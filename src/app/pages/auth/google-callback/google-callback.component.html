@@ -1,0 +1,16 @@
+<div class="auth-container">
+  <div class="auth-card">
+    <div *ngIf="isLoading" class="loading-container">
+      <div class="spinner"></div>
+      <p>Verifying your authentication...</p>
+    </div>
+    
+    <div *ngIf="!isLoading && errorMessage" class="error-container">
+      <p class="error-message">{{ errorMessage }}</p>
+      <button (click)="returnToLogin()" class="btn btn-primary">
+        Return to Login
+      </button>
+    </div>
+  </div>
+</div>
+ 

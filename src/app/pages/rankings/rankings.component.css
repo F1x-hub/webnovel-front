@@ -1,0 +1,65 @@
+.page-title {
+  font-size: 2rem;
+  margin-bottom: 24px;
+}
+
+.ranking-tabs {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 32px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+
+.tab-btn {
+  padding: 10px 20px;
+  background-color: #1a2133;
+  color: #fff;
+  border-radius: 6px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background-color 0.2s ease;
+}
+
+.tab-btn:hover {
+  background-color: #252e44;
+}
+
+.tab-btn.active {
+  background-color: #1976d2;
+}
+
+.ranking-list {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.ranking-item {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.rank-number {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #1976d2;
+  min-width: 40px;
+  text-align: center;
+}
+
+.novel-card-container {
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  .ranking-tabs {
+    gap: 8px;
+  }
+  
+  .tab-btn {
+    padding: 8px 16px;
+    font-size: 0.9rem;
+  }
+}

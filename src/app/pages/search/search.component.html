@@ -1,0 +1,92 @@
+<div class="search-page">
+  <div class="container">
+    <div class="search-header">
+      <h1>Search Novels</h1>
+      <div class="search-bar">
+        <input 
+          type="text" 
+          [(ngModel)]="searchQuery" 
+          placeholder="Enter novel title..." 
+          (keyup.enter)="onSearch()"
+          class="search-input" 
+        />
+        <button class="search-btn" (click)="onSearch()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/>
+            <path d="m21 21-4.3-4.3"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+    
+    <div class="filter-bar" *ngIf="searchQuery">
+      <div class="filter-options">
+        <div class="filter-group">
+          <label>Genre</label>
+          <select [(ngModel)]="filters.genreId" (change)="applyFilters()" [disabled]="loadingGenres">
+            <option [ngValue]="undefined">All Genres</option>
+            <option *ngIf="loadingGenres" value="">Loading genres...</option>
+            <option *ngFor="let genre of genres" [ngValue]="genre.id">{{ genre.name }}</option>
+          </select>
+        </div>
+        
+        <div class="filter-group">
+          <label>Status</label>
+          <select [(ngModel)]="filters.status" (change)="applyFilters()">
+            <option [ngValue]="undefined">All Statuses</option>
+            <option *ngFor="let status of statuses" [ngValue]="status.value">{{ status.label }}</option>
+          </select>
+        </div>
+        
+        <div class="filter-group">
+          <label>Sort By</label>
+          <select [(ngModel)]="filters.sortBy" (change)="applyFilters()">
+            <option [ngValue]="undefined">Default</option>
+            <option value="popular">Most Popular</option>
+            <option value="rating">Highest Rated</option>
+            <option value="newest">Recently Added</option>
+            <option value="a-z">A to Z</option>
+          </select>
+        </div>
+      </div>
+      
+      <button class="clear-filters" *ngIf="hasActiveFilters()" (click)="clearFilters()">
+        Clear Filters
+      </button>
+    </div>
+
+    <div class="search-content">
+      <!-- Loading state -->
+      <div class="loading-state" *ngIf="loading">
+        <div class="loader"></div>
+        <p>Searching novels...</p>
+      </div>
+
+      <!-- Error state -->
+      <div class="error-message" *ngIf="error">
+        <p>{{ error }}</p>
+        <button class="retry-btn" (click)="searchNovels()">Try Again</button>
+      </div>
+
+      <!-- No results state -->
+      <div class="no-results" *ngIf="!loading && !error && noResults">
+        <p>No novels found matching "{{ searchQuery }}"</p>
+        <div *ngIf="hasActiveFilters()" class="filter-notice">
+          <p>Try removing some filters to see more results</p>
+          <button class="clear-filters" (click)="clearFilters()">Clear Filters</button>
+        </div>
+      </div>
+
+      <!-- Results found -->
+      <div class="search-results" *ngIf="!loading && !error && novels.length > 0">
+        <p class="results-count">Found {{ novels.length }} {{ novels.length === 1 ? 'novel' : 'novels' }}</p>
+        <div class="novels-grid">
+          <app-novel-card 
+            *ngFor="let novel of novels" 
+            [novel]="novel"
+          ></app-novel-card>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

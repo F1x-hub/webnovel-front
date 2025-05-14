@@ -1,0 +1,867 @@
+.profile-container {
+  max-width: 1000px;
+  margin: 2rem auto;
+  padding: 1.5rem;
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px var(--divider-color);
+}
+
+.loading-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid var(--divider-color);
+    border-left-color: var(--accent-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+  
+  p {
+    margin-top: 1rem;
+    color: var(--text-secondary);
+  }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.error-message, .success-message {
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.error-message {
+  color: #ff6b6b;
+  font-weight: 500;
+  margin-top: 0.25rem;
+}
+
+.general-error {
+  background-color: rgba(255, 82, 82, 0.15);
+  border-left: 4px solid #ff5252;
+  color: #ff6b6b;
+}
+
+.success-message {
+  background-color: rgba(76, 175, 80, 0.15);
+  border-left: 4px solid #4caf50;
+  color: #81c784;
+}
+
+.profile-header {
+  display: flex;
+  gap: 2rem;
+  margin-bottom: 2rem;
+
+  &.dark-mode {
+    h1 {
+      color: white;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    }
+    
+    .member-since {
+      color: #bbbbbb;
+    }
+    
+    .stat-number {
+      color: var(--accent-color) !important;
+    }
+    
+    .stat-label {
+      color: #bbbbbb !important;
+    }
+  }
+  
+  &.light-mode {
+    h1 {
+      color: var(--text-primary);
+      font-weight: bold;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    }
+    
+    .member-since {
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+  }
+
+  .profile-image {
+    flex-shrink: 0;
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 4px solid var(--accent-color);
+    box-shadow: 0 4px 8px var(--divider-color);
+    
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+  
+  .profile-info {
+    flex: 1;
+    
+    h1 {
+      margin: 0 0 0.5rem;
+      font-size: 2rem;
+      color: var(--text-primary);
+      font-weight: 600;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    }
+    
+    .member-since {
+      color: var(--text-secondary);
+      margin-bottom: 1rem;
+    }
+    
+    .stats {
+      display: flex;
+      gap: 1.5rem;
+      margin-bottom: 1.5rem;
+      
+      .stat {
+        display: flex;
+        flex-direction: column;
+        
+        .stat-number {
+          font-size: 1.5rem;
+          font-weight: 600;
+          color: var(--accent-color);
+        }
+        
+        .stat-label {
+          font-size: 0.875rem;
+          color: var(--text-secondary);
+        }
+      }
+    }
+  }
+}
+
+.edit-button {
+  padding: 0.5rem 1.25rem;
+  background-color: var(--accent-color);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  
+  &:hover {
+    background-color: var(--accent-color-hover);
+  }
+}
+
+.profile-edit {
+  margin-top: 2rem;
+  
+  h2 {
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--divider-color);
+    color: var(--text-primary);
+  }
+  
+  .form-image-upload {
+    display: flex;
+    align-items: center;
+    margin-bottom: 2rem;
+    gap: 2rem;
+    
+    .image-preview {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 3px solid var(--accent-color);
+      
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+    }
+    
+    .image-upload {
+      flex: 1;
+      
+      label {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        background-color: var(--bg-tertiary);
+        color: var(--text-primary);
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        margin-bottom: 0.5rem;
+        
+        &:hover {
+          background-color: var(--bg-tertiary);
+          opacity: 0.9;
+        }
+      }
+      
+      input[type="file"] {
+        display: none;
+      }
+    }
+  }
+  
+  .form-columns {
+    display: flex;
+    gap: 2rem;
+    margin-bottom: 2rem;
+    
+    .form-column {
+      flex: 1;
+    }
+  }
+  
+  .form-group {
+    margin-bottom: 1.5rem;
+    
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+    
+    input {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      transition: border-color 0.2s;
+      background-color: var(--bg-tertiary);
+      color: var(--text-primary);
+      
+      &:focus {
+        border-color: var(--accent-color);
+        background-color: var(--bg-tertiary);
+        opacity: 0.9;
+      }
+      
+      &.is-invalid {
+        border-color: #c62828;
+      }
+    }
+    
+    .error-message {
+      margin-top: 0.5rem;
+      margin-bottom: 0;
+      font-size: 0.875rem;
+      background-color: transparent;
+      border-left: none;
+      padding: 0;
+    }
+  }
+  
+  .form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    
+    button {
+      padding: 0.75rem 1.5rem;
+      border-radius: 4px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    
+    .cancel-button {
+      background-color: var(--bg-tertiary);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+      
+      &:hover {
+        background-color: var(--bg-tertiary);
+        opacity: 0.9;
+      }
+    }
+    
+    .save-button {
+      background-color: var(--accent-color);
+      color: white;
+      border: none;
+      
+      &:hover {
+        background-color: var(--accent-color-hover);
+      }
+      
+      &:disabled {
+        background-color: #cccccc;
+        cursor: not-allowed;
+      }
+    }
+  }
+}
+
+.profile-details {
+  margin-top: 2rem;
+  
+  .details-section {
+    background-color: var(--bg-tertiary);
+    border-radius: 6px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    
+    h3 {
+      margin-top: 0;
+      margin-bottom: 1.25rem;
+      color: var(--text-primary);
+      font-size: 1.25rem;
+      font-weight: 600;
+      border-bottom: 1px solid var(--divider-color);
+      padding-bottom: 0.5rem;
+    }
+    
+    .detail-row {
+      display: flex;
+      margin-bottom: 1rem;
+      
+      .detail-label {
+        width: 120px;
+        font-weight: 500;
+        color: var(--text-secondary);
+      }
+      
+      .detail-value {
+        flex: 1;
+        color: var(--text-primary);
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .profile-header {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    
+    .profile-image {
+      margin-bottom: 1rem;
+    }
+    
+    .stats {
+      justify-content: center;
+    }
+    
+    .edit-button {
+      margin: 0 auto;
+      display: block;
+    }
+  }
+  
+  .form-columns {
+    flex-direction: column;
+    gap: 0;
+  }
+  
+  .form-image-upload {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+}
+
+// Novels section
+.novels-section {
+  margin-top: 2rem;
+  background-color: var(--bg-secondary);
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px var(--divider-color);
+  color: var(--text-primary);
+
+  .section-title {
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+    font-weight: 600;
+  }
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1rem;
+  text-align: center;
+
+  .empty-state-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+  }
+
+  p {
+    margin-bottom: 1.5rem;
+    color: var(--text-secondary);
+  }
+
+  .create-button {
+    padding: 0.75rem 2rem;
+    background-color: var(--accent-color);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+
+    &:hover {
+      background-color: var(--accent-color-hover);
+    }
+  }
+}
+
+// Carousel styles
+.novels-carousel {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 1rem 0;
+}
+
+.carousel-container {
+  flex: 1;
+  overflow: hidden;
+  margin: 0 1rem;
+}
+
+.carousel-track {
+  display: flex;
+  transition: transform 0.4s ease;
+}
+
+.carousel-item {
+  flex: 0 0 33.333%;
+  padding: 0 0.5rem;
+  cursor: pointer;
+  transition: transform 0.2s;
+
+  &:hover {
+    transform: translateY(-5px);
+  }
+
+  @media (max-width: 768px) {
+    flex: 0 0 50%;
+  }
+  
+  @media (max-width: 480px) {
+    flex: 0 0 100%;
+  }
+}
+
+.novel-card {
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: var(--bg-tertiary);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.novel-image {
+  width: 100%;
+  height: 300px;
+  overflow: hidden;
+  position: relative;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+}
+
+.novel-info {
+  padding: 0.75rem;
+}
+
+.novel-title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text-primary);
+}
+
+.novel-genre {
+  font-size: 0.875rem;
+  color: var(--text-tertiary);
+}
+
+.carousel-nav {
+  background-color: var(--bg-tertiary);
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: background-color 0.2s, color 0.2s;
+
+  &:hover:not([disabled]) {
+    background-color: var(--accent-color);
+    color: white;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  svg {
+    pointer-events: none;
+  }
+}
+
+.carousel-indicators {
+  display: flex;
+  justify-content: center;
+  margin-top: 1rem;
+}
+
+.carousel-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: none;
+  background-color: var(--divider-color);
+  margin: 0 0.25rem;
+  padding: 0;
+  cursor: pointer;
+  transition: background-color 0.2s;
+
+  &.active {
+    background-color: var(--accent-color);
+  }
+}
+
+.security-actions {
+  margin-top: 20px;
+}
+
+.change-password-btn {
+  padding: 8px 16px;
+  background-color: #3498db;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  font-size: 14px;
+}
+
+.change-password-btn:hover {
+  background-color: #2980b9;
+}
+
+/* Updated Modal styles to match the screenshot */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  z-index: 999;
+}
+
+.modal-content {
+  width: 90%;
+  max-width: 400px;
+  border-radius: 8px;
+  z-index: 1001;
+  overflow: hidden;
+  animation: modalFadeIn 0.3s;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Light theme for modal */
+.modal-content.light-theme {
+  background-color: #ffffff;
+  color: #333333;
+}
+
+/* Dark theme for modal */
+.modal-content.dark-theme {
+  background-color: #121a29;
+  color: #ffffff;
+  border: 1px solid #2d3748;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  background-color: #1c2739;
+}
+
+.modal-content.light-theme .modal-header {
+  border-bottom: 1px solid #eeeeee;
+  background-color: #f8f9fa;
+}
+
+.modal-content.dark-theme .modal-header {
+  border-bottom: 1px solid #2d3748;
+  background-color: #1c2739;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 500;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.close-button:hover {
+  opacity: 1;
+}
+
+.modal-content.light-theme .close-button {
+  color: #666666;
+}
+
+.modal-content.dark-theme .close-button {
+  color: #ffffff;
+}
+
+.modal-body {
+  padding: 20px;
+}
+
+/* Password field container with fixed space for validation */
+.password-field-container {
+  margin-bottom: 10px;
+}
+
+/* Password field styling */
+.password-field {
+  position: relative;
+  width: 100%;
+}
+
+.password-field input {
+  width: 100%;
+  padding: 12px 40px 12px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.modal-content.light-theme .password-field input {
+  background-color: #f5f7f9;
+  border: 1px solid #dbe0e5;
+  color: #333;
+}
+
+.modal-content.dark-theme .password-field input {
+  background-color: #1e293b;
+  border: 1px solid #2d3748;
+  color: #fff;
+}
+
+.password-field input:focus {
+  outline: none;
+}
+
+.modal-content.light-theme .password-field input:focus {
+  border-color: #3498db;
+  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+.modal-content.dark-theme .password-field input:focus {
+  border-color: #3498db;
+  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+.password-field input.is-invalid {
+  border-color: #e74c3c;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.password-toggle:hover {
+  opacity: 1;
+}
+
+.eye-icon {
+  font-size: 16px;
+}
+
+.modal-content.light-theme .password-toggle {
+  color: #666;
+}
+
+.modal-content.dark-theme .password-toggle {
+  color: #fff;
+}
+
+/* Validation message container with fixed height */
+.validation-message {
+  height: 20px; /* Fixed height to reserve space */
+  margin-top: 6px;
+  font-size: 12px;
+}
+
+.error {
+  color: #e34c4c;
+}
+
+/* Container for success/error notifications */
+.notification-container {
+  min-height: 24px;
+  margin: 15px 0;
+}
+
+/* Success and error message styles */
+.success-message, .general-error {
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.success-message {
+  background-color: rgba(46, 204, 113, 0.1);
+  color: #2ecc71;
+}
+
+.general-error {
+  background-color: rgba(231, 76, 60, 0.1);
+  color: #e74c3c;
+}
+
+/* Change password button */
+.change-password-submit {
+  width: 100%;
+  padding: 12px;
+  background-color: #2f80ed;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.change-password-submit:hover:not(:disabled) {
+  background-color: #2368c4;
+}
+
+.change-password-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+// Apply dark mode styles to modal
+:host-context(.dark-mode) {
+  .modal-content {
+    background-color: #1e2126;
+    color: #e4e6ea;
+  }
+  
+  .modal-header {
+    border-bottom-color: #2d3035;
+  }
+  
+  .modal-header h2 {
+    color: #e4e6ea;
+  }
+  
+  .close-button {
+    color: #a0a0a0;
+  }
+  
+  .close-button:hover {
+    color: #ffffff;
+  }
+  
+  input[type="password"] {
+    background-color: #2d3035;
+    color: #e4e6ea;
+    border-color: #3d4148;
+  }
+  
+  label {
+    color: #e4e6ea;
+  }
+} 

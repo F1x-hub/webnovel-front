@@ -1,0 +1,97 @@
+<div class="comments-container" (click)="closeAllMenus()">
+  <h2 class="comments-title">Comments</h2>
+
+  <!-- Comment form for logged-in users -->
+  <div class="comment-form-container" *ngIf="isUserLoggedIn; else loginPrompt">
+    <form [formGroup]="commentForm" (ngSubmit)="submitComment()">
+      <textarea 
+        formControlName="commentText" 
+        placeholder="Share your thoughts..."
+        [class.error]="commentForm.get('commentText')!.invalid && commentForm.get('commentText')!.touched"
+      ></textarea>
+      
+      <div class="form-error" *ngIf="commentForm.get('commentText')!.hasError('required') && commentForm.get('commentText')!.touched">
+        Comment cannot be empty
+      </div>
+      
+      <div class="form-error" *ngIf="commentForm.get('commentText')!.hasError('maxlength')">
+        Comment is too long (max 1000 characters)
+      </div>
+      
+      <button 
+        type="submit" 
+        class="submit-btn"
+        [disabled]="commentForm.invalid || isSubmitting"
+      >
+        {{ isSubmitting ? 'Sending...' : 'Submit' }}
+      </button>
+    </form>
+  </div>
+
+  <!-- Login prompt for non-logged-in users -->
+  <ng-template #loginPrompt>
+    <div class="login-prompt">
+      <p>Please login to leave a comment</p>
+      <button class="login-btn" (click)="navigateToLogin()">Login</button>
+    </div>
+  </ng-template>
+
+  <!-- Loading indicator -->
+  <div class="comments-loader" *ngIf="isLoading">
+    <div class="spinner"></div>
+    <p>Loading comments...</p>
+  </div>
+
+  <!-- No comments message -->
+  <div class="no-comments" *ngIf="!isLoading && comments.length === 0">
+    <p>No comments yet. Be the first to comment!</p>
+  </div>
+
+  <!-- Comments list -->
+  <div class="comment-list" *ngIf="!isLoading && comments.length > 0">
+    <div class="comment-card" *ngFor="let comment of comments; let i = index">
+      <div class="comment-header">
+        <div class="user-info">
+          <img 
+            class="user-avatar" 
+            [src]="'https://localhost:7188/api/Image/get-user-image/' + comment.userId" 
+            alt="User avatar"
+            onerror="this.src='assets/images/default-avatar.png'"
+          >
+          <div class="user-details">
+            <span class="username">{{ comment.username }}</span>
+            <span class="comment-date">{{ comment.createdAt | date:'medium' }}</span>
+          </div>
+        </div>
+        
+        <div class="comment-options" *ngIf="canDeleteComment(comment)">
+          <button class="options-btn" (click)="toggleOptionsMenu(i, $event)">
+            <i class="fas fa-ellipsis-v"></i>
+          </button>
+          
+          <div class="options-menu" *ngIf="comment.showOptions">
+            <button class="delete-btn" (click)="deleteComment(comment.id)">
+              <i class="fas fa-trash-alt"></i>
+              Delete
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <div class="comment-content">
+        {{ comment.content }}
+      </div>
+      
+      <div class="comment-actions">
+        <button 
+          class="like-btn" 
+          [class.liked]="comment.isLikedByCurrentUser"
+          (click)="toggleLike(comment)"
+        >
+          <i class="fas" [class.fa-heart]="comment.isLikedByCurrentUser" [class.fa-heart-o]="!comment.isLikedByCurrentUser"></i>
+          <span>{{ comment.likesCount }}</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

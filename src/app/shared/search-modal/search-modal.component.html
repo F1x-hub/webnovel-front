@@ -1,0 +1,64 @@
+<div class="search-modal-overlay" (click)="close()">
+  <div class="search-modal" (click)="$event.stopPropagation()">
+    <div class="search-container">
+      <div class="search-input-container">
+        <input 
+          #searchInput
+          type="text" 
+          class="search-input" 
+          [(ngModel)]="searchQuery" 
+          (input)="onSearchInput()"
+          placeholder="Search for novels..."
+          autofocus
+        >
+        <button class="search-button" (click)="navigateToSearchPage()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/>
+            <path d="m21 21-4.3-4.3"/>
+          </svg>
+        </button>
+        <button class="close-button" (click)="close()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+    
+    <div class="search-results-container" *ngIf="searchQuery.trim() && !isLoading">
+      <div *ngIf="searchResults.length > 0; else noResults" class="search-results">
+        <div 
+          *ngFor="let result of searchResults; let i = index" 
+          class="result-item" 
+          [class.selected]="i === selectedIndex"
+          (mouseenter)="selectResult(i)"
+          (click)="navigateToNovel(result)"
+        >
+          <div class="result-image">
+            <img [src]="result.imageUrl || 'assets/images/default-cover.png'" alt="{{ result.title }}" (error)="onImageError($event)">
+          </div>
+          <div class="result-info">
+            <div class="result-title">{{ result.title }}</div>
+            <div class="result-status" *ngIf="result.status">
+              {{ getStatusText(result.status) }}
+            </div>
+          </div>
+        </div>
+        
+        
+      </div>
+      
+      <ng-template #noResults>
+        <div class="no-results">
+          <p>No results found for "{{ searchQuery }}"</p>
+        </div>
+      </ng-template>
+    </div>
+    
+    <div class="search-loading" *ngIf="isLoading">
+      <div class="loader"></div>
+      <p>Searching...</p>
+    </div>
+  </div>
+</div>

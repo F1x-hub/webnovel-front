@@ -1,0 +1,340 @@
+<div class="my-novels-container">
+  <div class="my-novels-header">
+    <h1>My Novels</h1>
+    <div class="filter-controls">
+      <div class="filter-group">
+        <select [(ngModel)]="filters.status" (change)="applyFilters()">
+          <option [ngValue]="undefined">All Statuses</option>
+          <option *ngFor="let option of novelStatusOptions" [ngValue]="option.value">{{ option.label }}</option>
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <select [(ngModel)]="filters.sortBy" (change)="applyFilters()">
+          <option [ngValue]="undefined">Default Sort</option>
+          <option value="popular">Most Popular</option>
+          <option value="rating">Highest Rated</option>
+          <option value="newest">Recently Added</option>
+          <option value="a-z">A to Z</option>
+        </select>
+      </div>
+      
+      <button class="clear-filters-btn" *ngIf="hasActiveFilters()" (click)="clearFilters()">
+        Clear Filters
+      </button>
+    </div>
+    <button class="create-button" (click)="onCreateNovel()">Create New Novel</button>
+  </div>
+
+  <div class="loading-indicator" *ngIf="isLoading">
+    <div class="spinner"></div>
+    <p>Loading...</p>
+  </div>
+
+  <div class="error-message general-error" *ngIf="errorMessage">
+    <strong>Error:</strong> {{ errorMessage }}
+  </div>
+
+  <div class="success-message" *ngIf="successMessage">
+    {{ successMessage }}
+  </div>
+
+  <div class="my-novels-content" *ngIf="!isLoading">
+    <div class="empty-state" *ngIf="userNovels.length === 0">
+      <div class="empty-state-icon">📚</div>
+      <h3>You haven't created any novels yet</h3>
+      <p>Start creating your first novel and share your stories with the world.</p>
+      <button class="create-button" (click)="onCreateNovel()">Create Your First Novel</button>
+    </div>
+
+    <div class="novel-list" *ngIf="userNovels.length > 0">
+      <div class="novel-item" *ngFor="let novel of userNovels">
+        <div class="novel-item-content">
+          <div class="novel-cover">
+            <img [src]="novel.imageUrl || '/assets/images/default-cover.png'" 
+                 (error)="onImageError($event)" 
+                 [alt]="novel.title">
+          </div>
+          <div class="novel-content">
+            <h3 class="novel-title">{{ novel.title }}</h3>
+            <p class="novel-description">{{ novel.description }}</p>
+            <div class="novel-meta">
+              <span class="novel-genre">{{ novel.genres?.join(', ') || novel.genre }}</span>
+              <span class="novel-chapters">{{ novel.totalChapters || 0 }} chapters</span>
+              <span class="novel-status" *ngIf="novel.status">
+                <span class="status-badge" [ngClass]="getStatusClass(novel.status)">{{ getStatusText(novel.status) }}</span>
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="novel-actions">
+          <button class="edit-button" (click)="showEditForm(novel)">Edit</button>
+          <button class="delete-button" (click)="showDeleteConfirm(novel.id)">Delete</button>
+          <button class="add-chapter-button" (click)="showAddChapterForm(novel)">Add Chapter</button>
+          <button class="manage-chapters-button" (click)="showManageChapters(novel)">Manage Chapters</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Novel Form -->
+  <div class="modal-overlay" *ngIf="editFormVisible">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Edit Novel</h2>
+        <button class="close-button" (click)="cancelEdit()">&times;</button>
+      </div>
+      <form [formGroup]="editForm" (ngSubmit)="updateNovel()">
+        <div class="form-group">
+          <label for="title">Title</label>
+          <input 
+            type="text" 
+            id="title" 
+            formControlName="title" 
+            [class.is-invalid]="editForm.get('title')?.invalid && editForm.get('title')?.touched"
+          />
+          <div class="error-message" *ngIf="editForm.get('title')?.invalid && editForm.get('title')?.touched">
+            <span *ngIf="editForm.get('title')?.errors?.['required']">Title is required</span>
+            <span *ngIf="editForm.get('title')?.errors?.['minlength']">Title must be at least 3 characters</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="description">Description</label>
+          <textarea 
+            id="description" 
+            formControlName="description" 
+            rows="6"
+            [class.is-invalid]="editForm.get('description')?.invalid && editForm.get('description')?.touched"
+          ></textarea>
+          <div class="error-message" *ngIf="editForm.get('description')?.invalid && editForm.get('description')?.touched">
+            <span *ngIf="editForm.get('description')?.errors?.['required']">Description is required</span>
+            <span *ngIf="editForm.get('description')?.errors?.['minlength']">Description must be at least 20 characters</span>
+          </div>
+        </div>
+
+        <!-- Status field -->
+        <div class="form-group">
+          <label for="status">Status</label>
+          <select 
+            id="status" 
+            formControlName="status" 
+            class="form-control"
+            [class.is-invalid]="editForm.get('status')?.invalid && editForm.get('status')?.touched"
+          >
+            <option *ngFor="let option of novelStatusOptions" [value]="option.value">{{ option.label }}</option>
+          </select>
+          <div class="error-message" *ngIf="editForm.get('status')?.invalid && editForm.get('status')?.touched">
+            <span *ngIf="editForm.get('status')?.errors?.['required']">Status is required</span>
+          </div>
+        </div>
+
+        <!-- Adult Content field -->
+        <div class="form-group">
+          <div class="form-check">
+            <input 
+              type="checkbox" 
+              id="isAdultContent"
+              formControlName="isAdultContent"
+              class="form-check-input"
+            >
+            <label class="form-check-label" for="isAdultContent">
+              <strong>Adult Content</strong> - This novel contains adult themes (18+)
+            </label>
+          </div>
+          <small class="form-text text-muted">
+            Adult content will only be accessible to users who have verified their age as 18+
+          </small>
+        </div>
+
+        <!-- Cover Image upload field -->
+        <div class="form-group">
+          <label for="coverImage">Cover Image</label>
+          <div class="image-upload-container" 
+               (dragover)="onDragOver($event)" 
+               (dragleave)="onDragLeave($event)" 
+               (drop)="onDrop($event)"
+               [class.drag-active]="isDragging">
+            <div class="upload-area">
+              <div *ngIf="!imagePreview" class="upload-placeholder">
+                <div class="upload-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                    <polyline points="21 15 16 10 5 21"></polyline>
+                  </svg>
+                </div>
+                <p class="upload-text">Drag and drop an image<br>or <span class="browse-text">browse to upload</span>.</p>
+                <button type="button" class="upload-button" (click)="triggerFileInput()">Upload your photo</button>
+                <p class="upload-requirements">File must be JPG or PNG and up to 40MB</p>
+                <div class="upload-features">
+                  <span class="feature-item">✓ Free to use</span>
+                  <span class="feature-item">✓ No credit card required</span>
+                </div>
+              </div>
+              <img *ngIf="imagePreview" [src]="imagePreview" alt="Cover preview" class="preview-image">
+              <button *ngIf="imagePreview" type="button" class="remove-image-btn" (click)="removeImage()">Remove</button>
+            </div>
+            <input 
+              #fileInput
+              type="file" 
+              id="coverImage" 
+              class="file-input" 
+              accept="image/jpeg,image/png"
+              (change)="onFileSelected($event)"
+              hidden
+            />
+          </div>
+          <small class="form-text text-muted">Recommended size: 300x450 pixels (will be automatically resized to fit)</small>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="cancel-button" (click)="cancelEdit()">Cancel</button>
+          <button type="submit" class="save-button" [disabled]="editForm.invalid || isLoading">
+            {{ isLoading ? 'Saving...' : 'Save Changes' }}
+          </button>
+        </div>
+        
+        <!-- Debug information -->
+        <div *ngIf="editForm.invalid" class="error-message" style="margin-top: 10px; padding: 10px;">
+          <strong>Form is invalid:</strong>
+          <ul>
+            <li *ngIf="editForm.get('title')?.invalid">
+              Title errors: {{ editForm.get('title')?.errors | json }}
+            </li>
+            <li *ngIf="editForm.get('description')?.invalid">
+              Description errors: {{ editForm.get('description')?.errors | json }}
+            </li>
+            <li *ngIf="editForm.get('status')?.invalid">
+              Status errors: {{ editForm.get('status')?.errors | json }}
+            </li>
+          </ul>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Add Chapter Form -->
+  <div class="modal-overlay" *ngIf="addChapterFormVisible">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Add Chapter</h2>
+        <button class="close-button" (click)="cancelAddChapter()">&times;</button>
+      </div>
+      <form [formGroup]="chapterForm" (ngSubmit)="addChapter()">
+        <div class="form-group">
+          <label for="chapterTitle">Chapter Title</label>
+          <input 
+            type="text" 
+            id="chapterTitle" 
+            formControlName="title" 
+            [class.is-invalid]="chapterForm.get('title')?.invalid && chapterForm.get('title')?.touched"
+          />
+          <div class="error-message" *ngIf="chapterForm.get('title')?.invalid && chapterForm.get('title')?.touched">
+            <span *ngIf="chapterForm.get('title')?.errors?.['required']">Title is required</span>
+            <span *ngIf="chapterForm.get('title')?.errors?.['minlength']">Title must be at least 3 characters</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="chapterContent">Chapter Content</label>
+          <textarea 
+            id="chapterContent" 
+            formControlName="content" 
+            rows="15"
+            [class.is-invalid]="chapterForm.get('content')?.invalid && chapterForm.get('content')?.touched"
+          ></textarea>
+          <div class="error-message" *ngIf="chapterForm.get('content')?.invalid && chapterForm.get('content')?.touched">
+            <span *ngIf="chapterForm.get('content')?.errors?.['required']">Content is required</span>
+            <span *ngIf="chapterForm.get('content')?.errors?.['minlength']">Content must be at least 50 characters</span>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="cancel-button" (click)="cancelAddChapter()">Cancel</button>
+          <button type="submit" class="save-button" [disabled]="chapterForm.invalid || isLoading">
+            {{ isLoading ? 'Adding...' : 'Add Chapter' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Manage Chapters Dialog -->
+  <div class="modal-overlay" *ngIf="manageChaptersVisible">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Manage Chapters</h2>
+        <button class="close-button" (click)="cancelManageChapters()">&times;</button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="loading-indicator" *ngIf="isLoadingChapters">
+          <div class="spinner"></div>
+          <p>Loading chapters...</p>
+        </div>
+
+        <div class="empty-chapters" *ngIf="!isLoadingChapters && novelChapters.length === 0">
+          <p>This novel doesn't have any chapters yet.</p>
+          <button class="add-chapter-button-inline" (click)="showAddChapterForm(selectedNovel!)" *ngIf="selectedNovel">Add First Chapter</button>
+        </div>
+
+        <div class="chapters-list" *ngIf="!isLoadingChapters && novelChapters.length > 0">
+          <div class="chapter-item" *ngFor="let chapter of novelChapters">
+            <div class="chapter-info">
+              <span class="chapter-number">Chapter {{ chapter.chapterNumber }}</span>
+              <span class="chapter-title">{{ chapter.title }}</span>
+              <span class="chapter-date" *ngIf="chapter.createdAt">{{ chapter.createdAt | timeAgo }}</span>
+            </div>
+            <div class="chapter-actions">
+              <button class="delete-chapter-button" (click)="showDeleteChapterConfirm(chapter)">Delete</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="cancel-button" (click)="cancelManageChapters()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Chapter Confirmation Dialog -->
+  <div class="modal-overlay" *ngIf="deleteChapterConfirmVisible">
+    <div class="modal-content delete-confirm">
+      <div class="modal-header">
+        <h2>Delete Chapter</h2>
+        <button class="close-button" (click)="cancelDeleteChapter()">&times;</button>
+      </div>
+      <div class="delete-message">
+        <p>Are you sure you want to delete Chapter {{ selectedChapter?.chapterNumber }}: "{{ selectedChapter?.title }}"?</p>
+        <p>This action cannot be undone.</p>
+      </div>
+      <div class="modal-actions">
+        <button class="cancel-button" (click)="cancelDeleteChapter()">Cancel</button>
+        <button class="delete-button confirm" (click)="deleteChapter()" [disabled]="isLoading">
+          {{ isLoading ? 'Deleting...' : 'Delete' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Novel Confirmation Dialog -->
+  <div class="modal-overlay" *ngIf="deleteConfirmVisible">
+    <div class="modal-content delete-confirm">
+      <div class="modal-header">
+        <h2>Delete Novel</h2>
+        <button class="close-button" (click)="cancelDelete()">&times;</button>
+      </div>
+      <div class="delete-message">
+        <p>Are you sure you want to delete this novel? This action cannot be undone.</p>
+      </div>
+      <div class="modal-actions">
+        <button class="cancel-button" (click)="cancelDelete()">Cancel</button>
+        <button class="delete-button confirm" (click)="deleteNovel()" [disabled]="isLoading">
+          {{ isLoading ? 'Deleting...' : 'Delete' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

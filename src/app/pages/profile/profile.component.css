@@ -1,0 +1,147 @@
+.profile-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.profile-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 2rem 0;
+}
+
+.profile-image {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+}
+
+.profile-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-name {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: white;
+}
+
+.profile-membership {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-bottom: 1.5rem;
+}
+
+.profile-stats {
+  background-color: var(--bg-secondary);
+  border-radius: 24px;
+  padding: 0.5rem 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.stat-item {
+  font-size: 1rem;
+  color: var(--text-secondary);
+}
+
+.stat-value {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.edit-profile-btn {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  border: none;
+  border-radius: 4px;
+  padding: 0.6rem 1.2rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.edit-profile-btn:hover {
+  background-color: var(--bg-tertiary);
+}
+
+.profile-divider {
+  height: 1px;
+  background-color: var(--divider-color);
+  margin: 1rem 0 2rem;
+}
+
+.section-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  color: white;
+}
+
+.comment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.comment-item {
+  background-color: var(--bg-secondary);
+  border-radius: 8px;
+  padding: 1.2rem;
+}
+
+.comment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.8rem;
+}
+
+.book-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 0.2rem;
+  color: var(--text-primary);
+}
+
+.chapter-info {
+  font-size: 0.85rem;
+  color: var(--text-tertiary);
+}
+
+.comment-time {
+  font-size: 0.8rem;
+  color: var(--text-tertiary);
+}
+
+.comment-text {
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+@media (max-width: 768px) {
+  .profile-container {
+    padding: 1.5rem;
+  }
+  
+  .profile-image {
+    width: 100px;
+    height: 100px;
+  }
+  
+  .profile-name {
+    font-size: 1.7rem;
+  }
+  
+  .section-title {
+    font-size: 1.3rem;
+  }
+}

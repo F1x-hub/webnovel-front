@@ -1,0 +1,183 @@
+<div class="auth-container">
+  <div class="auth-card">
+    <h2>Login</h2>
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input 
+          type="email" 
+          id="email" 
+          formControlName="email" 
+          [class.is-invalid]="loginForm.get('email')?.invalid && loginForm.get('email')?.touched"
+        />
+        <div class="error-message" *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched">
+          <span *ngIf="loginForm.get('email')?.errors?.['required']">Email is required</span>
+          <span *ngIf="loginForm.get('email')?.errors?.['email']">Please enter a valid email</span>
+          <span *ngIf="loginForm.get('email')?.errors?.['notFound']">User with this email not found</span>
+          <span *ngIf="loginForm.get('email')?.errors?.['locked']">Your account is locked</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <div class="password-input-container">
+          <input 
+            [type]="showLoginPassword ? 'text' : 'password'" 
+            id="password" 
+            formControlName="password" 
+            [class.is-invalid]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
+          />
+          <button type="button" class="password-toggle" (click)="showLoginPassword = !showLoginPassword">
+            {{ showLoginPassword ? '🔒' : '👁️' }}
+          </button>
+        </div>
+        <div class="error-message" *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched">
+          <span *ngIf="loginForm.get('password')?.errors?.['required']">Password is required</span>
+          <span *ngIf="loginForm.get('password')?.errors?.['minlength']">Password must be at least 6 characters</span>
+          <span *ngIf="loginForm.get('password')?.errors?.['incorrect']">Password is incorrect</span>
+          <span *ngIf="loginForm.get('password')?.errors?.['locked']">Too many failed attempts</span>
+        </div>
+      </div>
+
+      <div class="success-message" *ngIf="successMessage">
+        {{ successMessage }}
+      </div>
+
+      <div class="general-error" *ngIf="errorMessage">
+        {{ errorMessage }}
+      </div>
+
+      <button type="submit" [disabled]="loginForm.invalid || isLoading" class="btn btn-primary">
+        {{ isLoading ? 'Loading...' : 'Login' }}
+      </button>
+      
+      <div class="forgot-password">
+        <a href="javascript:void(0)" (click)="forgotPassword()">Forgot Password?</a>
+      </div>
+    </form>
+    
+    <div class="social-login">
+      <p><span>Or sign in with</span></p>
+      <button class="google-btn" (click)="signInWithGoogle()">
+        <img src="assets/google-icon.svg" alt="Google">
+        <span>Login with Google</span>
+      </button>
+    </div>
+    
+    <div class="auth-footer">
+      <p>Don't have an account? <a routerLink="/auth/register">Register</a></p>
+    </div>
+  </div>
+  
+  <!-- Forgot Password Modal -->
+  <div class="modal" *ngIf="showForgotPasswordModal">
+    <div class="modal-content" [ngClass]="{'dark-theme': isDarkMode, 'light-theme': !isDarkMode}">
+      <div class="modal-header">
+        <h2>Forgot Password</h2>
+        <button class="close-button" (click)="showForgotPasswordModal = false">&times;</button>
+      </div>
+      <div class="modal-body" *ngIf="!showResetForm">
+        <form [formGroup]="forgotPasswordForm" (ngSubmit)="onForgotPasswordSubmit()">
+          <div class="form-group">
+            <label for="resetEmail">Email</label>
+            <input 
+              type="email" 
+              id="resetEmail" 
+              formControlName="email" 
+              [class.is-invalid]="forgotPasswordForm.get('email')?.invalid && forgotPasswordForm.get('email')?.touched"
+            />
+            <div class="error-message" *ngIf="forgotPasswordForm.get('email')?.invalid && forgotPasswordForm.get('email')?.touched">
+              <span *ngIf="forgotPasswordForm.get('email')?.errors?.['required']">Email is required</span>
+              <span *ngIf="forgotPasswordForm.get('email')?.errors?.['email']">Please enter a valid email</span>
+            </div>
+          </div>
+          
+          <div class="success-message" *ngIf="forgotPasswordSuccess">
+            {{ forgotPasswordSuccess }}
+          </div>
+
+          <div class="general-error" *ngIf="forgotPasswordError">
+            {{ forgotPasswordError }}
+          </div>
+          
+          <button type="submit" [disabled]="forgotPasswordForm.invalid || isForgotPasswordLoading" class="btn btn-primary">
+            {{ isForgotPasswordLoading ? 'Sending...' : 'Send Reset Code' }}
+          </button>
+        </form>
+      </div>
+      
+      <!-- Reset Password Form (shows after code is sent) -->
+      <div class="modal-body" *ngIf="showResetForm">
+        <form [formGroup]="resetPasswordForm" (ngSubmit)="onResetPasswordSubmit()">
+          <div class="form-group">
+            <label for="code">Verification Code</label>
+            <input 
+              type="text" 
+              id="code" 
+              formControlName="code" 
+              [class.is-invalid]="resetPasswordForm.get('code')?.invalid && resetPasswordForm.get('code')?.touched"
+              placeholder="Enter 6-digit code from email"
+            />
+            <div class="error-message" *ngIf="resetPasswordForm.get('code')?.invalid && resetPasswordForm.get('code')?.touched">
+              <span *ngIf="resetPasswordForm.get('code')?.errors?.['required']">Code is required</span>
+              <span *ngIf="resetPasswordForm.get('code')?.errors?.['minlength'] || resetPasswordForm.get('code')?.errors?.['maxlength']">Code must be 6 digits</span>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="newPassword">New Password</label>
+            <div class="password-input-container">
+              <input 
+                [type]="showNewPassword ? 'text' : 'password'" 
+                id="newPassword" 
+                formControlName="newPassword" 
+                [class.is-invalid]="resetPasswordForm.get('newPassword')?.invalid && resetPasswordForm.get('newPassword')?.touched"
+              />
+              <button type="button" class="password-toggle" (click)="showNewPassword = !showNewPassword">
+                {{ showNewPassword ? '🔒' : '👁️' }}
+              </button>
+            </div>
+            <div class="error-message" *ngIf="resetPasswordForm.get('newPassword')?.invalid && resetPasswordForm.get('newPassword')?.touched">
+              <span *ngIf="resetPasswordForm.get('newPassword')?.errors?.['required']">New password is required</span>
+              <span *ngIf="resetPasswordForm.get('newPassword')?.errors?.['minlength']">New password must be at least 6 characters</span>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="confirmPassword">Confirm Password</label>
+            <div class="password-input-container">
+              <input 
+                [type]="showConfirmPassword ? 'text' : 'password'" 
+                id="confirmPassword" 
+                formControlName="confirmPassword" 
+                [class.is-invalid]="resetPasswordForm.get('confirmPassword')?.invalid && resetPasswordForm.get('confirmPassword')?.touched"
+              />
+              <button type="button" class="password-toggle" (click)="showConfirmPassword = !showConfirmPassword">
+                {{ showConfirmPassword ? '🔒' : '👁️' }}
+              </button>
+            </div>
+            <div class="error-message" *ngIf="resetPasswordForm.get('confirmPassword')?.invalid && resetPasswordForm.get('confirmPassword')?.touched">
+              <span *ngIf="resetPasswordForm.get('confirmPassword')?.errors?.['required']">Confirm password is required</span>
+              <span *ngIf="resetPasswordForm.get('confirmPassword')?.errors?.['passwordMismatch']">Passwords do not match</span>
+            </div>
+          </div>
+          
+          <div class="success-message" *ngIf="resetPasswordSuccess">
+            {{ resetPasswordSuccess }}
+          </div>
+
+          <div class="general-error" *ngIf="resetPasswordError">
+            {{ resetPasswordError }}
+          </div>
+          
+          <button type="submit" [disabled]="resetPasswordForm.invalid || isResetPasswordLoading" class="btn btn-primary">
+            {{ isResetPasswordLoading ? 'Resetting...' : 'Reset Password' }}
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Modal Backdrop -->
+  <div class="modal-backdrop" *ngIf="showForgotPasswordModal" (click)="showForgotPasswordModal = false"></div>
+</div> 

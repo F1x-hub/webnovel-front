@@ -1,0 +1,19 @@
+<div class="container">
+  <h1 class="page-title">Rankings</h1>
+  
+  <div class="ranking-tabs">
+    <button class="tab-btn active">Popular</button>
+    <button class="tab-btn">New Releases</button>
+    <button class="tab-btn">Rising Stars</button>
+    <button class="tab-btn">Completed</button>
+  </div>
+
+  <div class="ranking-list">
+    <div class="ranking-item" *ngFor="let novel of rankedNovels; let i = index">
+      <div class="rank-number">{{ i + 1 }}</div>
+      <div class="novel-card-container">
+        <app-novel-card [novel]="novel"></app-novel-card>
+      </div>
+    </div>
+  </div>
+</div>

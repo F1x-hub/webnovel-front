@@ -1,0 +1,244 @@
+.auth-container {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100%;
+  padding: 2rem;
+  background-color: transparent;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 500px;
+  padding: 2rem;
+  margin: 1rem 0;
+}
+
+h2 {
+  margin-bottom: 1.5rem;
+  text-align: center;
+  color: #fff;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.form-row .form-group {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #ccc;
+}
+
+input {
+  width: 100%;
+  padding: 0.75rem;
+  font-size: 1rem;
+  border: 1px solid #2d3748;
+  border-radius: 4px;
+  background-color: #252e44;
+  color: #fff;
+  transition: border-color 0.15s ease-in-out;
+}
+
+input:focus {
+  outline: none;
+  border-color: #1e88e5;
+  box-shadow: 0 0 0 0.2rem rgba(30, 136, 229, 0.25);
+}
+
+input.is-invalid {
+  border-color: #ff4d4f;
+  box-shadow: 0 0 0 1px rgba(255, 77, 79, 0.2);
+}
+
+.error-message {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.875rem;
+  color: #ff4d4f;
+  font-weight: 500;
+}
+
+.general-error {
+  background-color: rgba(255, 77, 79, 0.15);
+  border-left: 3px solid #ff4d4f;
+  padding: 0.75rem 1rem;
+  margin: 1rem 0;
+  border-radius: 4px;
+  color: #ff4d4f;
+  font-weight: 500;
+}
+
+button {
+  display: block;
+  width: 100%;
+  padding: 0.75rem;
+  margin-top: 1.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+  color: white;
+  background-color: #1e88e5;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.15s ease-in-out;
+}
+
+button:hover:not(:disabled) {
+  background-color: #1976d2;
+}
+
+button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.auth-footer {
+  margin-top: 1.5rem;
+  text-align: center;
+  color: #aaa;
+}
+
+.auth-footer a {
+  color: #1e88e5;
+  text-decoration: none;
+}
+
+.auth-footer a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 576px) {
+  .form-row {
+    flex-direction: column;
+    gap: 0;
+  }
+  
+  .form-row .form-group {
+    margin-bottom: 1rem;
+  }
+}
+
+.success-message {
+  background-color: rgba(82, 196, 26, 0.15);
+  border-left: 3px solid #52c41a;
+  padding: 0.75rem 1rem;
+  margin: 1rem 0;
+  border-radius: 4px;
+  color: #52c41a;
+  font-weight: 500;
+}
+
+.image-upload-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.profile-image-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.image-preview {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  overflow: hidden;
+  margin-bottom: 10px;
+  border: 2px solid #e0e0e0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.image-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.upload-btn {
+  display: inline-block;
+  padding: 8px 16px;
+  background-color: #007bff;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.upload-btn:hover {
+  background-color: #0069d9;
+} 
+
+.social-login {
+  margin-top: 2rem;
+  text-align: center;
+}
+
+.social-login p {
+  position: relative;
+  margin-bottom: 1.25rem;
+  color: #aaa;
+  font-size: 0.875rem;
+  z-index: 1;
+}
+
+.social-login p::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background-color: #2d3748;
+  z-index: -1;
+}
+
+.social-login p span {
+  background-color: #141c2c;
+  padding: 0 1rem;
+}
+
+.google-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.75rem;
+  background-color: #fff;
+  color: #3c4043;
+  border: 1px solid #dadce0;
+  border-radius: 4px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s, box-shadow 0.2s;
+}
+
+.google-btn:hover {
+  background-color: #f8f9fa;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.google-btn img {
+  width: 18px;
+  height: 18px;
+} 

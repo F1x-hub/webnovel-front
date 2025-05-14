@@ -1,0 +1,5 @@
+<app-age-verification-modal 
+  *ngIf="showModal" 
+  [novelId]="currentNovelId" 
+  (verificationComplete)="onVerificationComplete($event)"
+></app-age-verification-modal> 

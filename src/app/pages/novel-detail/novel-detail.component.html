@@ -1,0 +1,205 @@
+<div class="container">
+  <div *ngIf="loading" class="loading">
+    <p>Loading novel details...</p>
+  </div>
+
+  <div *ngIf="error" class="error">
+    <p>Error loading novel details. Please try again later.</p>
+    <button class="btn" routerLink="/browse">Back to Browse</button>
+  </div>
+
+  <div *ngIf="novel && !loading && !error" class="novel-detail">
+    <div class="breadcrumb">
+      <a routerLink="/">Home</a> / 
+      <a (click)="goBackToList()" class="browse-link">Browse</a> / 
+      <span>{{ novel.title }}</span>
+    </div>
+    
+    <div class="novel-header">
+      <div class="novel-cover">
+        <img [src]="novel.imageUrl || '/assets/images/default-cover.png'" [alt]="novel.title" (error)="onImageError($event)">
+      </div>
+      
+      <div class="novel-info">
+        <h1 class="novel-title">{{ novel.title }}</h1>
+        
+        <div class="genre-tags">
+          <span class="genre-tag">{{ novel.genre }}</span>
+          <span *ngFor="let genre of novel.genres" class="genre-tag">{{ genre }}</span>
+        </div>
+        
+        <div class="novel-metadata">
+          <div class="novel-status" *ngIf="novel.status !== undefined">
+            <span class="status-badge" [ngClass]="getNovelStatus().class">{{ getNovelStatus().text }}</span>
+          </div>
+          
+          <div class="novel-author" *ngIf="author && author.id">
+            <span>Author: <a class="author-link" (click)="navigateToAuthorProfile(author.id)">{{ author.userName }}</a></span>
+          </div>
+          
+          <div class="novel-rating">
+            <app-star-rating 
+              [rating]="novel.rating || 0" 
+              [ratingsCount]="novel.ratingsCount || 0" 
+              [readonly]="!isLoggedIn()" 
+              (ratingChange)="rateNovel($event)">
+            </app-star-rating>
+          </div>
+          
+          <div class="novel-chapters" *ngIf="novel.totalChapters !== undefined">
+            <span class="chapters-count">
+              <strong>{{ novel.totalChapters }}</strong> {{ novel.totalChapters === 1 ? 'Chapter' : 'Chapters' }} Available
+            </span>
+          </div>
+
+          <div class="novel-views" *ngIf="novel.views !== undefined">
+            <span class="views-count">
+              <span class="eye-icon">👁️</span> {{ formatViewsCount(novel.views) }} views
+            </span>
+          </div>
+        </div>
+        
+        <div class="novel-actions">
+          <button class="btn primary-btn" (click)="startReading()" [disabled]="chapters.length === 0">{{ readingButtonText }}</button>
+          <button *ngIf="currentUser" class="btn secondary-btn" (click)="toggleLibrary()" [ngClass]="{'in-library': isInLibrary}">
+            <span *ngIf="isInLibrary">✓ In Library</span>
+            <span *ngIf="!isInLibrary">+ Add to Library</span>
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <div class="tabs-container">
+      <div class="tabs">
+        <div class="tab" [class.active]="activeTab === 'about'" (click)="setActiveTab('about')">About</div>
+        <div class="tab" [class.active]="activeTab === 'toc'" (click)="setActiveTab('toc')">Table of Contents</div>
+      </div>
+    </div>
+    
+    <div class="tab-content" *ngIf="activeTab === 'about'">
+      <h2 class="section-title">Synopsis</h2>
+      <p class="novel-description">{{ novel.description || 'No description available.' }}</p>
+      
+      <!-- Comments Section -->
+      <div class="comments-section">
+        <h2 class="section-title">Comments</h2>
+        
+        <!-- Comment Form (for authenticated users) -->
+        <div *ngIf="currentUser" class="comment-form-container">
+          <form [formGroup]="commentForm" (ngSubmit)="submitComment()" class="comment-form">
+            <textarea 
+              formControlName="content" 
+              class="comment-textarea" 
+              placeholder="Share your thoughts about this novel..."
+              rows="3"
+            ></textarea>
+            <div class="form-controls">
+              <button 
+                type="submit" 
+                class="submit-comment-btn" 
+                [disabled]="!commentForm.valid"
+              >
+                Post Comment
+              </button>
+            </div>
+            <div *ngIf="commentForm.get('content')?.invalid && commentForm.get('content')?.touched" class="validation-error">
+              <span *ngIf="commentForm.get('content')?.errors?.['required']">Comment cannot be empty.</span>
+              <span *ngIf="commentForm.get('content')?.errors?.['minlength']">Comment must be at least 3 characters.</span>
+              <span *ngIf="commentForm.get('content')?.errors?.['maxlength']">Comment cannot exceed 500 characters.</span>
+            </div>
+          </form>
+        </div>
+        
+        <!-- Login prompt for non-authenticated users -->
+        <div *ngIf="!currentUser" class="login-prompt">
+          <p>Please <a routerLink="/auth/login" [queryParams]="{returnUrl: '/novel/' + novel.id}">login</a> to post comments.</p>
+        </div>
+        
+        <!-- Comments List -->
+        <div class="comments-list">
+          <div *ngIf="commentsLoading" class="loading-comments">
+            <p>Loading comments...</p>
+          </div>
+          
+          <div *ngIf="!commentsLoading && comments.length === 0" class="no-comments">
+            <p>No comments yet. Be the first to comment!</p>
+          </div>
+          
+          <div *ngIf="!commentsLoading && comments.length > 0" class="comments-container">
+            <div *ngFor="let comment of comments" class="comment-item">
+              <div class="comment-header">
+                <div class="comment-user">
+                  <img [src]="comment.userAvatar || 'assets/images/default-avatar.png'" alt="User avatar" class="user-avatar">
+                  <div class="user-info">
+                    <span class="username">{{ comment.displayName || comment.username }}</span>
+                    <span class="comment-date">{{ comment.createdAt | date:'medium' }}</span>
+                  </div>
+                </div>
+                <div class="comment-actions" *ngIf="currentUser && (currentUser.id === comment.userId || currentUser.roleId === 1)">
+                  <button class="options-btn" (click)="toggleCommentOptions(comment, $event)">⋮</button>
+                  <div class="comment-options-menu" *ngIf="comment.showOptions">
+                    <button class="delete-btn" (click)="deleteComment(comment)">Delete</button>
+                  </div>
+                </div>
+              </div>
+              <div class="comment-content">
+                <p>{{ comment.content }}</p>
+              </div>
+              <div class="comment-footer">
+                <button class="like-btn" (click)="toggleCommentLike(comment)" [class.liked]="comment.isLikedByCurrentUser">
+                  <span class="like-icon">❤</span>
+                  <span class="like-count">{{ comment.likes || comment.likesCount || 0 }}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-content" *ngIf="activeTab === 'toc'">
+      <div class="toc-container">
+        <div *ngIf="loading" class="loading-chapters">
+          <p>Loading chapters...</p>
+        </div>
+        
+        <div *ngIf="chapters.length === 0 && !loading" class="empty-chapters">
+          <p>No chapters available for this novel yet.</p>
+        </div>
+
+        <!-- Latest chapter -->
+        <div class="latest-release" *ngIf="latestChapter">
+          <div class="latest-chapter-label">Latest Release:</div>
+          <a class="chapter-link" [routerLink]="['/read', novel.id, latestChapter.chapterNumber]">Chapter {{ latestChapter.chapterNumber }} - {{ latestChapter.title }}</a>
+          <div class="chapter-time">
+            <span *ngIf="latestChapter.isRead" class="read-badge">READ</span>
+            <span *ngIf="latestChapter.createdAt" class="chapter-date">{{ latestChapter.createdAt | timeAgo }}</span>
+          </div>
+          <button class="sort-btn" (click)="toggleSort()" title="{{ sortDirection === 'asc' ? 'Sorted from lowest to highest' : 'Sorted from highest to lowest' }}">
+            <span class="sort-icon">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
+          </button>
+        </div>
+
+        <hr class="toc-divider" *ngIf="latestChapter">
+
+        <!-- Volumes and chapters -->
+        <div class="toc-volume" *ngFor="let volume of volumes">
+          <h3 class="volume-title">{{ volume.name }}</h3>
+          
+          <div class="chapter-grid">
+            <div class="chapter-item" *ngFor="let chapter of volume.chapters">
+              <div class="chapter-number">{{ chapter.chapterNumber }}</div>
+              <div class="chapter-details">
+                <a class="chapter-link" [routerLink]="['/read', novel.id, chapter.chapterNumber]">{{ chapter.title }}</a>
+                <div class="chapter-time">
+                  <span *ngIf="chapter.isRead" class="read-badge">READ</span>
+                  <span *ngIf="chapter.createdAt" class="chapter-date">{{ chapter.createdAt | timeAgo }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,33 @@
+<div class="age-verification-overlay">
+  <div class="age-verification-modal">
+    <h2>Age Verification</h2>
+    
+    <div class="modal-content">
+      <p>The content you are trying to access contains adult themes (18+).</p>
+      <p>Please confirm that you are 18 years of age or older.</p>
+      
+      <div *ngIf="errorMessage" class="error-message">
+        {{ errorMessage }}
+      </div>
+    </div>
+    
+    <div class="modal-actions">
+      <button 
+        class="reject-button" 
+        (click)="rejectAdult()" 
+        [disabled]="isProcessing"
+      >
+        No, I'm Under 18
+      </button>
+      
+      <button 
+        class="confirm-button" 
+        (click)="confirmAdult()" 
+        [disabled]="isProcessing"
+      >
+        <span *ngIf="isProcessing" class="spinner"></span>
+        Yes, I'm 18 or Older
+      </button>
+    </div>
+  </div>
+</div> 

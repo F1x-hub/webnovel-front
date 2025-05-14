@@ -1,0 +1,299 @@
+<div class="profile-container">
+  <div class="loading-indicator" *ngIf="isLoading">
+    <div class="spinner"></div>
+    <p>Loading...</p>
+  </div>
+
+  <div class="error-message general-error" *ngIf="errorMessage">
+    <strong>Error:</strong> {{ errorMessage }}
+    <div *ngIf="errorMessage.includes('unreachable')">
+      <br>
+      <small>Please make sure your backend API is running at https://localhost:7188</small>
+    </div>
+  </div>
+
+  <div class="success-message" *ngIf="successMessage">
+    {{ successMessage }}
+  </div>
+
+  <div class="profile-content" *ngIf="userProfile && !isLoading">
+    <div class="profile-header" [ngClass]="{'dark-mode': isDarkMode, 'light-mode': !isDarkMode}">
+      <div class="profile-image">
+        <img [src]="getImageUrl(userProfile.imageUrl)" alt="{{ userProfile.firstName }} {{ userProfile.lastName }} profile image">
+      </div>
+      <div class="profile-info">
+        <h1>{{ userProfile.firstName }} {{ userProfile.lastName }}</h1>
+        <p class="member-since">{{ memberSince }}</p>
+        <div class="stats">
+          <div class="stat">
+            <span class="stat-number">{{ booksRead }}</span>
+            <span class="stat-label">books read</span>
+          </div>
+        </div>
+        <button 
+          *ngIf="!isEditing && isOwnProfile" 
+          class="edit-button" 
+          (click)="toggleEditMode()">
+          Edit Profile
+        </button>
+      </div>
+    </div>
+
+    <!-- Edit Mode -->
+    <div class="profile-edit" *ngIf="isEditing && isOwnProfile">
+      <h2>Edit Profile</h2>
+      <form [formGroup]="profileForm" (ngSubmit)="saveProfile()">
+        <div class="form-image-upload">
+          <div class="image-preview">
+            <img [src]="imagePreview || getImageUrl(userProfile.imageUrl)" alt="Profile image preview">
+          </div>
+          <div class="image-upload">
+            <label for="profile-image">Change Profile Picture</label>
+            <input type="file" id="profile-image" accept="image/*" (change)="onFileSelected($event)">
+          </div>
+        </div>
+
+        <div class="form-columns">
+          <div class="form-column">
+            <div class="form-group">
+              <label for="userName">Username</label>
+              <input 
+                type="text" 
+                id="userName" 
+                formControlName="userName" 
+                [class.is-invalid]="profileForm.get('userName')?.invalid && profileForm.get('userName')?.touched"
+              >
+              <div class="error-message" *ngIf="profileForm.get('userName')?.invalid && profileForm.get('userName')?.touched">
+                <span *ngIf="profileForm.get('userName')?.errors?.['required']">Username is required</span>
+                <span *ngIf="profileForm.get('userName')?.errors?.['minlength']">Username must be at least 3 characters</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="email">Email</label>
+              <input 
+                type="email" 
+                id="email" 
+                formControlName="email" 
+                [class.is-invalid]="profileForm.get('email')?.invalid && profileForm.get('email')?.touched"
+              >
+              <div class="error-message" *ngIf="profileForm.get('email')?.invalid && profileForm.get('email')?.touched">
+                <span *ngIf="profileForm.get('email')?.errors?.['required']">Email is required</span>
+                <span *ngIf="profileForm.get('email')?.errors?.['email']">Please enter a valid email</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-column">
+            <div class="form-group">
+              <label for="firstName">First Name</label>
+              <input 
+                type="text" 
+                id="firstName" 
+                formControlName="firstName" 
+                [class.is-invalid]="profileForm.get('firstName')?.invalid && profileForm.get('firstName')?.touched"
+              >
+              <div class="error-message" *ngIf="profileForm.get('firstName')?.invalid && profileForm.get('firstName')?.touched">
+                <span *ngIf="profileForm.get('firstName')?.errors?.['required']">First name is required</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="lastName">Last Name</label>
+              <input 
+                type="text" 
+                id="lastName" 
+                formControlName="lastName" 
+                [class.is-invalid]="profileForm.get('lastName')?.invalid && profileForm.get('lastName')?.touched"
+              >
+              <div class="error-message" *ngIf="profileForm.get('lastName')?.invalid && profileForm.get('lastName')?.touched">
+                <span *ngIf="profileForm.get('lastName')?.errors?.['required']">Last name is required</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="cancel-button" (click)="toggleEditMode()">Cancel</button>
+          <button type="submit" class="save-button" [disabled]="profileForm.invalid || isLoading">
+            {{ isLoading ? 'Saving...' : 'Save Profile' }}
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- User's Novels Section -->
+    <div class="novels-section" *ngIf="!isEditing">
+      <h3 class="section-title">{{ isOwnProfile ? 'My Novels' : 'Novels by ' + userProfile.userName }}</h3>
+      
+      <div class="loading-indicator" *ngIf="isLoadingNovels">
+        <div class="spinner"></div>
+        <p>Loading novels...</p>
+      </div>
+      
+      <div class="empty-state" *ngIf="userNovels.length === 0 && !isLoadingNovels">
+        <div class="empty-state-icon">📚</div>
+        <p>{{ isOwnProfile ? 'You haven\'t created any novels yet.' : 'This user hasn\'t created any novels yet.' }}</p>
+        <button *ngIf="isOwnProfile" class="create-button" (click)="router.navigate(['/novel-create'])">Create Your First Novel</button>
+      </div>
+      
+      <div class="novels-carousel" *ngIf="userNovels.length > 0 && !isLoadingNovels">
+        <button class="carousel-nav prev-btn" (click)="prevSlide()" [disabled]="userNovels.length <= 3">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+        </button>
+        
+        <div class="carousel-container">
+          <div class="carousel-track" [style.transform]="'translateX(' + (-currentSlide * 33.333) + '%)'">
+            <div class="carousel-item" *ngFor="let novel of userNovels; let i = index" (click)="navigateToNovel(novel.id || 0)">
+              <div class="novel-card">
+                <div class="novel-image">
+                  <img [src]="novel.imageUrl || 'assets/images/default-cover.png'" 
+                       (error)="onImageError($event)" 
+                       [alt]="novel.title">
+                </div>
+                <div class="novel-info">
+                  <h4 class="novel-title">{{ novel.title }}</h4>
+                  <p class="novel-genre">{{ novel.genres?.join(', ') || novel.genre }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <button class="carousel-nav next-btn" (click)="nextSlide()" [disabled]="userNovels.length <= 3">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </button>
+      </div>
+      
+      <div class="carousel-indicators" *ngIf="userNovels.length > 3">
+        <button 
+          *ngFor="let novel of userNovels; let i = index" 
+          class="carousel-indicator" 
+          [class.active]="i === currentSlide"
+          (click)="goToSlide(i)">
+        </button>
+      </div>
+    </div>
+    
+    <!-- Account Information section (only visible to profile owner) -->
+    <div class="profile-details" *ngIf="!isEditing && isOwnProfile">
+      <div class="details-section">
+        <h3>Account Information</h3>
+        <div class="detail-row">
+          <span class="detail-label">Username:</span>
+          <span class="detail-value">{{ userProfile.userName }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Email:</span>
+          <span class="detail-value">{{ userProfile.email }}</span>
+        </div>
+        <div class="security-actions">
+          <button class="change-password-btn" (click)="showChangePasswordModal = true">Change Password</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Change Password Modal -->
+<div class="modal" *ngIf="showChangePasswordModal">
+  <div class="modal-content" [ngClass]="{'dark-theme': isDarkMode, 'light-theme': !isDarkMode}">
+    <div class="modal-header">
+      <h2>Change Password</h2>
+      <button class="close-button" (click)="showChangePasswordModal = false">×</button>
+    </div>
+    <div class="modal-body">
+      <form [formGroup]="changePasswordForm" (ngSubmit)="onChangePasswordSubmit()">
+        <div class="password-field-container">
+          <div class="password-field">
+            <input 
+              [type]="showCurrentPassword ? 'text' : 'password'" 
+              id="currentPassword" 
+              formControlName="currentPassword" 
+              [class.is-invalid]="changePasswordForm.get('currentPassword')?.invalid && changePasswordForm.get('currentPassword')?.touched"
+              placeholder="Current Password"
+            />
+            <button type="button" class="password-toggle" (click)="showCurrentPassword = !showCurrentPassword">
+              <span class="eye-icon">👁️</span>
+            </button>
+          </div>
+          <div class="validation-message">
+            <span class="error" *ngIf="changePasswordForm.get('currentPassword')?.invalid && changePasswordForm.get('currentPassword')?.touched">
+              Current password is required
+            </span>
+            <span class="error" *ngIf="false"><!-- Placeholder to maintain height --></span>
+          </div>
+        </div>
+        
+        <div class="password-field-container">
+          <div class="password-field">
+            <input 
+              [type]="showNewPassword ? 'text' : 'password'" 
+              id="newPassword" 
+              formControlName="newPassword" 
+              [class.is-invalid]="changePasswordForm.get('newPassword')?.invalid && changePasswordForm.get('newPassword')?.touched"
+              placeholder="New Password"
+            />
+            <button type="button" class="password-toggle" (click)="showNewPassword = !showNewPassword">
+              <span class="eye-icon">👁️</span>
+            </button>
+          </div>
+          <div class="validation-message">
+            <span class="error" *ngIf="changePasswordForm.get('newPassword')?.errors?.['minlength'] && changePasswordForm.get('newPassword')?.touched">
+              New password must be at least 6 characters
+            </span>
+            <span class="error" *ngIf="changePasswordForm.get('newPassword')?.errors?.['required'] && changePasswordForm.get('newPassword')?.touched">
+              New password is required
+            </span>
+            <span class="error" *ngIf="false"><!-- Placeholder to maintain height --></span>
+          </div>
+        </div>
+        
+        <div class="password-field-container">
+          <div class="password-field">
+            <input 
+              [type]="showConfirmPassword ? 'text' : 'password'"
+              id="confirmPassword" 
+              formControlName="confirmPassword" 
+              [class.is-invalid]="changePasswordForm.get('confirmPassword')?.invalid && changePasswordForm.get('confirmPassword')?.touched"
+              placeholder="Confirm Password"
+            />
+            <button type="button" class="password-toggle" (click)="showConfirmPassword = !showConfirmPassword">
+              <span class="eye-icon">👁️</span>
+            </button>
+          </div>
+          <div class="validation-message">
+            <span class="error" *ngIf="changePasswordForm.get('confirmPassword')?.errors?.['passwordMismatch'] && changePasswordForm.get('confirmPassword')?.touched">
+              Passwords do not match
+            </span>
+            <span class="error" *ngIf="changePasswordForm.get('confirmPassword')?.errors?.['required'] && changePasswordForm.get('confirmPassword')?.touched">
+              Confirm password is required
+            </span>
+            <span class="error" *ngIf="false"><!-- Placeholder to maintain height --></span>
+          </div>
+        </div>
+        
+        <div class="notification-container">
+          <div class="success-message" *ngIf="changePasswordSuccess">
+            {{ changePasswordSuccess }}
+          </div>
+
+          <div class="general-error" *ngIf="changePasswordError">
+            {{ changePasswordError }}
+          </div>
+        </div>
+        
+        <button type="submit" [disabled]="changePasswordForm.invalid || isChangePasswordLoading" class="change-password-submit">
+          {{ isChangePasswordLoading ? 'Changing...' : 'Change Password' }}
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Backdrop -->
+<div class="modal-backdrop" *ngIf="showChangePasswordModal" (click)="showChangePasswordModal = false"></div>

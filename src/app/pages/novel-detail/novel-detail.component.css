@@ -1,0 +1,659 @@
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.loading, .error {
+  text-align: center;
+  padding: 50px 0;
+  color: var(--text-primary);
+}
+
+.novel-detail {
+  color: var(--text-primary);
+}
+
+.btn {
+  padding: 10px 20px;
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+  border: none;
+  outline: none;
+}
+
+.primary-btn {
+  background-color: #3498db;
+  color: white;
+}
+
+.primary-btn:hover {
+  background-color: #2980b9;
+}
+
+.primary-btn:disabled {
+  background-color: #7fb5da;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.secondary-btn {
+  background-color: #ecf0f1;
+  color: #34495e;
+  border: 1px solid #bdc3c7;
+}
+
+.secondary-btn:hover {
+  background-color: #d6dbdf;
+}
+
+.secondary-btn.in-library {
+  background-color: #2ecc71;
+  color: white;
+  border: none;
+}
+
+.secondary-btn.in-library:hover {
+  background-color: #27ae60;
+}
+
+.breadcrumb {
+  margin-bottom: 30px;
+  font-size: 14px;
+  color: var(--text-tertiary);
+}
+
+.breadcrumb a {
+  color: var(--accent-color);
+  text-decoration: none;
+}
+
+.breadcrumb a:hover {
+  text-decoration: underline;
+}
+
+.breadcrumb a.browse-link {
+  cursor: pointer;
+}
+
+.novel-header {
+  display: flex;
+  gap: 40px;
+  margin-bottom: 50px;
+}
+
+.novel-cover {
+  flex: 0 0 300px;
+  height: 450px;
+}
+
+.novel-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.novel-info {
+  flex: 1;
+}
+
+.novel-title {
+  font-size: 38px;
+  margin: 0 0 25px 0;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.genre-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 25px;
+}
+
+.genre-tag {
+  background-color: var(--bg-tertiary);
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.novel-metadata {
+  margin-bottom: 30px;
+  color: var(--text-tertiary);
+  font-size: 16px;
+}
+
+.novel-author, .novel-chapters, .novel-views, .novel-status {
+  margin-bottom: 12px;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.status-in-progress {
+  background-color: #3498db;
+  color: white;
+}
+
+.status-frozen {
+  background-color: #95a5a6;
+  color: white;
+}
+
+.status-abandoned {
+  background-color: #e74c3c;
+  color: white;
+}
+
+.status-completed {
+  background-color: #2ecc71;
+  color: white;
+}
+
+.status-unknown {
+  background-color: #f39c12;
+  color: white;
+}
+
+.novel-views .views-count {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.novel-views .eye-icon {
+  color: var(--text-tertiary);
+  font-size: 14px;
+}
+
+.novel-views i {
+  color: var(--text-tertiary);
+}
+
+.novel-rating {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.rating-stars {
+  margin-right: 10px;
+}
+
+.star {
+  color: var(--bg-tertiary);
+  font-size: 20px;
+}
+
+.star.filled {
+  color: #f0ad4e;
+}
+
+.rating-value {
+  font-weight: 500;
+  color: #f0ad4e;
+}
+
+.novel-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.tabs-container {
+  margin-bottom: 25px;
+}
+
+.tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.tab {
+  padding: 12px 25px;
+  cursor: pointer;
+  color: var(--text-tertiary);
+  font-weight: 500;
+  font-size: 18px;
+}
+
+.tab.active {
+  color: var(--accent-color);
+  border-bottom: 2px solid var(--accent-color);
+}
+
+.tab-content {
+  padding: 10px 0 40px;
+}
+
+.section-title {
+  font-size: 24px;
+  margin-bottom: 20px;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.novel-description {
+  line-height: 1.8;
+  color: var(--text-secondary);
+  font-size: 16px;
+}
+
+/* Table of Contents Styles */
+.toc-container {
+  color: var(--text-primary);
+}
+
+.latest-release {
+  display: flex;
+  align-items: center;
+  padding: 15px 0;
+  position: relative;
+}
+
+.latest-chapter-label {
+  font-weight: 500;
+  margin-right: 15px;
+  white-space: nowrap;
+  color: var(--text-primary);
+}
+
+.chapter-link {
+  flex: 1;
+  color: var(--accent-color);
+  text-decoration: none;
+  cursor: pointer;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chapter-link:hover {
+  text-decoration: underline;
+}
+
+.chapter-time {
+  padding-left: 15px;
+  color: var(--text-tertiary);
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.sort-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-tertiary);
+  font-size: 20px;
+  padding: 0 10px;
+  margin-left: 10px;
+  transition: color 0.3s ease, transform 0.2s ease;
+}
+
+.sort-btn:hover {
+  color: var(--text-primary);
+}
+
+.sort-btn .sort-icon {
+  display: inline-block;
+  font-weight: bold;
+}
+
+.toc-divider {
+  border: none;
+  height: 1px;
+  background-color: var(--border-color);
+  margin: 15px 0;
+}
+
+.volume-title {
+  font-size: 20px;
+  margin: 25px 0 15px;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.chapter-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 40px;
+  row-gap: 0;
+}
+
+.chapter-item {
+  display: flex;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.chapter-number {
+  width: 30px;
+  margin-right: 15px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.chapter-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.chapter-date {
+  font-size: 0.8rem;
+  color: #8a94a6;
+  margin-left: 8px;
+}
+
+@media (max-width: 768px) {
+  .novel-header {
+    flex-direction: column;
+  }
+  
+  .novel-cover {
+    max-width: 300px;
+    height: 450px;
+    margin: 0 auto 30px;
+  }
+
+  .chapter-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .latest-release {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .latest-chapter-label {
+    margin-bottom: 10px;
+  }
+
+  .chapter-time {
+    padding-left: 0;
+    margin-top: 5px;
+  }
+
+  .sort-btn {
+    position: absolute;
+    top: 15px;
+    right: 0;
+  }
+}
+
+.read-badge {
+  display: inline-block;
+  background-color: #2196f3;
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 8px;
+}
+
+.author-link {
+  color: var(--primary-color);
+  cursor: pointer;
+  text-decoration: underline;
+  font-weight: 500;
+}
+
+.author-link:hover {
+  color: var(--primary-color-dark);
+}
+
+/* Table of Contents empty states */
+.loading-chapters, .empty-chapters {
+  padding: 20px 0;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.empty-chapters {
+  min-height: 150px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed var(--border-color);
+  border-radius: 8px;
+  margin: 20px 0;
+}
+
+/* Comments Section */
+.comments-section {
+  margin-top: 40px;
+}
+
+.comment-form-container {
+  margin-bottom: 30px;
+}
+
+.comment-form {
+  width: 100%;
+}
+
+.comment-textarea {
+  width: 100%;
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: #fff;
+  padding: 12px;
+  font-size: 14px;
+  resize: vertical;
+}
+
+.form-controls {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+
+.submit-comment-btn {
+  background-color: #4a6ee0;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.submit-comment-btn:disabled {
+  background-color: #2c3b5a;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.validation-error {
+  color: #ff6b6b;
+  font-size: 12px;
+  margin-top: 8px;
+}
+
+.login-prompt {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.login-prompt a {
+  color: #4a6ee0;
+  text-decoration: none;
+}
+
+.loading-comments {
+  text-align: center;
+  padding: 20px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.no-comments {
+  text-align: center;
+  padding: 20px;
+  color: rgba(255, 255, 255, 0.7);
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+}
+
+.comments-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.comment-item {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.comment-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.comment-user {
+  display: flex;
+  align-items: center;
+}
+
+.user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-right: 12px;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.username {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.comment-date {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.comment-actions {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.options-btn {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  font-size: 18px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.options-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.comment-options-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background-color: #1f2937;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  z-index: 10;
+  min-width: 120px;
+  overflow: hidden;
+}
+
+.comment-options-menu .delete-btn {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 8px 12px;
+  background: none;
+  border: none;
+  color: #ff6b6b;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+  opacity: 1;
+}
+
+.comment-options-menu .delete-btn:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.comment-content {
+  margin-bottom: 12px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.comment-footer {
+  display: flex;
+  align-items: center;
+}
+
+.like-btn {
+  display: flex;
+  align-items: center;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  transition: color 0.2s;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.like-btn:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.like-btn.liked {
+  color: #ff6b6b;
+}
+
+.like-icon {
+  margin-right: 4px;
+}
+
+.like-count {
+  font-size: 12px;
+}
+
+@media (max-width: 768px) {
+  .comment-header {
+    flex-direction: column;
+  }
+  
+  .comment-actions {
+    margin-top: 10px;
+  }
+}

@@ -1,0 +1,56 @@
+<div class="container">
+  <h1>My Library</h1>
+  
+  <div *ngIf="loading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Loading library...</p>
+  </div>
+
+  <div *ngIf="error" class="error-message">
+    <p>{{ error }}</p>
+  </div>
+
+  <div *ngIf="!loading && !error">
+    <div *ngIf="myLibrary.length === 0" class="empty-library">
+      <p>Your library is currently empty</p>
+      <button routerLink="/browse" class="btn-primary">Start Reading</button>
+    </div>
+
+    <div *ngIf="myLibrary.length > 0" class="novel-grid">
+      <app-novel-card 
+        *ngFor="let novel of myLibrary" 
+        [novel]="novel"
+        [showProgress]="true"
+      ></app-novel-card>
+    </div>
+
+    <!-- Pagination -->
+    <div *ngIf="totalPages > 1" class="pagination">
+      <button 
+        [disabled]="currentPage === 1" 
+        (click)="prevPage()" 
+        class="pagination-btn"
+      >
+        Previous
+      </button>
+      
+      <span *ngFor="let page of getPages()" class="page-number">
+        <button 
+          [class.active]="page === currentPage"
+          (click)="goToPage(page)"
+          class="page-btn"
+        >
+          {{ page }}
+        </button>
+      </span>
+      
+      <button 
+        [disabled]="currentPage === totalPages" 
+        (click)="nextPage()" 
+        class="pagination-btn"
+      >
+        Next
+      </button>
+    </div>
+  </div>
+</div> 

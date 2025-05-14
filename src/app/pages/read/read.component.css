@@ -1,0 +1,333 @@
+.container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.loading, .error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  text-align: center;
+}
+
+.error .btn {
+  margin-top: 20px;
+}
+
+/* Новый заголовок главы */
+.novel-chapter-header {
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;                      
+  align-items: center;                
+  justify-content: space-between;  
+}
+
+.novel-chapter-header h1 {
+  font-size: 1.4rem;
+  margin: 0;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+
+.novel-title {
+  color: var(--accent-color);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.novel-title:hover {
+  color: var(--accent-color-hover);
+  text-decoration: underline;
+}
+
+.chapter-container {
+  background-color: var(--background-secondary);
+  border-radius: 8px;
+  padding: 30px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.chapter-header {
+  margin-bottom: 30px;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 15px;
+}
+
+.chapter-navigation {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 15px;
+}
+
+.nav-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #3498db;
+  color: white;
+  border: 1px solid #2980b9;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.nav-btn svg {
+  stroke: white;
+}
+
+.nav-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.nav-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  background-color: transparent;
+}
+
+.nav-btn:disabled svg {
+  stroke: #7f8c8d;
+}
+
+.chapter-info {
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.chapter-title {
+  font-size: 1.8rem;
+  margin: 0;
+  text-align: center;
+}
+
+.chapter-content {
+  font-size: 1.1rem;
+  line-height: 1.7;
+  margin-bottom: 40px;
+  padding: 0 20px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  max-width: 100%;
+}
+
+.chapter-content div {
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-width: 100%;
+}
+
+.chapter-footer {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--border-color);
+  padding-top: 20px;
+  margin-top: 40px;
+}
+
+.chapter-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+.chapter-actions .mark-read-btn {
+  margin-left: auto;    /* отодвигаем кнопку максимально вправо */
+}
+
+.chapter-actions a {
+  position: absolute;         /* 4. Вынимаем ссылку из потока */
+  left: 50%;                  /* 5. Смещаем в середину по горизонтали контейнера */
+  transform: translateX(-50%);
+}
+
+.comments-section {
+  margin-top: 40px;
+  border-top: 1px solid var(--border-color);
+  padding-top: 20px;
+}
+
+.comments-list {
+  margin-top: 20px;
+}
+
+.comment {
+  padding: 15px;
+  border-radius: 8px;
+  background-color: var(--background-light);
+  margin-bottom: 15px;
+}
+
+.comment-header {
+  margin-bottom: 10px;
+}
+
+.comment-author {
+  font-weight: 600;
+}
+
+.comment-body {
+  margin-bottom: 10px;
+}
+
+.comment-footer {
+  display: flex;
+  justify-content: space-between;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.primary-btn {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.secondary-btn {
+  background-color: var(--secondary-color);
+  color: white;
+  text-decoration: none;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 10px;
+  }
+  
+  .chapter-container {
+    padding: 20px 15px;
+  }
+  
+  .chapter-content {
+    padding: 0 10px;
+    font-size: 1rem;
+  }
+  
+  .chapter-title {
+    font-size: 1.5rem;
+  }
+}
+
+.mark-read-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 50%;
+  background-color: #333;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mark-read-btn svg {
+  stroke: #fff;
+  transition: all 0.2s ease;
+}
+
+.mark-read-btn.active {
+  background-color: #4CAF50;
+  box-shadow: 0 0 10px rgba(76, 175, 80, 0.7);
+  transform: scale(1.1);
+}
+
+.mark-read-btn.active svg {
+  stroke: #fff;
+  stroke-width: 3;
+}
+
+.checkmark-icon {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Update notification styling */
+.read-notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+  animation: slideIn 0.3s forwards, slideOut 0.3s 2.7s forwards;
+}
+
+.notification-content {
+  display: flex;
+  align-items: center;
+  padding: 12px 20px;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  color: white;
+  transition: background-color 0.3s ease;
+}
+
+.notification-success {
+  background-color: #4CAF50;
+}
+
+.notification-info {
+  background-color: #2196F3;
+}
+
+.notification-content svg {
+  margin-right: 10px;
+  stroke: white;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOut {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+.mark-read-btn:hover {
+  opacity: 0.9;
+  transform: scale(1.05);
+}
+
+.icon-btn {
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}

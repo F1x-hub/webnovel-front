@@ -1,0 +1,38 @@
+<div class="auth-container">
+  <div class="auth-card">
+    <h2>Verify Your Account</h2>
+    <p class="verify-info">Please enter the verification code sent to your email.</p>
+    
+    <form [formGroup]="verifyForm" (ngSubmit)="onSubmit()">
+      <div class="form-group">
+        <label for="temporaryCode">Verification Code</label>
+        <input 
+          type="text" 
+          id="temporaryCode" 
+          formControlName="temporaryCode" 
+          [class.is-invalid]="verifyForm.get('temporaryCode')?.invalid && verifyForm.get('temporaryCode')?.touched"
+          maxlength="6"
+          autocomplete="off"
+        />
+        <div class="error-message" *ngIf="verifyForm.get('temporaryCode')?.invalid && verifyForm.get('temporaryCode')?.touched">
+          <span *ngIf="verifyForm.get('temporaryCode')?.errors?.['required']">Verification code is required</span>
+          <span *ngIf="verifyForm.get('temporaryCode')?.errors?.['minlength'] || verifyForm.get('temporaryCode')?.errors?.['maxlength']">
+            Verification code must be 6 characters
+          </span>
+        </div>
+      </div>
+
+      <div class="general-error" *ngIf="errorMessage">
+        {{ errorMessage }}
+      </div>
+
+      <button type="submit" [disabled]="verifyForm.invalid || isLoading" class="btn btn-primary">
+        {{ isLoading ? 'Verifying...' : 'Verify' }}
+      </button>
+    </form>
+    
+    <div class="auth-footer">
+      <p>Didn't receive a code? <a routerLink="/auth/login">Go back to login</a></p>
+    </div>
+  </div>
+</div> 

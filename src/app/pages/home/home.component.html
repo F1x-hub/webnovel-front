@@ -1,0 +1,27 @@
+<div class="container">
+  <section class="weekly-book">
+    <h2 class="section-title">Weekly Popular Books</h2>
+    <div *ngIf="loading" class="loading-spinner">
+      <div class="spinner"></div>
+    </div>
+    <div *ngIf="!loading && weeklyBooks.length === 0" class="no-data">
+      No popular books found for this week.
+    </div>
+    <div *ngIf="!loading && weeklyBooks.length > 0" class="novel-grid">
+      <app-novel-card *ngFor="let novel of weeklyBooks" [novel]="novel"></app-novel-card>
+    </div>
+  </section>
+
+  <section class="ranking">
+    <h2 class="section-title">Ranking</h2>
+    <div *ngIf="loadingRanked" class="loading-spinner">
+      <div class="spinner"></div>
+    </div>
+    <div *ngIf="!loadingRanked && topRankedNovels.length === 0" class="no-data">
+      No ranked novels found.
+    </div>
+    <div *ngIf="!loadingRanked && topRankedNovels.length > 0" class="novel-grid">
+      <app-novel-card *ngFor="let novel of topRankedNovels" [novel]="novel"></app-novel-card>
+    </div>
+  </section>
+</div>

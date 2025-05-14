@@ -1,0 +1,59 @@
+.library-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.library-title {
+  font-size: 32px;
+  margin-bottom: 40px;
+  color: var(--text-primary);
+}
+
+.novels-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 30px;
+}
+
+.loading-state, .error-state, .empty-library {
+  text-align: center;
+  padding: 50px 0;
+  color: var(--text-primary);
+  min-height: 300px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.error-state {
+  color: #e74c3c;
+}
+
+.empty-library p {
+  margin-bottom: 20px;
+  font-size: 18px;
+}
+
+.browse-btn {
+  background-color: var(--accent-color);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 4px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.browse-btn:hover {
+  background-color: var(--accent-color-hover);
+}
+
+@media (max-width: 768px) {
+  .novels-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 20px;
+  }
+} 

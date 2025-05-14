@@ -1,0 +1,117 @@
+<div class="auth-container">
+  <div class="auth-card">
+    <h2>Create Account</h2>
+    <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+      <div class="form-group image-upload-group">
+        <label>Profile Picture</label>
+        <div class="profile-image-container">
+          <div class="image-preview" *ngIf="imagePreview">
+            <img [src]="imagePreview" alt="Profile Preview">
+          </div>
+          <div class="image-preview" *ngIf="!imagePreview">
+            <img src="assets/images/default-avatar.png" alt="Default Profile">
+          </div>
+          <div class="image-upload-input">
+            <label for="profile-image" class="upload-btn">Choose Photo</label>
+            <input type="file" id="profile-image" accept="image/*" (change)="onFileSelected($event)" style="display: none;">
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="userName">Username</label>
+        <input 
+          type="text" 
+          id="userName" 
+          formControlName="userName" 
+          [class.is-invalid]="registerForm.get('userName')?.invalid && registerForm.get('userName')?.touched"
+        />
+        <div class="error-message" *ngIf="registerForm.get('userName')?.invalid && registerForm.get('userName')?.touched">
+          <span *ngIf="registerForm.get('userName')?.errors?.['required']">Username is required</span>
+          <span *ngIf="registerForm.get('userName')?.errors?.['minlength']">Username must be at least 3 characters</span>
+          <span *ngIf="registerForm.get('userName')?.errors?.['serverError']">{{ registerForm.get('userName')?.errors?.['serverError'] }}</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input 
+          type="email" 
+          id="email" 
+          formControlName="email" 
+          [class.is-invalid]="registerForm.get('email')?.invalid && registerForm.get('email')?.touched"
+        />
+        <div class="error-message" *ngIf="registerForm.get('email')?.invalid && registerForm.get('email')?.touched">
+          <span *ngIf="registerForm.get('email')?.errors?.['required']">Email is required</span>
+          <span *ngIf="registerForm.get('email')?.errors?.['email']">Please enter a valid email</span>
+          <span *ngIf="registerForm.get('email')?.errors?.['serverError']">{{ registerForm.get('email')?.errors?.['serverError'] }}</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input 
+          type="password" 
+          id="password" 
+          formControlName="password" 
+          [class.is-invalid]="registerForm.get('password')?.invalid && registerForm.get('password')?.touched"
+        />
+        <div class="error-message" *ngIf="registerForm.get('password')?.invalid && registerForm.get('password')?.touched">
+          <span *ngIf="registerForm.get('password')?.errors?.['required']">Password is required</span>
+          <span *ngIf="registerForm.get('password')?.errors?.['minlength']">Password must be at least 6 characters</span>
+          <span *ngIf="registerForm.get('password')?.errors?.['serverError']">{{ registerForm.get('password')?.errors?.['serverError'] }}</span>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="firstName">First Name</label>
+          <input 
+            type="text" 
+            id="firstName" 
+            formControlName="firstName" 
+            [class.is-invalid]="registerForm.get('firstName')?.invalid && registerForm.get('firstName')?.touched"
+          />
+          <div class="error-message" *ngIf="registerForm.get('firstName')?.invalid && registerForm.get('firstName')?.touched">
+            <span *ngIf="registerForm.get('firstName')?.errors?.['required']">First name is required</span>
+            <span *ngIf="registerForm.get('firstName')?.errors?.['serverError']">{{ registerForm.get('firstName')?.errors?.['serverError'] }}</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="lastName">Last Name</label>
+          <input 
+            type="text" 
+            id="lastName" 
+            formControlName="lastName" 
+            [class.is-invalid]="registerForm.get('lastName')?.invalid && registerForm.get('lastName')?.touched"
+          />
+          <div class="error-message" *ngIf="registerForm.get('lastName')?.invalid && registerForm.get('lastName')?.touched">
+            <span *ngIf="registerForm.get('lastName')?.errors?.['required']">Last name is required</span>
+            <span *ngIf="registerForm.get('lastName')?.errors?.['serverError']">{{ registerForm.get('lastName')?.errors?.['serverError'] }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="general-error" *ngIf="errorMessage">
+        {{ errorMessage }}
+      </div>
+
+      <button type="submit" [disabled]="registerForm.invalid || isLoading" class="btn btn-primary">
+        {{ isLoading ? 'Creating Account...' : 'Register' }}
+      </button>
+    </form>
+    
+    <div class="social-login">
+      <p><span>Or register with</span></p>
+      <button class="google-btn" (click)="signInWithGoogle()">
+        <img src="assets/google-icon.svg" alt="Google">
+        <span>Register with Google</span>
+      </button>
+    </div>
+    
+    <div class="auth-footer">
+      <p>Already have an account? <a routerLink="/auth/login">Login</a></p>
+    </div>
+  </div>
+</div> 

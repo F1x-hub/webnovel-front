@@ -1,0 +1,23 @@
+<div class="novel-card" (click)="navigateToNovel($event)">
+  <div class="novel-image">
+    <img [src]="novel.imageUrl || '/assets/images/default-cover.png'" 
+         (error)="onImageError($event)" 
+         alt="{{ novel.title }}" />
+    <span *ngIf="novel.isAdultContent" class="adult-badge">18+</span>
+  </div>
+  <div class="novel-info">
+    <h3 class="novel-title">{{ novel.title }}</h3>
+    
+    <ng-container *ngIf="showProgress && novel.currentChapter">
+      <div class="chapter-info">
+        Chapter {{ novel.currentChapter }}
+        <span *ngIf="novel.totalChapters">/{{ novel.totalChapters }}</span>
+      </div>
+    </ng-container>
+    
+    <div class="novel-meta">
+      <span class="novel-genre">{{ novel.genre }}</span>
+      <app-star-rating *ngIf="novel.rating" [rating]="novel.rating" [readonly]="true" [showRatingsCount]="false"></app-star-rating>
+    </div>
+  </div>
+</div>

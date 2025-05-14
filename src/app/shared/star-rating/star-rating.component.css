@@ -1,0 +1,36 @@
+.star-rating {
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+}
+
+.stars {
+  display: flex;
+  margin-right: 5px;
+}
+
+.star {
+  font-size: 24px;
+  cursor: pointer;
+  margin-right: 4px;
+  transition: color 0.2s ease;
+  user-select: none;
+}
+
+.star-filled {
+  color: #FF9800;
+}
+
+.star-half {
+  color: #FF9800;
+}
+
+.star-empty {
+  color: #e0e0e0;
+}
+
+.rating-info {
+  margin-left: 6px;
+  color: inherit;
+  opacity: 0.9;
+} 

@@ -1,0 +1,73 @@
+<div class="container">
+  <div class="browse-header">
+    <h1 class="page-title">Browse Novels</h1>
+    <div class="browse-filters">
+      <div class="filter-group">
+        <label>Genre</label>
+        <select class="filter-select" [(ngModel)]="filters.genreId" (change)="applyFilters()" [disabled]="loadingGenres">
+          <option [ngValue]="undefined">All Genres</option>
+          <option *ngIf="loadingGenres" value="">Loading genres...</option>
+          <option *ngFor="let genre of genres" [ngValue]="genre.id">{{ genre.name }}</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Status</label>
+        <select class="filter-select" [(ngModel)]="filters.status" (change)="applyFilters()">
+          <option [ngValue]="undefined">All Statuses</option>
+          <option *ngFor="let status of statuses" [ngValue]="status.value">{{ status.label }}</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Sort By</label>
+        <select class="filter-select" [(ngModel)]="filters.sortBy" (change)="applyFilters()">
+          <option [ngValue]="undefined">Default</option>
+          <option value="popular">Most Popular</option>
+          <option value="rating">Highest Rated</option>
+          <option value="newest">Recently Added</option>
+          <option value="a-z">A to Z</option>
+        </select>
+      </div>
+      <div class="filter-actions">
+        <button class="clear-filters-btn" (click)="clearFilters()" [disabled]="!hasActiveFilters()">
+          Clear Filters
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="loading-indicator">
+    <div class="spinner"></div>
+    <p>Loading novels...</p>
+  </div>
+
+  <div *ngIf="error" class="error-message">
+    <p>{{ error }}</p>
+    <button *ngIf="error.includes('No novels found')" class="clear-filters-btn" (click)="clearFilters()">
+      Clear Filters
+    </button>
+  </div>
+
+  <div *ngIf="!loading && !error && novels.length === 0" class="no-results">
+    <p>No novels found matching your criteria.</p>
+    <button class="clear-filters-btn" (click)="clearFilters()">Clear Filters</button>
+  </div>
+
+  <div class="novel-grid" *ngIf="!loading && novels.length > 0">
+    <app-novel-card *ngFor="let novel of novels" [novel]="novel"></app-novel-card>
+  </div>
+
+  <div class="pagination" *ngIf="!loading && novels.length > 0">
+    <button class="pagination-btn" [disabled]="currentPage === 1" (click)="previousPage()">Previous</button>
+    <div class="page-numbers">
+      <button 
+        *ngFor="let page of getPageNumbers()" 
+        class="page-number" 
+        [class.active]="page === currentPage"
+        [attr.data-current]="page === currentPage"
+        (click)="goToPage(page)">
+        {{ page }}
+      </button>
+    </div>
+    <button class="pagination-btn" [disabled]="currentPage === totalPages" (click)="nextPage()">Next</button>
+  </div>
+</div>
