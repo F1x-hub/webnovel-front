@@ -40,12 +40,12 @@ export class HomeComponent implements OnInit {
         next: (data) => {
           console.log('Weekly popular books data:', data);
           if (Array.isArray(data)) {
-            this.weeklyBooks = data.map(novel => {
-              if (novel.id) {
-                novel.imageUrl = this.novelService.getNovelImageUrl(novel.id);
-              }
-              return novel;
-            });
+          this.weeklyBooks = data.map(novel => {
+            if (novel.id) {
+              novel.imageUrl = this.novelService.getNovelImageUrl(novel.id);
+            }
+            return novel;
+          });
           } else {
             console.error('Unexpected response format:', data);
             this.weeklyBooks = [];
@@ -69,12 +69,12 @@ export class HomeComponent implements OnInit {
         next: (data) => {
           console.log('Top ranked novels data:', data);
           if (Array.isArray(data)) {
-            this.topRankedNovels = data.map(novel => {
-              if (novel.id) {
-                novel.imageUrl = this.novelService.getNovelImageUrl(novel.id);
-              }
-              return novel;
-            });
+          this.topRankedNovels = data.map(novel => {
+            if (novel.id) {
+              novel.imageUrl = this.novelService.getNovelImageUrl(novel.id);
+            }
+            return novel;
+          });
           } else {
             console.error('Unexpected response format:', data);
             this.topRankedNovels = [];
