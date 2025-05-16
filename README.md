@@ -51,7 +51,6 @@ export const environment = {
   production: false,
   apiUrl: 'http://localhost:3000/api',
   oauthClientId: 'your-oauth-client-id',
-  // Add other environment variables as needed
 };
 ```
 
@@ -65,23 +64,62 @@ export const environment = {
 
 ## Project Structure
 ```
-src/
-├── app/
-│   ├── components/       # Reusable UI components
-│   ├── models/           # TypeScript interfaces and models
-│   ├── pages/            # Application pages/routes
-│   │   ├── auth/         # Authentication pages
-│   │   ├── browse/       # Novel browsing
-│   │   ├── create/       # Novel creation
-│   │   ├── read/         # Novel reading
-│   │   └── ...
-│   ├── services/         # API and state management services
-│   └── shared/           # Shared components (navbar, footer)
-├── assets/               # Static assets
-│   ├── images/           # General images
-│   ├── novel-covers/     # Novel cover images
-│   └── profiles/         # User profile images
-└── environments/         # Environment configuration
+WebNovel/
+├── .angular/              # Angular cache and build files
+├── Services/              # Backend service integrations
+├── src/                   # Source code
+│   ├── app/               # Application code
+│   │   ├── components/    # Reusable UI components
+│   │   │   ├── age-verification-modal/  # Age verification popup
+│   │   │   ├── age-verification-wrapper/ # Age verification container
+│   │   │   ├── chapter-comments/        # Chapter discussion section
+│   │   │   ├── novel-card/              # Novel preview card
+│   │   │   └── novel-comments/          # Novel reviews section
+│   │   │
+│   │   ├── models/        # TypeScript interfaces and data models
+│   │   │
+│   │   ├── pages/         # Application pages/routes
+│   │   │   ├── auth/      # Authentication pages
+│   │   │   │   ├── auth-layout/         # Authentication page layout
+│   │   │   │   ├── complete-profile/    # Profile completion
+│   │   │   │   ├── google-callback/     # Google OAuth handler
+│   │   │   │   ├── login/               # User login
+│   │   │   │   ├── oauth-callback/      # General OAuth handler
+│   │   │   │   ├── register/            # User registration
+│   │   │   │   └── verify/              # Account verification
+│   │   │   │
+│   │   │   ├── browse/                  # Novel browsing page
+│   │   │   ├── complete-registration/   # Registration completion
+│   │   │   ├── create/                  # Content creation hub
+│   │   │   ├── home/                    # Homepage
+│   │   │   ├── library/                 # User's reading library
+│   │   │   ├── my-novels/               # Author's novels management
+│   │   │   ├── novel-create/            # Novel creation workflow
+│   │   │   ├── novel-detail/            # Novel information page
+│   │   │   ├── profile/                 # User profile page
+│   │   │   ├── rankings/                # Novel rankings page
+│   │   │   ├── read/                    # Novel reading interface
+│   │   │   └── search/                  # Search results page
+│   │   │
+│   │   ├── services/      # API communication and data services
+│   │   │
+│   │   └── shared/        # Shared components
+│   │       ├── footer/    # Application footer
+│   │       ├── navbar/    # Navigation header
+│   │       ├── search-modal/ # Search popup
+│   │       └── star-rating/  # Rating component
+│   │
+│   ├── assets/            # Static assets
+│   │   ├── images/        # General images
+│   │   ├── novel-covers/  # Novel cover images
+│   │   └── profiles/      # User profile images
+│   │
+│   └── environments/      # Environment configuration
+│
+├── angular.json           # Angular configuration
+├── package.json           # Dependencies and scripts
+├── tsconfig.json          # TypeScript configuration
+└── other config files     # Various configuration files
 ```
 
 ## Features
@@ -96,7 +134,7 @@ src/
 
 ## Documentation
 - [Angular Documentation](https://angular.io/docs)
-- [API Documentation](#) <!-- Replace with your API docs link if available -->
+- [API Documentation](#) 
 
 ## Roadmap
 - [ ] Offline reading capability
