@@ -8,7 +8,7 @@
     <strong>Error:</strong> {{ errorMessage }}
     <div *ngIf="errorMessage.includes('unreachable')">
       <br>
-      <small>Please make sure your backend API is running at https://localhost:7188</small>
+      <small>Please make sure your backend API is running at {{ userService.API_URL }}</small>
     </div>
   </div>
 

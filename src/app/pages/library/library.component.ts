@@ -50,6 +50,9 @@ export class LibraryComponent implements OnInit {
       )
       .subscribe({
         next: (data) => {
+          // Log raw data from API for debugging
+          console.log('Raw library data from API:', data);
+          
           // Temporary array to hold novels with basic info
           const libraryNovels = Array.isArray(data) ? data.map(item => {
             // Get the novel ID
@@ -74,7 +77,7 @@ export class LibraryComponent implements OnInit {
           
           this.myLibrary = libraryNovels;
           this.totalPages = Math.ceil(this.myLibrary.length / this.pageSize) || 1;
-          console.log('Library novels with direct image URLs:', this.myLibrary);
+          console.log('Processed library novels:', this.myLibrary);
         },
         error: (error) => {
           console.error('Error loading library:', error);

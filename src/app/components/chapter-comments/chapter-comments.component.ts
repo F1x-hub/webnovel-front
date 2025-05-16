@@ -5,6 +5,7 @@ import { CommentService } from '../../services/comment.service';
 import { ChapterComment } from '../../models/chapter-comment.model';
 import { CreateChapterCommentDto } from '../../services/comment.service';
 import { AuthService } from '../../services/auth.service';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-chapter-comments',
@@ -22,6 +23,7 @@ export class ChapterCommentsComponent implements OnInit, OnDestroy {
   userLikedComments: Record<number, boolean> = {};
   isDeletingComment: number | null = null;
   activePopupCommentId: number | null = null;
+  apiUrl = environment.apiUrl;
   
   private commentsSubscription?: Subscription;
   

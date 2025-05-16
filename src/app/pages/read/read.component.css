@@ -27,6 +27,12 @@
   justify-content: space-between;  
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .novel-chapter-header h1 {
   font-size: 1.4rem;
   margin: 0;
@@ -134,19 +140,37 @@
   margin-top: 40px;
 }
 
-.chapter-actions {
-  display: flex;
-  justify-content: center;
-  margin-top: 20px;
-}
-.chapter-actions .mark-read-btn {
-  margin-left: auto;    /* отодвигаем кнопку максимально вправо */
+.chapter-navigation-container {
+  position: relative;
+  margin-bottom: 20px;
 }
 
-.chapter-actions a {
-  position: absolute;         /* 4. Вынимаем ссылку из потока */
-  left: 50%;                  /* 5. Смещаем в середину по горизонтали контейнера */
+.back-button-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 10px;
+  position: absolute;
+  right: 0;
+  top: 45px;
+}
+
+.footer-actions {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  margin-top: 20px;
+}
+
+.footer-actions a {
+  position: absolute;
+  left: 50%;
   transform: translateX(-50%);
+  top: 0;
 }
 
 .comments-section {
@@ -330,4 +354,136 @@
 
 .icon-btn {
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+/* Chapters popup styling */
+.chapters-popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.chapters-popup {
+  background-color: #121212;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 80vh;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  animation: scaleIn 0.3s ease-in-out;
+  overflow: hidden;
+}
+
+.chapters-popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: #2196F3;
+}
+
+.chapters-popup-header h3 {
+  margin: 0;
+  color: white;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.close-btn {
+  background: transparent;
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close-btn svg {
+  stroke: white;
+  width: 20px;
+  height: 20px;
+}
+
+.chapters-list {
+  padding: 0;
+  overflow-y: auto;
+  max-height: calc(80vh - 60px);
+}
+
+.chapter-item {
+  padding: 15px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.chapter-item:last-child {
+  border-bottom: none;
+}
+
+.chapter-item:hover {
+  background-color: rgba(33, 150, 243, 0.1);
+}
+
+.chapter-item.active {
+  background-color: rgba(33, 150, 243, 0.15);
+  border-left: 3px solid #4CAF50;
+}
+
+.chapter-number {
+  font-weight: 600;
+  font-size: 1rem;
+  color: #2196F3;
+}
+
+.chapter-item .chapter-title {
+  font-size: 1rem;
+  text-align: left;
+  color: white;
+  margin-top: 3px;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Chapters Button Styling */
+.chapters-btn {
+  background-color: #27ae60;
+  border-color: #219653;
+}
+
+.chapters-btn:hover {
+  background-color: #2ecc71;
 }

@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { NovelService } from '../../services/novel.service';
 import { Novel, NovelStatus } from '../../components/novel-card/novel-card.component';
 import { debounceTime, distinctUntilChanged, Subject, Subscription } from 'rxjs';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-search-modal',
@@ -17,13 +18,15 @@ export class SearchModalComponent implements OnInit, OnDestroy {
   searchResults: Novel[] = [];
   isLoading: boolean = false;
   selectedIndex: number = -1;
+  imagesLoaded: { [key: number]: boolean } = {};
   
   private searchQuerySubject = new Subject<string>();
   private subscriptions: Subscription[] = [];
 
   constructor(
     private novelService: NovelService,
-    private router: Router
+    private router: Router,
+    public authService: AuthService
   ) {}
 
   ngOnInit(): void {
@@ -78,11 +81,25 @@ export class SearchModalComponent implements OnInit, OnDestroy {
     }
 
     this.isLoading = true;
+    this.imagesLoaded = {};
     
-    // Use userId = 0 for anonymous search (can be updated to use actual user ID if needed)
-    this.novelService.getNovelByName(query, 0).subscribe({
+    // Get current user ID if logged in, otherwise use 0 for anonymous
+    const userId = this.authService.currentUserValue?.id || 0;
+    console.log('Searching with userId:', userId, 'Query:', query);
+    
+    this.novelService.getNovelByName(query, userId).subscribe({
       next: (results) => {
+        // Set image URLs for each result
+        results.forEach(novel => {
+          if (novel.id) {
+            novel.imageUrl = this.novelService.getNovelImageUrl(novel.id);
+            // Initialize image loading state
+            this.imagesLoaded[novel.id] = false;
+          }
+        });
+        
         this.searchResults = results.slice(0, 7); // Limit to 7 results for better UI
+        console.log('Search results:', this.searchResults.length, 'total results');
         this.isLoading = false;
         this.selectedIndex = -1; // Reset selection
       },
@@ -98,7 +115,34 @@ export class SearchModalComponent implements OnInit, OnDestroy {
     const img = event.target as HTMLImageElement;
     if (img) {
       img.src = 'assets/images/default-cover.png';
+      // Set image as loaded when using fallback
+      const novelId = this.getNovelIdFromImgElement(img);
+      if (novelId) {
+        this.imagesLoaded[novelId] = true;
+      }
     }
+  }
+
+  onImageLoad(novelId: number): void {
+    if (novelId) {
+      this.imagesLoaded[novelId] = true;
+    }
+  }
+
+  private getNovelIdFromImgElement(img: HTMLImageElement): number | null {
+    // Try to find the parent result-item and extract the novel id
+    const resultItem = img.closest('.result-item');
+    if (resultItem) {
+      const index = Array.from(resultItem.parentElement?.children || []).indexOf(resultItem);
+      if (index >= 0 && index < this.searchResults.length) {
+        return this.searchResults[index].id || null;
+      }
+    }
+    return null;
+  }
+
+  isImageLoaded(novelId: number | undefined): boolean {
+    return novelId ? !!this.imagesLoaded[novelId] : false;
   }
 
   selectResult(index: number): void {

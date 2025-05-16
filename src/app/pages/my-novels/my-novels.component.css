@@ -109,13 +109,54 @@
   height: 150px;
   flex-shrink: 0;
   margin-right: 15px;
+  position: relative;
+  overflow: hidden;
+  border-radius: 4px;
+}
+
+.novel-cover .image-placeholder {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: var(--bg-color-secondary);
+  background-image: linear-gradient(
+    110deg,
+    rgba(50, 50, 60, 0.6) 30%, 
+    rgba(30, 30, 40, 0.6) 50%, 
+    rgba(50, 50, 60, 0.6) 70%
+  );
+  background-size: 200% 100%;
+  animation: myNovelsShimmer 1.5s infinite;
+  z-index: 2;
+  transition: opacity 0.3s ease-out;
+}
+
+.novel-cover .image-placeholder.loaded {
+  opacity: 0;
+  visibility: hidden;
 }
 
 .novel-cover img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 4px;
+  opacity: 0;
+  transition: opacity 0.3s ease-out;
+}
+
+.novel-cover img.loaded {
+  opacity: 1;
+}
+
+@keyframes myNovelsShimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 .novel-content {

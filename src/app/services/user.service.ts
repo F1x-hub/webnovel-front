@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, catchError, throwError, of, tap } from 'rxjs';
 import { AuthService } from './auth.service';
+import { environment } from '../../environments/environment';
 
 export interface UserProfile {
   id: number;
@@ -21,7 +22,7 @@ export interface UserProfile {
   providedIn: 'root'
 })
 export class UserService {
-  public readonly API_URL = 'https://localhost:7188/api';
+  public readonly API_URL = `${environment.apiUrl}/api`;
   private readonly IMAGE_CACHE_PREFIX = 'user_image_';
   private readonly IMAGE_CACHE_TIMESTAMP = 'user_image_timestamp_';
 

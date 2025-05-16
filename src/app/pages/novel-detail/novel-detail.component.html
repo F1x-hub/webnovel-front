@@ -17,7 +17,14 @@
     
     <div class="novel-header">
       <div class="novel-cover">
-        <img [src]="novel.imageUrl || '/assets/images/default-cover.png'" [alt]="novel.title" (error)="onImageError($event)">
+        <div class="image-placeholder" [class.loaded]="coverImageLoaded"></div>
+        <img 
+          [src]="novel.imageUrl || 'assets/images/default-cover.png'" 
+          [alt]="novel.title || 'Novel cover'" 
+          (error)="onImageError($event)"
+          (load)="coverImageLoaded = true"
+          [class.loaded]="coverImageLoaded"
+          onerror="this.onerror=null; this.src='assets/images/default-cover.png';">
       </div>
       
       <div class="novel-info">

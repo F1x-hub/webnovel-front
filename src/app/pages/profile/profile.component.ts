@@ -70,7 +70,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
   constructor(
     private formBuilder: FormBuilder,
-    private userService: UserService,
+    public userService: UserService,
     public authService: AuthService,
     private themeService: ThemeService,
     public router: Router,

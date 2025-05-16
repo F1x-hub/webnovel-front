@@ -7,6 +7,12 @@ import { Location } from '@angular/common';
 import { AgeVerificationService } from '../../services/age-verification.service';
 import { DomSanitizer } from '@angular/platform-browser';
 
+interface ChapterItem {
+  id: number;
+  number: number;
+  title: string;
+}
+
 @Component({
   selector: 'app-read',
   templateUrl: './read.component.html',
@@ -24,6 +30,8 @@ export class ReadComponent implements OnInit {
   isLastReadChapter: boolean = false;
   lastReadChapter: number = 0;
   showMarkReadNotification: boolean = false;
+  showChaptersPopup: boolean = false;
+  chaptersList: ChapterItem[] = [];
   private previousUrl: string | null = null;
 
   constructor(
@@ -59,6 +67,7 @@ export class ReadComponent implements OnInit {
         this.fetchChapterCount();
         this.loadChapter();
         this.checkIfLastReadChapter();
+        this.loadChaptersList();
       } else {
         this.error = true;
         this.loading = false;
@@ -87,6 +96,55 @@ export class ReadComponent implements OnInit {
         // если не удалось загрузить детали новеллы
       }
     });
+  }
+
+  loadChaptersList(): void {
+    this.novelService.getAllChapters(this.novelId).subscribe({
+      next: (chapters) => {
+        this.chaptersList = chapters.map(chapter => ({
+          id: chapter.id,
+          number: chapter.chapterNumber,
+          title: chapter.title
+        }));
+      },
+      error: (err) => {
+        console.error('Error loading chapters list:', err);
+      }
+    });
+  }
+
+  toggleChaptersPopup(): void {
+    this.showChaptersPopup = !this.showChaptersPopup;
+    // When opening the popup, ensure chapters list is loaded
+    if (this.showChaptersPopup && this.chaptersList.length === 0) {
+      this.loadChaptersList();
+    }
+  }
+
+  closeChaptersPopup(event: MouseEvent): void {
+    // Only close if clicking the overlay or the close button
+    if (
+      (event.target as HTMLElement).classList.contains('chapters-popup-overlay') ||
+      (event.target as HTMLElement).closest('.close-btn')
+    ) {
+      this.showChaptersPopup = false;
+      event.stopPropagation();
+    }
+  }
+
+  goToChapter(chapterNumber: number): void {
+    if (chapterNumber === this.chapterNumber) {
+      // If same chapter, just close the popup
+      this.showChaptersPopup = false;
+      return;
+    }
+    
+    this.chapterNumber = chapterNumber;
+    this.loadChapter();
+    this.showChaptersPopup = false;
+    
+    // Ensure scroll position is reset when navigating directly to a chapter
+    window.scrollTo(0, 0);
   }
 
   fetchChapterCount(): void {
@@ -118,6 +176,9 @@ export class ReadComponent implements OnInit {
           
           // Check if this is the last read chapter after loading chapter
           this.checkIfLastReadChapter();
+          
+          // Scroll to the top of the page when a new chapter is loaded
+          window.scrollTo(0, 0);
         },
         error: (err) => {
           console.error('Error loading chapter:', err);

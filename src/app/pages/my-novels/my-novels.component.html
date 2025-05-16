@@ -51,8 +51,11 @@
       <div class="novel-item" *ngFor="let novel of userNovels">
         <div class="novel-item-content">
           <div class="novel-cover">
+            <div class="image-placeholder" [class.loaded]="isImageLoaded(novel.id)"></div>
             <img [src]="novel.imageUrl || '/assets/images/default-cover.png'" 
                  (error)="onImageError($event)" 
+                 (load)="onImageLoad(novel.id!)"
+                 [class.loaded]="isImageLoaded(novel.id)"
                  [alt]="novel.title">
           </div>
           <div class="novel-content">

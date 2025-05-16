@@ -38,6 +38,7 @@ export class NovelCardComponent {
     genre: ''
   };
   @Input() showProgress: boolean = true;
+  imageLoaded: boolean = false;
 
   constructor(
     private router: Router,
@@ -75,6 +76,11 @@ export class NovelCardComponent {
     const img = event.target as HTMLImageElement;
     if (img) {
       img.src = '/assets/images/default-cover.png';
+      this.imageLoaded = true;
     }
+  }
+
+  onImageLoad(): void {
+    this.imageLoaded = true;
   }
 }

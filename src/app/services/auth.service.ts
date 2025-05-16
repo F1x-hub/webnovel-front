@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { BehaviorSubject, Observable, tap, catchError, throwError, map, of, switchMap } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 export interface User {
   id?: number;
@@ -32,7 +33,7 @@ export interface RegisterRequest {
   password: string;
   firstName: string;
   lastName: string;
-  age: number;
+  isAdult: boolean;
   roleId: number;
   profileImage?: File;
 }
@@ -57,7 +58,7 @@ export interface ChangePasswordRequest {
   providedIn: 'root'
 })
 export class AuthService {
-  private readonly API_URL = 'https://localhost:7188/api';
+  private readonly API_URL = `${environment.apiUrl}/api`;
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
 
@@ -168,7 +169,7 @@ export class AuthService {
     formData.append('Password', userData.password);
     formData.append('FirstName', userData.firstName);
     formData.append('LastName', userData.lastName);
-    formData.append('Age', userData.age.toString());
+    formData.append('IsAdult', (userData.isAdult !== undefined ? userData.isAdult : false).toString());
     
     // Установить RoleId = 1 для обычных пользователей, если не указано другое значение
     formData.append('RoleId', (userData.roleId !== undefined ? userData.roleId : 1).toString());
@@ -180,6 +181,7 @@ export class AuthService {
     
     console.log('Sending FormData to:', `${this.API_URL}/Registration/register`);
     console.log('RoleId value:', (userData.roleId !== undefined ? userData.roleId : 1).toString());
+    console.log('IsAdult value:', (userData.isAdult !== undefined ? userData.isAdult : false).toString());
     
     // Send as multipart/form-data
     return this.http.post<any>(`${this.API_URL}/Registration/register`, formData)

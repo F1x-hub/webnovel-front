@@ -7,6 +7,7 @@ import { AuthService } from '../../services/auth.service';
 import { UserService } from 'src/app/services/user.service';
 import { Router } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
+import { environment } from '../../../environments/environment';
 
 export interface CreateNovelCommentDto {
   displayName: string;
@@ -34,6 +35,7 @@ export class NovelCommentsComponent implements OnInit, OnDestroy {
   isDeletingComment: number | null = null;
   activePopupCommentId: number | null = null;
   showOptions: { [key: number]: boolean } = {};
+  apiUrl = environment.apiUrl;
   
   private subscriptions: Subscription = new Subscription();
   private destroy$ = new Subject<void>();

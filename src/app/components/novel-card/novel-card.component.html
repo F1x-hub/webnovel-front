@@ -1,7 +1,10 @@
 <div class="novel-card" (click)="navigateToNovel($event)">
   <div class="novel-image">
+    <div class="image-placeholder" [class.loaded]="imageLoaded"></div>
     <img [src]="novel.imageUrl || '/assets/images/default-cover.png'" 
-         (error)="onImageError($event)" 
+         (error)="onImageError($event)"
+         (load)="onImageLoad()"
+         [class.loaded]="imageLoaded"
          alt="{{ novel.title }}" />
     <span *ngIf="novel.isAdultContent" class="adult-badge">18+</span>
   </div>

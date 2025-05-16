@@ -241,4 +241,32 @@ button:disabled {
 .google-btn img {
   width: 18px;
   height: 18px;
+}
+
+.checkbox-group {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
+.checkbox-container {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.checkbox-container input[type="checkbox"] {
+  width: auto;
+  margin-right: 0.5rem;
+  cursor: pointer;
+}
+
+.checkbox-container label {
+  margin-bottom: 0;
+  cursor: pointer;
+}
+
+.form-text {
+  font-size: 0.8rem;
+  color: #aaa;
+  margin-left: 1.5rem;
 } 

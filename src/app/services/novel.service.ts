@@ -76,7 +76,9 @@ export class NovelService {
   private readonly IMAGE_CACHE_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
   private readonly DEFAULT_COVER_IMAGE = 'assets/images/default-cover.png';
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient) {
+    console.log('NovelService initialized with API URL:', this.apiUrl);
+  }
 
   getNovels(options: NovelFilterOptions = {}): Observable<Novel[]> {
     const { pageNumber = 1, pageSize = 10, genreId, status, sortBy, userId = 0 } = options;
@@ -236,6 +238,7 @@ export class NovelService {
     
     // No cache or expired, return the API URL
     const imageUrl = `${this.apiUrl}/api/Image/get-novel-image/${novelId}?t=${new Date().getTime()}`;
+    console.log(`Generated image URL: ${imageUrl}`);
     
     // Fetch and cache the image
     this.fetchAndCacheImage(novelId, imageUrl);

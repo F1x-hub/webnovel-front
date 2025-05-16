@@ -28,8 +28,26 @@
       <h1>
         <a [routerLink]="['/novel', novelId]" class="novel-title">{{ novelTitle }}</a> / Chapter {{ chapterNumber }} — {{ chapter.title }}
       </h1>
-      <!-- Mark as last read button - uses direct API endpoint check for current chapter status -->
-      <button 
+      
+      <div class="header-actions">
+        <!-- Chapter selector button -->
+        <button 
+          class="nav-btn chapters-btn" 
+          (click)="toggleChaptersPopup()"
+          aria-label="Select Chapter"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="8" y1="6" x2="21" y2="6"></line>
+            <line x1="8" y1="12" x2="21" y2="12"></line>
+            <line x1="8" y1="18" x2="21" y2="18"></line>
+            <line x1="3" y1="6" x2="3.01" y2="6"></line>
+            <line x1="3" y1="12" x2="3.01" y2="12"></line>
+            <line x1="3" y1="18" x2="3.01" y2="18"></line>
+          </svg>
+        </button>
+        
+        <!-- Mark as last read button - uses direct API endpoint check for current chapter status -->
+        <button 
           *ngIf="authService.currentUserValue"
           class="btn icon-btn mark-read-btn" 
           [class.active]="isLastReadChapter"
@@ -46,6 +64,7 @@
             <polyline points="20 6 9 17 4 12"></polyline>
           </svg>
         </button>
+      </div>
     </div>
     
     <div class="chapter-header">
@@ -60,7 +79,9 @@
             <polyline points="15 18 9 12 15 6"></polyline>
           </svg>
         </button>
+        
         <span class="chapter-info">Chapter {{ chapterNumber }} / {{ totalChapters }}</span>
+        
         <button 
           class="nav-btn next-btn" 
           [disabled]="!hasNextChapter()"
@@ -81,50 +102,97 @@
     </div>
     
     <div class="chapter-footer">
-      <div class="chapter-navigation">
-        <button 
-          class="nav-btn prev-btn" 
-          [disabled]="!hasPreviousChapter()" 
-          (click)="previousChapter()"
-          aria-label="Previous Chapter"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="15 18 9 12 15 6"></polyline>
-          </svg>
-        </button>
-        <button 
-          class="nav-btn next-btn"
-          [disabled]="!hasNextChapter()" 
-          (click)="nextChapter()"
-          aria-label="Next Chapter"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="9 18 15 12 9 6"></polyline>
-          </svg>
-        </button>
+      <div class="chapter-navigation-container">
+        <div class="chapter-navigation">
+          <button 
+            class="nav-btn prev-btn" 
+            [disabled]="!hasPreviousChapter()" 
+            (click)="previousChapter()"
+            aria-label="Previous Chapter"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+          </button>
+          
+          <button 
+            class="nav-btn next-btn"
+            [disabled]="!hasNextChapter()" 
+            (click)="nextChapter()"
+            aria-label="Next Chapter"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+          </button>
+        </div>
+        
+        <div class="action-buttons">
+          <!-- Chapter selector button -->
+          <button 
+            class="nav-btn chapters-btn" 
+            (click)="toggleChaptersPopup()"
+            aria-label="Select Chapter"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="8" y1="6" x2="21" y2="6"></line>
+              <line x1="8" y1="12" x2="21" y2="12"></line>
+              <line x1="8" y1="18" x2="21" y2="18"></line>
+              <line x1="3" y1="6" x2="3.01" y2="6"></line>
+              <line x1="3" y1="12" x2="3.01" y2="12"></line>
+              <line x1="3" y1="18" x2="3.01" y2="18"></line>
+            </svg>
+          </button>
+          
+          <!-- Mark as last read button -->
+          <button 
+            *ngIf="authService.currentUserValue"
+            class="btn icon-btn mark-read-btn" 
+            [class.active]="isLastReadChapter"
+            (click)="markAsLastRead()"
+            aria-label="Mark as Last Read"
+            title="{{isLastReadChapter ? 'Current Read Chapter' : 'Mark as Last Read'}}"
+          >
+            <!-- Bookmark icon (default) -->
+            <svg *ngIf="!isLastReadChapter" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+            </svg>
+            <!-- Checkmark icon (when active) -->
+            <svg *ngIf="isLastReadChapter" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="checkmark-icon">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </button>
+        </div>
       </div>
       
-      <div class="chapter-actions">
-        
+      <div class="back-button-container">
         <a (click)="goBack()" class="btn secondary-btn">Back to Novel</a>
-        <!-- Mark as last read button (footer) - uses direct API endpoint check for current chapter status -->
-        <button 
-          *ngIf="authService.currentUserValue"
-          class="btn icon-btn mark-read-btn" 
-          [class.active]="isLastReadChapter"
-          (click)="markAsLastRead()"
-          aria-label="Mark as Last Read"
-          title="{{isLastReadChapter ? 'Current Read Chapter' : 'Mark as Last Read'}}"
-        >
-          <!-- Bookmark icon (default) -->
-          <svg *ngIf="!isLastReadChapter" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
-          </svg>
-          <!-- Checkmark icon (when active) -->
-          <svg *ngIf="isLastReadChapter" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="checkmark-icon">
-            <polyline points="20 6 9 17 4 12"></polyline>
-          </svg>
-        </button>
+      </div>
+    </div>
+    
+    <!-- Chapters popup overlay -->
+    <div *ngIf="showChaptersPopup" class="chapters-popup-overlay" (click)="closeChaptersPopup($event)">
+      <div class="chapters-popup">
+        <div class="chapters-popup-header">
+          <h3>{{ novelTitle }}</h3>
+          <button class="close-btn" (click)="closeChaptersPopup($event)">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+        <div class="chapters-list">
+          <div 
+            *ngFor="let chap of chaptersList; let i = index" 
+            class="chapter-item" 
+            [class.active]="chap.number === chapterNumber"
+            (click)="goToChapter(chap.number)"
+          >
+            <span class="chapter-number">Chapter {{ chap.number }}</span>
+            <span class="chapter-title">{{ chap.title }}</span>
+          </div>
+        </div>
       </div>
     </div>
     

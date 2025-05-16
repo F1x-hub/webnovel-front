@@ -36,12 +36,22 @@
           (click)="navigateToNovel(result)"
         >
           <div class="result-image">
-            <img [src]="result.imageUrl || 'assets/images/default-cover.png'" alt="{{ result.title }}" (error)="onImageError($event)">
+            <div class="image-placeholder" [class.loaded]="isImageLoaded(result.id)"></div>
+            <img 
+              [src]="result.imageUrl || 'assets/images/default-cover.png'" 
+              alt="{{ result.title }}" 
+              (error)="onImageError($event)"
+              (load)="onImageLoad(result.id!)"
+              [class.loaded]="isImageLoaded(result.id)"
+            >
           </div>
           <div class="result-info">
             <div class="result-title">{{ result.title }}</div>
-            <div class="result-status" *ngIf="result.status">
-              {{ getStatusText(result.status) }}
+            <div class="result-meta">
+              <span class="result-status" *ngIf="result.status">
+                {{ getStatusText(result.status) }}
+              </span>
+              <span class="adult-badge" *ngIf="result.isAdultContent">18+</span>
             </div>
           </div>
         </div>
@@ -52,6 +62,9 @@
       <ng-template #noResults>
         <div class="no-results">
           <p>No results found for "{{ searchQuery }}"</p>
+          <p class="no-results-info" *ngIf="authService.currentUserValue === null">
+            Note: You must be logged in to see adult content (18+) in search results.
+          </p>
         </div>
       </ng-template>
     </div>

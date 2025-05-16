@@ -26,6 +26,7 @@ export class RegisterComponent implements OnInit {
       password: ['', [Validators.required, Validators.minLength(6)]],
       firstName: ['', Validators.required],
       lastName: ['', Validators.required],
+      isAdult: [false],
       roleId: [1] // Устанавливаем 1 для обычного пользователя по умолчанию
     });
   }

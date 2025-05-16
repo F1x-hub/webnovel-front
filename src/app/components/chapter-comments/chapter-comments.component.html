@@ -45,7 +45,7 @@
         <div class="user-info">
           <img 
             class="user-avatar" 
-            [src]="'https://localhost:7188/api/Image/get-user-image/' + comment.userId" 
+            [src]="apiUrl + '/api/Image/get-user-image/' + comment.userId" 
             alt="User avatar"
             onerror="this.src='assets/images/default-avatar.png'"
           >

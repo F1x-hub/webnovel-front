@@ -36,7 +36,7 @@ export class NovelDetailComponent implements OnInit, OnDestroy {
   libraryLoading = false;
   lastReadChapter: number | null = null;
   sortDirection: 'asc' | 'desc' = 'asc';
-  
+  coverImageLoaded = false;
   // Comments
   comments: NovelComment[] = [];
   commentsLoading = false;
@@ -68,7 +68,11 @@ export class NovelDetailComponent implements OnInit, OnDestroy {
   onImageError(event: Event): void {
     const img = event.target as HTMLImageElement;
     if (img) {
-      img.src = '/assets/images/default-cover.png';
+      img.src = 'assets/images/default-cover.png';
+      // Force a re-render by triggering onload
+      setTimeout(() => {
+        this.coverImageLoaded = true;
+      }, 100);
     }
   }
 
@@ -76,6 +80,7 @@ export class NovelDetailComponent implements OnInit, OnDestroy {
     this.currentUser = this.authService.currentUserValue;
     this.chapters = [];
     this.volumes = [];
+    this.coverImageLoaded = false;
     
     // Load sort direction from localStorage
     this.loadSortDirection();
@@ -264,6 +269,9 @@ export class NovelDetailComponent implements OnInit, OnDestroy {
   }
 
   fetchNovel(id: number): void {
+    // Reset image loading state
+    this.coverImageLoaded = false;
+    
     // Get current user ID if logged in
     const userId = this.currentUser?.id || 0;
     
@@ -280,6 +288,7 @@ export class NovelDetailComponent implements OnInit, OnDestroy {
         // Set the image URL using the service
         if (novel.id) {
           novel.imageUrl = this.novelService.getNovelImageUrl(novel.id);
+          console.log("Novel image URL set to:", novel.imageUrl);
           
           // Get the rating for the novel
           this.novelService.getNovelRating(novel.id).subscribe({

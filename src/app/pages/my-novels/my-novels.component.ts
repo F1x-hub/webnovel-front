@@ -43,6 +43,9 @@ export class MyNovelsComponent implements OnInit, OnDestroy {
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
   isDragging = false;
   
+  // Track image loading state
+  private imagesLoaded: { [key: number]: boolean } = {};
+  
   // Filter options
   filters: NovelFilterOptions = {};
 
@@ -111,6 +114,7 @@ export class MyNovelsComponent implements OnInit, OnDestroy {
   loadUserNovels(): void {
     this.isLoading = true;
     this.errorMessage = '';
+    this.imagesLoaded = {}; // Reset images loaded state
     
     const userId = this.authService.currentUserValue?.id;
     if (!userId) {
@@ -125,6 +129,8 @@ export class MyNovelsComponent implements OnInit, OnDestroy {
         this.userNovels = novels.map(novel => {
           if (novel.id) {
             novel.imageUrl = this.novelService.getNovelImageUrl(novel.id);
+            // Initialize image loading state
+            this.imagesLoaded[novel.id] = false;
           }
           return novel;
         });
@@ -136,6 +142,16 @@ export class MyNovelsComponent implements OnInit, OnDestroy {
         this.isLoading = false;
       }
     });
+  }
+
+  onImageLoad(novelId: number): void {
+    if (novelId) {
+      this.imagesLoaded[novelId] = true;
+    }
+  }
+
+  isImageLoaded(novelId: number | undefined): boolean {
+    return novelId ? !!this.imagesLoaded[novelId] : false;
   }
 
   loadNovelChapters(novelId: number): void {
@@ -581,7 +597,28 @@ export class MyNovelsComponent implements OnInit, OnDestroy {
     const img = event.target as HTMLImageElement;
     if (img) {
       img.src = '/assets/images/default-cover.png';
+      
+      // Set image as loaded when using fallback
+      const novelElement = img.closest('.novel-item');
+      if (novelElement) {
+        const novelId = this.findNovelIdFromElement(novelElement);
+        if (novelId) {
+          this.imagesLoaded[novelId] = true;
+        }
+      }
     }
+  }
+
+  private findNovelIdFromElement(element: Element): number | null {
+    // Find the novel ID by matching the element with the corresponding novel
+    const novelIndex = Array.from(element.parentElement?.children || [])
+      .indexOf(element);
+    
+    if (novelIndex >= 0 && novelIndex < this.userNovels.length) {
+      return this.userNovels[novelIndex].id || null;
+    }
+    
+    return null;
   }
 
   // New filtering methods
