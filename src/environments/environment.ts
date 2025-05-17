@@ -4,4 +4,4 @@ export const environment = {
 }; 
 
 //https://localhost:7188
-//https://webnovel-api-env.eba-evbhicmx.eu-north-1.elasticbeanstalk.com
+//https://webnovel-api-env-1.eba-evbhicmx.eu-north-1.elasticbeanstalk.com

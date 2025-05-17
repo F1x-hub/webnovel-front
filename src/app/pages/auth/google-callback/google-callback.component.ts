@@ -18,12 +18,6 @@ export class GoogleCallbackComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    // Force HTTPS in production if not already using it
-    if (location.protocol === 'http:' && !location.hostname.includes('localhost')) {
-      window.location.href = location.href.replace('http:', 'https:');
-      return;
-    }
-
     this.route.queryParams.subscribe(params => {
       const token = params['token'];
       const error = params['error'];

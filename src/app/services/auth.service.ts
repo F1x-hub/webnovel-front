@@ -473,9 +473,7 @@ export class AuthService {
 
   googleLogin(returnUrl: string = '/'): Observable<any> {
     // Redirect to backend to initiate Google login
-    const appUrl = window.location.protocol === 'https:' 
-      ? window.location.origin 
-      : window.location.origin.replace('http:', 'https:');
+    const appUrl = window.location.origin;
     const callbackUrl = `${appUrl}/auth/callback`;
     window.location.href = `${this.API_URL}/Auth/google-login?returnUrl=${encodeURIComponent(callbackUrl)}`;
     return new Observable(); // This won't be used as we're redirecting
@@ -483,9 +481,7 @@ export class AuthService {
 
   googleRegister(): Observable<any> {
     // Redirect to backend to initiate Google registration
-    const appUrl = window.location.protocol === 'https:' 
-      ? window.location.origin 
-      : window.location.origin.replace('http:', 'https:');
+    const appUrl = window.location.origin;
     const callbackUrl = `${appUrl}/auth/callback`;
     window.location.href = `${this.API_URL}/Auth/google-login?returnUrl=${encodeURIComponent(callbackUrl)}`;
     return new Observable(); // This won't be used as we're redirecting
