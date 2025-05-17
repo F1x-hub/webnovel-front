@@ -3,6 +3,7 @@ import { Subscription } from 'rxjs';
 import { AgeVerificationService } from './services/age-verification.service';
 import { AuthService } from './services/auth.service';
 import { Router } from '@angular/router';
+import { environment } from '../environments/environment';
 
 @Component({
   selector: 'app-root',
@@ -20,6 +21,9 @@ export class AppComponent implements OnInit, OnDestroy {
   ) {}
   
   ngOnInit(): void {
+    // Enforce HTTPS in production
+    this.enforceHttps();
+    
     // Listen for user authentication changes
     this.authService.currentUser$.subscribe(user => {
       // If user logs in and is already verified as adult, no need to show verification
@@ -27,6 +31,14 @@ export class AppComponent implements OnInit, OnDestroy {
         this.ageVerificationService.hideVerificationModal();
       }
     });
+  }
+  
+  private enforceHttps(): void {
+    if (environment.production && 
+        window.location.protocol === 'http:' && 
+        !window.location.hostname.includes('localhost')) {
+      window.location.href = window.location.href.replace('http:', 'https:');
+    }
   }
   
   ngOnDestroy(): void {

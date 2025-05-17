@@ -14,6 +14,7 @@ import { ReadComponent } from './pages/read/read.component';
 import { LibraryComponent } from './pages/library/library.component';
 import { CreateComponent } from './pages/create/create.component';
 import { AuthInterceptor } from './services/auth.interceptor';
+import { HttpRedirectInterceptor } from './shared/http-redirect.interceptor';
 import { NovelDetailComponent } from './pages/novel-detail/novel-detail.component';
 import { ChapterCommentsComponent } from './components/chapter-comments/chapter-comments.component';
 import { NovelCommentsComponent } from './components/novel-comments/novel-comments.component';
@@ -56,6 +57,7 @@ import { FooterComponent } from './shared/footer/footer.component';
   ],
   providers: [
     { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },
+    { provide: HTTP_INTERCEPTORS, useClass: HttpRedirectInterceptor, multi: true },
     LibraryService,
     AgeVerificationService
   ],
