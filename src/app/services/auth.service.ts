@@ -471,20 +471,31 @@ export class AuthService {
       );
   }
 
+  private ensureHttps(url: string): string {
+    if (url.startsWith('http:')) {
+      return url.replace('http:', 'https:');
+    }
+    return url;
+  }
+
   googleLogin(returnUrl: string = '/'): Observable<any> {
-    // Redirect to backend to initiate Google login
-    const appUrl = window.location.origin;
+    // Ensure we're using HTTPS
+    const appUrl = this.ensureHttps(window.location.origin);
     const callbackUrl = `${appUrl}/auth/callback`;
+    
+    // Redirect to backend to initiate Google login
     window.location.href = `${this.API_URL}/Auth/google-login?returnUrl=${encodeURIComponent(callbackUrl)}`;
-    return new Observable(); // This won't be used as we're redirecting
+    return new Observable();
   }
 
   googleRegister(): Observable<any> {
-    // Redirect to backend to initiate Google registration
-    const appUrl = window.location.origin;
+    // Ensure we're using HTTPS
+    const appUrl = this.ensureHttps(window.location.origin);
     const callbackUrl = `${appUrl}/auth/callback`;
+    
+    // Redirect to backend to initiate Google registration
     window.location.href = `${this.API_URL}/Auth/google-login?returnUrl=${encodeURIComponent(callbackUrl)}`;
-    return new Observable(); // This won't be used as we're redirecting
+    return new Observable();
   }
 
   // Direct API methods using idToken

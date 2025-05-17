@@ -178,6 +178,12 @@ export class LoginComponent implements OnInit {
     this.isLoading = true;
     this.errorMessage = '';
     
+    // Ensure we're using HTTPS for Google authentication
+    if (window.location.protocol === 'http:') {
+      window.location.href = window.location.href.replace('http:', 'https:');
+      return;
+    }
+    
     try {
       // Get current URL to use as return URL after authentication
       const returnUrl = this.router.url;

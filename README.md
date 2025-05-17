@@ -9,6 +9,7 @@
 - [Project Structure](#project-structure)
 - [Features](#features)
 - [Documentation](#documentation)
+- [HTTPS Authentication](#https-authentication)
 - [Roadmap](#roadmap)
 - [Authors and License](#authors-and-license)
 
@@ -56,6 +57,7 @@ export const environment = {
 
 ## Available Scripts
 - `npm start` - Starts the development server
+- `npm run start-secure` - Starts the development server with HTTPS enabled (recommended for authentication features)
 - `npm run build` - Builds the application for production
 - `npm run watch` - Builds and watches for changes
 - `npm test` - Runs unit tests
@@ -135,6 +137,19 @@ WebNovel/
 ## Documentation
 - [Angular Documentation](https://angular.io/docs)
 - [API Documentation](#) 
+
+## HTTPS Authentication
+Google authentication requires HTTPS for security reasons. To properly use Google login:
+
+1. Always use HTTPS in production environments
+2. For local development, use the secure development server:
+```bash
+npm run start-secure
+```
+3. Access the application at `https://localhost:4200/`
+4. You may need to accept the self-signed certificate warning in your browser
+
+Note: The application will automatically redirect HTTP requests to HTTPS for authentication-related pages.
 
 ## Roadmap
 - [ ] Offline reading capability
