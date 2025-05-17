@@ -495,6 +495,7 @@ export class NovelDetailComponent implements OnInit, OnDestroy {
   refreshNovelRating(): void {
     if (!this.novel?.id) return;
     
+    const userId = this.currentUser?.id || 0;
     this.novelService.getNovelRating(this.novel.id).subscribe({
       next: (response) => {
         if (this.novel) {

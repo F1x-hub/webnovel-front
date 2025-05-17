@@ -452,7 +452,11 @@ export class NovelService {
   }
 
   rateNovel(novelId: number, userId: number, rating: number): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/api/Rating/rate-novel/${novelId}/${userId}`, { rating });
+    return this.http.post<any>(
+      `${this.apiUrl}/api/Rating/rate-novel/${novelId}/${userId}`, 
+      rating, 
+      { headers: { 'Content-Type': 'application/json' } }
+    );
   }
 
   getNovelByName(name: string, userId: number = 0, options: NovelFilterOptions = {}): Observable<Novel[]> {
