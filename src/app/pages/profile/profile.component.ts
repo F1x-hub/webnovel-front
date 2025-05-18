@@ -108,10 +108,10 @@ export class ProfileComponent implements OnInit, OnDestroy {
       }
     });
     
-    // Load cached profile image if available
-    if (this.currentUserId) {
-      this.loadCachedProfileImage(this.currentUserId);
-    }
+      // Only load cached profile image if viewing own profile
+  if (this.currentUserId && !this.route.snapshot.paramMap.get('id')) {
+    this.loadCachedProfileImage(this.currentUserId);
+  }
     
     // Update dark mode status
     this.themeService.darkMode$.subscribe(isDark => {
@@ -475,8 +475,8 @@ export class ProfileComponent implements OnInit, OnDestroy {
   }
 
   getImageUrl(url: string | undefined): string {
-    // If we have a cached image (in base64 format), use it
-    if (this.cachedProfileImage && this.userProfile?.id) {
+    // Only use cached image when viewing own profile
+    if (this.isOwnProfile && this.cachedProfileImage && this.userProfile?.id) {
       return this.cachedProfileImage;
     }
     

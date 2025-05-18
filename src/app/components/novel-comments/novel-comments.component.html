@@ -54,9 +54,9 @@
         <div class="user-info">
           <img 
             class="user-avatar" 
-            [src]="apiUrl + '/api/Image/get-user-image/' + comment.userId" 
+            [src]="getUserImageUrl(comment.userId, comment.userAvatar)" 
             alt="User avatar"
-            onerror="this.src='assets/images/default-avatar.png'"
+            (error)="handleImageError($event)"
           >
           <div class="user-details">
             <span class="username">{{ comment.username }}</span>

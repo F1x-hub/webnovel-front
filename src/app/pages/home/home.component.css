@@ -128,3 +128,150 @@
     font-size: 1.5rem;
   }
 }
+
+/* Skeleton Loading Animation */
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.shimmer-effect {
+  background: linear-gradient(
+    110deg,
+    var(--bg-tertiary, rgba(50, 50, 50, 0.5)) 25%,
+    var(--bg-secondary, rgba(70, 70, 70, 0.6)) 50%, 
+    var(--bg-tertiary, rgba(50, 50, 50, 0.5)) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+.novels-skeleton {
+  animation: fade-in 0.3s ease-in;
+}
+
+@keyframes fade-in {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+/* Novel Grid */
+.novel-grid, .novel-grid-skeleton {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 20px;
+  margin-bottom: 40px;
+}
+
+.novel-card-skeleton {
+  display: flex;
+  flex-direction: column;
+  background-color: rgba(30, 30, 30, 0.8);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  height: 400px;
+}
+
+.novel-cover-skeleton {
+  height: 280px;
+  width: 100%;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+  background-color: rgba(40, 40, 40, 0.8);
+}
+
+.novel-info-skeleton {
+  padding: 16px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.novel-title-skeleton {
+  height: 22px;
+  width: 90%;
+  border-radius: 4px;
+}
+
+.novel-author-skeleton {
+  height: 16px;
+  width: 60%;
+  border-radius: 4px;
+}
+
+.novel-genre-skeleton {
+  height: 16px;
+  width: 50%;
+  border-radius: 4px;
+}
+
+.novel-rating-skeleton {
+  height: 16px;
+  width: 70%;
+  border-radius: 4px;
+  margin-top: auto;
+}
+
+@media (max-width: 1200px) {
+  .novel-grid, .novel-grid-skeleton {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (max-width: 992px) {
+  .novel-grid, .novel-grid-skeleton {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .novel-grid, .novel-grid-skeleton {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+  }
+  
+  .weekly-highlight {
+    flex-direction: column;
+  }
+  
+  .highlight-image {
+    height: 280px;
+  }
+  
+  .highlight-info {
+    padding: 20px;
+  }
+  
+  .highlight-title {
+    font-size: 1.5rem;
+  }
+  
+  .novel-card-skeleton {
+    height: 320px;
+  }
+  
+  .novel-cover-skeleton {
+    height: 220px;
+  }
+  
+  .novel-info-skeleton {
+    padding: 12px;
+    gap: 8px;
+  }
+  
+  .novel-title-skeleton {
+    height: 18px;
+  }
+  
+  .novel-author-skeleton, .novel-genre-skeleton, .novel-rating-skeleton {
+    height: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .novel-grid, .novel-grid-skeleton {
+    grid-template-columns: 1fr;
+  }
+}

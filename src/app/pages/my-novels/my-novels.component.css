@@ -700,3 +700,194 @@
 .clear-filters-btn:hover {
   background-color: rgba(255, 255, 255, 0.15);
 }
+
+/* Skeleton Loader Styles */
+.skeleton-loader {
+  animation: fade-in 0.3s ease-in;
+}
+
+@keyframes fade-in {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+.shimmer-effect {
+  background: linear-gradient(
+    110deg,
+    var(--bg-tertiary, rgba(50, 50, 50, 0.5)) 25%,
+    var(--bg-secondary, rgba(70, 70, 70, 0.6)) 50%,
+    var(--bg-tertiary, rgba(50, 50, 50, 0.5)) 75%
+  );
+  background-size: 200% 100%;
+  animation: myNovelsShimmer 1.5s infinite;
+}
+
+.novel-item.skeleton {
+  background-color: var(--bg-color-secondary, #1a2236);
+  overflow: hidden;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  transform: none;
+}
+
+.novel-item.skeleton:hover {
+  transform: none;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.novel-cover-skeleton {
+  width: 100px;
+  height: 150px;
+  flex-shrink: 0;
+  margin-right: 15px;
+  border-radius: 4px;
+  background-color: rgba(40, 40, 40, 0.8);
+}
+
+.novel-title-skeleton {
+  height: 24px;
+  width: 80%;
+  margin-bottom: 12px;
+  border-radius: 4px;
+}
+
+.novel-description-skeleton {
+  height: 16px;
+  width: 100%;
+  margin-bottom: 8px;
+  border-radius: 4px;
+}
+
+.novel-meta-skeleton {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 15px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.novel-genre-skeleton, 
+.novel-chapters-skeleton {
+  height: 16px;
+  width: 30%;
+  border-radius: 4px;
+}
+
+.novel-status-skeleton {
+  height: 20px;
+  width: 25%;
+  border-radius: 12px;
+}
+
+.novel-actions-skeleton {
+  display: flex;
+  border-top: 1px solid var(--border-color, rgba(60, 60, 60, 0.5));
+  padding: 10px;
+  gap: 10px;
+}
+
+.action-btn-skeleton {
+  height: 35px;
+  flex: 1;
+  border-radius: 4px;
+}
+
+@media (max-width: 768px) {
+  .novel-title-skeleton {
+    height: 20px;
+  }
+  
+  .novel-description-skeleton {
+    height: 14px;
+  }
+  
+  .novel-meta-skeleton {
+    flex-direction: column;
+    gap: 6px;
+  }
+  
+  .novel-genre-skeleton, 
+  .novel-chapters-skeleton,
+  .novel-status-skeleton {
+    width: 60%;
+    height: 14px;
+  }
+  
+  .novel-actions-skeleton {
+    flex-wrap: wrap;
+  }
+  
+  .action-btn-skeleton {
+    flex-basis: calc(50% - 5px);
+  }
+}
+
+/* Chapter List Skeleton Styles */
+.chapters-loading-skeleton {
+  margin-top: 15px;
+  animation: fade-in 0.3s ease-in;
+}
+
+.chapter-item-skeleton {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 15px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 10px;
+}
+
+.chapter-info-skeleton {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+}
+
+.chapter-number-skeleton {
+  width: 80px;
+  height: 18px;
+  border-radius: 4px;
+}
+
+.chapter-title-skeleton {
+  width: 200px;
+  height: 18px;
+  border-radius: 4px;
+  margin-left: 10px;
+}
+
+.chapter-date-skeleton {
+  width: 100px;
+  height: 14px;
+  border-radius: 4px;
+  margin-left: 10px;
+}
+
+.chapter-actions-skeleton {
+  display: flex;
+  gap: 10px;
+}
+
+.delete-chapter-btn-skeleton {
+  width: 80px;
+  height: 30px;
+  border-radius: 4px;
+}
+
+@media (max-width: 580px) {
+  .chapter-info-skeleton {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  
+  .chapter-title-skeleton {
+    margin-left: 0;
+    width: 80%;
+  }
+  
+  .chapter-date-skeleton {
+    margin-left: 0;
+    width: 60%;
+  }
+}

@@ -11,7 +11,7 @@
   align-items: flex-start;
   z-index: 2000;
   padding-top: 50px;
-  overflow-y: auto;
+  overflow-y: hidden;
   backdrop-filter: blur(3px);
 }
 
@@ -25,6 +25,9 @@
   overflow: hidden;
   color: #fff;
   animation: modalFadeIn 0.2s ease-out;
+  display: flex;
+  flex-direction: column;
+  max-height: calc(90vh - 50px);
 }
 
 /* Search container */
@@ -32,6 +35,7 @@
   padding: 16px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   position: relative;
+  flex-shrink: 0;
 }
 
 /* Search input container */
@@ -102,9 +106,10 @@
 
 /* Search results container */
 .search-results-container {
-  max-height: 70vh;
+  max-height: 100%;
   overflow-y: auto;
   padding: 0;
+  flex: 1;
 }
 
 /* Search results */
@@ -252,11 +257,8 @@
 
 /* Loading indicator */
 .search-loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 40px 0;
+  padding: 0;
+  width: 100%;
 }
 
 .loader {
@@ -374,4 +376,68 @@
   100% {
     background-position: -200% 0;
   }
+}
+
+/* Skeleton Loading Animation */
+@keyframes modalShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.shimmer-effect {
+  background: linear-gradient(
+    110deg,
+    rgba(60, 60, 70, 0.6) 25%, 
+    rgba(40, 42, 54, 0.6) 50%, 
+    rgba(60, 60, 70, 0.6) 75%
+  );
+  background-size: 200% 100%;
+  animation: modalShimmer 1.5s infinite;
+}
+
+.search-results-skeleton {
+  display: flex;
+  flex-direction: column;
+  animation: fadeIn 0.3s ease;
+}
+
+.result-item-skeleton {
+  display: flex;
+  padding: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  align-items: center;
+}
+
+.result-image-skeleton {
+  width: 40px;
+  height: 60px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  margin-right: 12px;
+  background-color: #282a36;
+}
+
+.result-info-skeleton {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+}
+
+.result-title-skeleton {
+  height: 16px;
+  width: 80%;
+  border-radius: 4px;
+}
+
+.result-meta-skeleton {
+  height: 14px;
+  width: 50%;
+  border-radius: 4px;
+}
+
+@keyframes fadeIn {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
 }

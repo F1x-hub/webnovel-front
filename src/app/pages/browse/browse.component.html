@@ -6,9 +6,11 @@
         <label>Genre</label>
         <select class="filter-select" [(ngModel)]="filters.genreId" (change)="applyFilters()" [disabled]="loadingGenres">
           <option [ngValue]="undefined">All Genres</option>
-          <option *ngIf="loadingGenres" value="">Loading genres...</option>
           <option *ngFor="let genre of genres" [ngValue]="genre.id">{{ genre.name }}</option>
         </select>
+        <div *ngIf="loadingGenres" class="genres-loading-indicator">
+          <div class="mini-shimmer shimmer-effect"></div>
+        </div>
       </div>
       <div class="filter-group">
         <label>Status</label>
@@ -35,9 +37,27 @@
     </div>
   </div>
 
-  <div *ngIf="loading" class="loading-indicator">
-    <div class="spinner"></div>
-    <p>Loading novels...</p>
+  <!-- Skeleton loader for novels -->
+  <div *ngIf="loading" class="novels-skeleton">
+    <div class="novel-grid-skeleton">
+      <div class="novel-card-skeleton" *ngFor="let i of [1,2,3,4,5,6,7,8,9,10]">
+        <div class="novel-cover-skeleton shimmer-effect"></div>
+        <div class="novel-info-skeleton">
+          <div class="novel-title-skeleton shimmer-effect"></div>
+          <div class="novel-author-skeleton shimmer-effect"></div>
+          <div class="novel-genre-skeleton shimmer-effect"></div>
+          <div class="novel-rating-skeleton shimmer-effect"></div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="pagination-skeleton">
+      <div class="prev-btn-skeleton shimmer-effect"></div>
+      <div class="page-numbers-skeleton">
+        <div class="page-number-skeleton shimmer-effect" *ngFor="let i of [1,2,3,4,5,6,7,8,9,10]"></div>
+      </div>
+      <div class="next-btn-skeleton shimmer-effect"></div>
+    </div>
   </div>
 
   <div *ngIf="error" class="error-message">

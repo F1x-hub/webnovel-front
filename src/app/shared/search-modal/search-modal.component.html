@@ -26,8 +26,20 @@
       </div>
     </div>
     
-    <div class="search-results-container" *ngIf="searchQuery.trim() && !isLoading">
-      <div *ngIf="searchResults.length > 0; else noResults" class="search-results">
+    <div class="search-results-container" *ngIf="searchQuery.trim()">
+      <div *ngIf="isLoading" class="search-loading">
+        <div class="search-results-skeleton">
+          <div class="result-item-skeleton" *ngFor="let i of [1, 2, 3, 4, 5]">
+            <div class="result-image-skeleton shimmer-effect"></div>
+            <div class="result-info-skeleton">
+              <div class="result-title-skeleton shimmer-effect"></div>
+              <div class="result-meta-skeleton shimmer-effect"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div *ngIf="!isLoading && searchResults.length > 0" class="search-results">
         <div 
           *ngFor="let result of searchResults; let i = index" 
           class="result-item" 
@@ -55,23 +67,14 @@
             </div>
           </div>
         </div>
-        
-        
       </div>
       
-      <ng-template #noResults>
-        <div class="no-results">
-          <p>No results found for "{{ searchQuery }}"</p>
-          <p class="no-results-info" *ngIf="authService.currentUserValue === null">
-            Note: You must be logged in to see adult content (18+) in search results.
-          </p>
-        </div>
-      </ng-template>
-    </div>
-    
-    <div class="search-loading" *ngIf="isLoading">
-      <div class="loader"></div>
-      <p>Searching...</p>
+      <div *ngIf="!isLoading && searchResults.length === 0" class="no-results">
+        <p>No results found for "{{ searchQuery }}"</p>
+        <p class="no-results-info" *ngIf="authService.currentUserValue === null">
+          Note: You must be logged in to see adult content (18+) in search results.
+        </p>
+      </div>
     </div>
   </div>
 </div>

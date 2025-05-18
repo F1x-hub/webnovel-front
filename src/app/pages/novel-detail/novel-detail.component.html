@@ -1,6 +1,91 @@
 <div class="container">
-  <div *ngIf="loading" class="loading">
-    <p>Loading novel details...</p>
+  <div *ngIf="loading" class="skeleton-loader">
+    <div class="breadcrumb-skeleton"></div>
+    
+    <div class="novel-header">
+      <div class="novel-cover-skeleton">
+        <div class="shimmer-effect"></div>
+      </div>
+      
+      <div class="novel-info-skeleton">
+        <div class="title-skeleton shimmer-effect"></div>
+        
+        <div class="genre-tags-skeleton">
+          <span class="genre-tag-skeleton shimmer-effect"></span>
+          <span class="genre-tag-skeleton shimmer-effect"></span>
+          <span class="genre-tag-skeleton shimmer-effect"></span>
+        </div>
+        
+        <div class="metadata-skeleton">
+          <div class="status-skeleton shimmer-effect"></div>
+          <div class="author-skeleton shimmer-effect"></div>
+          <div class="rating-skeleton shimmer-effect"></div>
+          <div class="chapters-skeleton shimmer-effect"></div>
+          <div class="views-skeleton shimmer-effect"></div>
+        </div>
+        
+        <div class="actions-skeleton">
+          <div class="btn-skeleton primary-skeleton shimmer-effect"></div>
+          <div class="btn-skeleton secondary-skeleton shimmer-effect"></div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="tabs-skeleton">
+      <div class="tab-skeleton shimmer-effect"></div>
+      <div class="tab-skeleton shimmer-effect"></div>
+    </div>
+    
+    <div class="content-skeleton">
+      <div class="title-skeleton shimmer-effect"></div>
+      <div class="text-line-skeleton shimmer-effect"></div>
+      <div class="text-line-skeleton shimmer-effect"></div>
+      <div class="text-line-skeleton shimmer-effect"></div>
+      <div class="text-line-skeleton shimmer-effect"></div>
+    </div>
+
+    <!-- Comments skeleton -->
+    <div class="comments-skeleton">
+      <div class="title-skeleton shimmer-effect"></div>
+      <div class="comment-form-skeleton shimmer-effect"></div>
+      
+      <div class="comments-list-skeleton">
+        <div class="comment-skeleton">
+          <div class="comment-header-skeleton">
+            <div class="avatar-skeleton shimmer-effect"></div>
+            <div class="username-skeleton shimmer-effect"></div>
+          </div>
+          <div class="comment-content-skeleton shimmer-effect"></div>
+          <div class="comment-content-skeleton shimmer-effect" style="width: 70%;"></div>
+        </div>
+        
+        <div class="comment-skeleton">
+          <div class="comment-header-skeleton">
+            <div class="avatar-skeleton shimmer-effect"></div>
+            <div class="username-skeleton shimmer-effect"></div>
+          </div>
+          <div class="comment-content-skeleton shimmer-effect"></div>
+          <div class="comment-content-skeleton shimmer-effect" style="width: 85%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOC skeleton --> 
+    <div class="toc-skeleton">
+      <div class="latest-chapter-skeleton">
+        <div class="latest-label-skeleton shimmer-effect"></div>
+        <div class="latest-title-skeleton shimmer-effect"></div>
+      </div>
+      
+      <div class="chapters-grid-skeleton">
+        <div class="chapter-skeleton shimmer-effect"></div>
+        <div class="chapter-skeleton shimmer-effect"></div>
+        <div class="chapter-skeleton shimmer-effect"></div>
+        <div class="chapter-skeleton shimmer-effect"></div>
+        <div class="chapter-skeleton shimmer-effect"></div>
+        <div class="chapter-skeleton shimmer-effect"></div>
+      </div>
+    </div>
   </div>
 
   <div *ngIf="error" class="error">
@@ -124,8 +209,24 @@
         
         <!-- Comments List -->
         <div class="comments-list">
-          <div *ngIf="commentsLoading" class="loading-comments">
-            <p>Loading comments...</p>
+          <div *ngIf="commentsLoading" class="loading-comments-skeleton">
+            <div class="comment-skeleton">
+              <div class="comment-header-skeleton">
+                <div class="avatar-skeleton shimmer-effect"></div>
+                <div class="username-skeleton shimmer-effect"></div>
+              </div>
+              <div class="comment-content-skeleton shimmer-effect"></div>
+              <div class="comment-content-skeleton shimmer-effect" style="width: 70%;"></div>
+            </div>
+            
+            <div class="comment-skeleton">
+              <div class="comment-header-skeleton">
+                <div class="avatar-skeleton shimmer-effect"></div>
+                <div class="username-skeleton shimmer-effect"></div>
+              </div>
+              <div class="comment-content-skeleton shimmer-effect"></div>
+              <div class="comment-content-skeleton shimmer-effect" style="width: 85%;"></div>
+            </div>
           </div>
           
           <div *ngIf="!commentsLoading && comments.length === 0" class="no-comments">
@@ -166,8 +267,20 @@
 
     <div class="tab-content" *ngIf="activeTab === 'toc'">
       <div class="toc-container">
-        <div *ngIf="loading" class="loading-chapters">
-          <p>Loading chapters...</p>
+        <div *ngIf="loading" class="loading-chapters-skeleton">
+          <div class="latest-chapter-skeleton">
+            <div class="latest-label-skeleton shimmer-effect"></div>
+            <div class="latest-title-skeleton shimmer-effect"></div>
+          </div>
+          <hr class="toc-divider">
+          <div class="chapters-grid-skeleton">
+            <div class="chapter-skeleton shimmer-effect"></div>
+            <div class="chapter-skeleton shimmer-effect"></div>
+            <div class="chapter-skeleton shimmer-effect"></div>
+            <div class="chapter-skeleton shimmer-effect"></div>
+            <div class="chapter-skeleton shimmer-effect"></div>
+            <div class="chapter-skeleton shimmer-effect"></div>
+          </div>
         </div>
         
         <div *ngIf="chapters.length === 0 && !loading" class="empty-chapters">

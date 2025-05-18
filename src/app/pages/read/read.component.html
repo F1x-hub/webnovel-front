@@ -1,6 +1,55 @@
 <div class="container">
-  <div *ngIf="loading" class="loading">
-    <p>Loading chapter...</p>
+  <div *ngIf="loading" class="chapter-skeleton">
+    <div class="novel-chapter-header-skeleton">
+      <div class="title-path-skeleton shimmer-effect"></div>
+      <div class="header-actions-skeleton">
+        <div class="action-btn-skeleton shimmer-effect"></div>
+        <div class="action-btn-skeleton shimmer-effect"></div>
+      </div>
+    </div>
+    
+    <div class="chapter-container-skeleton">
+      <div class="chapter-header-skeleton">
+        <div class="nav-skeleton">
+          <div class="nav-btn-skeleton shimmer-effect"></div>
+          <div class="chapter-info-skeleton shimmer-effect"></div>
+          <div class="nav-btn-skeleton shimmer-effect"></div>
+        </div>
+        <div class="chapter-title-skeleton shimmer-effect"></div>
+      </div>
+      
+      <div class="chapter-content-skeleton">
+        <div class="content-line-skeleton shimmer-effect"></div>
+        <div class="content-line-skeleton shimmer-effect"></div>
+        <div class="content-line-skeleton shimmer-effect"></div>
+        <div class="content-line-skeleton shimmer-effect"></div>
+        <div class="content-line-skeleton shimmer-effect"></div>
+        <div class="content-line-skeleton shimmer-effect" style="width: 70%;"></div>
+        
+        <div class="paragraph-break"></div>
+        
+        <div class="content-line-skeleton shimmer-effect"></div>
+        <div class="content-line-skeleton shimmer-effect"></div>
+        <div class="content-line-skeleton shimmer-effect"></div>
+        <div class="content-line-skeleton shimmer-effect" style="width: 85%;"></div>
+        
+        <div class="paragraph-break"></div>
+        
+        <div class="content-line-skeleton shimmer-effect"></div>
+        <div class="content-line-skeleton shimmer-effect"></div>
+        <div class="content-line-skeleton shimmer-effect"></div>
+        <div class="content-line-skeleton shimmer-effect"></div>
+        <div class="content-line-skeleton shimmer-effect" style="width: 60%;"></div>
+      </div>
+      
+      <div class="chapter-footer-skeleton">
+        <div class="nav-skeleton">
+          <div class="nav-btn-skeleton shimmer-effect"></div>
+          <div class="nav-btn-skeleton shimmer-effect"></div>
+        </div>
+        <div class="back-btn-skeleton shimmer-effect"></div>
+      </div>
+    </div>
   </div>
 
   <div *ngIf="error" class="error">
@@ -183,6 +232,29 @@
           </button>
         </div>
         <div class="chapters-list">
+          <div *ngIf="showChaptersPopup && chaptersList.length === 0" class="chapters-loading-skeleton">
+            <div class="chapter-item-skeleton">
+              <div class="chapter-number-skeleton shimmer-effect"></div>
+              <div class="chapter-title-skeleton shimmer-effect"></div>
+            </div>
+            <div class="chapter-item-skeleton">
+              <div class="chapter-number-skeleton shimmer-effect"></div>
+              <div class="chapter-title-skeleton shimmer-effect"></div>
+            </div>
+            <div class="chapter-item-skeleton">
+              <div class="chapter-number-skeleton shimmer-effect"></div>
+              <div class="chapter-title-skeleton shimmer-effect"></div>
+            </div>
+            <div class="chapter-item-skeleton">
+              <div class="chapter-number-skeleton shimmer-effect"></div>
+              <div class="chapter-title-skeleton shimmer-effect"></div>
+            </div>
+            <div class="chapter-item-skeleton">
+              <div class="chapter-number-skeleton shimmer-effect"></div>
+              <div class="chapter-title-skeleton shimmer-effect"></div>
+            </div>
+          </div>
+          
           <div 
             *ngFor="let chap of chaptersList; let i = index" 
             class="chapter-item" 

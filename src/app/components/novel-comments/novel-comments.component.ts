@@ -36,6 +36,7 @@ export class NovelCommentsComponent implements OnInit, OnDestroy {
   activePopupCommentId: number | null = null;
   showOptions: { [key: number]: boolean } = {};
   apiUrl = environment.apiUrl;
+  imageTimestamp: number = Date.now();
   
   private subscriptions: Subscription = new Subscription();
   private destroy$ = new Subject<void>();
@@ -53,6 +54,7 @@ export class NovelCommentsComponent implements OnInit, OnDestroy {
   }
   
   ngOnInit(): void {
+    this.imageTimestamp = Date.now();
     this.checkAuthStatus();
     this.loadComments();
   }
@@ -334,5 +336,27 @@ export class NovelCommentsComponent implements OnInit, OnDestroy {
   private getPluralEnding(number: number, endings: string[]): string {
     const cases = [2, 0, 1, 1, 1, 2];
     return endings[(number % 100 > 4 && number % 100 < 20) ? 2 : cases[(number % 10 < 5) ? number % 10 : 5]];
+  }
+  
+  getUserImageUrl(userId: number, avatarUrl?: string): string {
+    // If comment has a specific avatar URL
+    if (avatarUrl) {
+      return `${avatarUrl}?t=${this.imageTimestamp}`;
+    }
+    
+    // If we have a userId, construct the URL to the user's profile image
+    if (userId) {
+      return `${this.apiUrl}/api/Image/get-user-image/${userId}?t=${this.imageTimestamp}`;
+    }
+    
+    // Fallback to default avatar
+    return `assets/images/default-avatar.png?t=${this.imageTimestamp}`;
+  }
+  
+  handleImageError(event: Event): void {
+    const imgElement = event.target as HTMLImageElement;
+    if (imgElement) {
+      imgElement.src = 'assets/images/default-avatar.png';
+    }
   }
 }

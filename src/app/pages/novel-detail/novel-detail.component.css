@@ -701,3 +701,301 @@
     margin-top: 10px;
   }
 }
+
+/* Skeleton Loading Animation */
+.skeleton-loader {
+  max-width: 1200px;
+  margin: 0 auto;
+  animation: fade-in 0.3s ease-in;
+}
+
+@keyframes fade-in {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+.shimmer-effect {
+  background: linear-gradient(
+    110deg,
+    var(--bg-tertiary, rgba(50, 50, 50, 0.5)) 25%,
+    var(--bg-secondary, rgba(70, 70, 70, 0.6)) 50%,
+    var(--bg-tertiary, rgba(50, 50, 50, 0.5)) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.breadcrumb-skeleton {
+  height: 18px;
+  width: 320px;
+  background-color: var(--bg-tertiary, rgba(50, 50, 50, 0.5));
+  border-radius: 4px;
+  margin-bottom: 30px;
+}
+
+.novel-header {
+  display: flex;
+  gap: 40px;
+  margin-bottom: 50px;
+}
+
+.novel-cover-skeleton {
+  flex: 0 0 300px;
+  height: 450px;
+  position: relative;
+  border-radius: 8px;
+  background-color: var(--bg-secondary, rgba(40, 40, 40, 0.8));
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.novel-info-skeleton {
+  flex: 1;
+}
+
+.title-skeleton {
+  height: 38px;
+  width: 70%;
+  border-radius: 4px;
+  margin-bottom: 25px;
+}
+
+.genre-tags-skeleton {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 25px;
+}
+
+.genre-tag-skeleton {
+  height: 32px;
+  width: 100px;
+  border-radius: 20px;
+}
+
+.metadata-skeleton {
+  margin-bottom: 30px;
+}
+
+.status-skeleton {
+  height: 26px;
+  width: 120px;
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+
+.author-skeleton, 
+.rating-skeleton, 
+.chapters-skeleton, 
+.views-skeleton {
+  height: 18px;
+  width: 60%;
+  border-radius: 4px;
+  margin-bottom: 12px;
+}
+
+.rating-skeleton {
+  width: 140px;
+}
+
+.actions-skeleton {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.btn-skeleton {
+  height: 40px;
+  border-radius: 4px;
+}
+
+.primary-skeleton {
+  width: 140px;
+  background-color: rgba(52, 152, 219, 0.3);
+}
+
+.secondary-skeleton {
+  width: 130px;
+  background-color: rgba(236, 240, 241, 0.1);
+}
+
+.tabs-skeleton {
+  display: flex;
+  border-bottom: 1px solid var(--border-color, rgba(60, 60, 60, 0.5));
+  margin-bottom: 25px;
+}
+
+.tab-skeleton {
+  width: 120px;
+  height: 40px;
+  border-radius: 4px;
+  margin-right: 20px;
+}
+
+.content-skeleton {
+  padding: 10px 0 40px;
+}
+
+.title-skeleton {
+  height: 28px;
+  width: 250px;
+  margin-bottom: 20px;
+}
+
+.text-line-skeleton {
+  height: 16px;
+  width: 100%;
+  border-radius: 4px;
+  margin-bottom: 12px;
+}
+
+.text-line-skeleton:nth-child(even) {
+  width: 92%;
+}
+
+.text-line-skeleton:nth-child(3n) {
+  width: 96%;
+}
+
+.text-line-skeleton:last-child {
+  width: 70%;
+}
+
+@media (max-width: 768px) {
+  .novel-header {
+    flex-direction: column;
+  }
+  
+  .novel-cover-skeleton {
+    max-width: 300px;
+    height: 450px;
+    margin: 0 auto 30px;
+  }
+
+  .title-skeleton, .author-skeleton, .rating-skeleton, .chapters-skeleton, .views-skeleton {
+    width: 100%;
+  }
+}
+
+/* Comments Skeleton */
+.comments-skeleton {
+  margin-top: 40px;
+}
+
+.comment-form-skeleton {
+  height: 100px;
+  width: 100%;
+  border-radius: 8px;
+  margin-bottom: 30px;
+}
+
+.comments-list-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.comment-skeleton {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.comment-header-skeleton {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.avatar-skeleton {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  margin-right: 12px;
+}
+
+.username-skeleton {
+  height: 18px;
+  width: 120px;
+  border-radius: 4px;
+}
+
+.comment-content-skeleton {
+  height: 16px;
+  width: 100%;
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+
+/* Table of Contents Skeleton */
+.toc-skeleton {
+  margin-top: 20px;
+}
+
+.latest-chapter-skeleton {
+  display: flex;
+  align-items: center;
+  padding: 15px 0;
+  margin-bottom: 25px;
+  border-bottom: 1px solid var(--border-color, rgba(60, 60, 60, 0.5));
+}
+
+.latest-label-skeleton {
+  height: 18px;
+  width: 120px;
+  border-radius: 4px;
+  margin-right: 15px;
+}
+
+.latest-title-skeleton {
+  height: 18px;
+  flex: 1;
+  border-radius: 4px;
+}
+
+.chapters-grid-skeleton {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 40px;
+  row-gap: 15px;
+}
+
+.chapter-skeleton {
+  height: 40px;
+  width: 100%;
+  border-radius: 4px;
+}
+
+@media (max-width: 768px) {
+  .chapters-grid-skeleton {
+    grid-template-columns: 1fr;
+  }
+  
+  .latest-chapter-skeleton {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .latest-label-skeleton {
+    margin-bottom: 10px;
+  }
+}
+
+/* Comment Loading Skeleton */
+.loading-comments-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: fade-in 0.3s ease-in;
+}
+
+/* Chapters Loading Skeleton */
+.loading-chapters-skeleton {
+  animation: fade-in 0.3s ease-in;
+}

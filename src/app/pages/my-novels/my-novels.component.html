@@ -26,9 +26,32 @@
     <button class="create-button" (click)="onCreateNovel()">Create New Novel</button>
   </div>
 
-  <div class="loading-indicator" *ngIf="isLoading">
-    <div class="spinner"></div>
-    <p>Loading...</p>
+  <!-- Skeleton loader -->
+  <div class="skeleton-loader" *ngIf="isLoading">
+    <div class="novel-list">
+      <div class="novel-item skeleton" *ngFor="let i of [1,2,3,4,5,6]">
+        <div class="novel-item-content">
+          <div class="novel-cover-skeleton shimmer-effect"></div>
+          <div class="novel-content">
+            <div class="novel-title-skeleton shimmer-effect"></div>
+            <div class="novel-description-skeleton shimmer-effect"></div>
+            <div class="novel-description-skeleton shimmer-effect" style="width: 85%;"></div>
+            <div class="novel-description-skeleton shimmer-effect" style="width: 70%;"></div>
+            <div class="novel-meta-skeleton">
+              <div class="novel-genre-skeleton shimmer-effect"></div>
+              <div class="novel-chapters-skeleton shimmer-effect"></div>
+              <div class="novel-status-skeleton shimmer-effect"></div>
+            </div>
+          </div>
+        </div>
+        <div class="novel-actions-skeleton">
+          <div class="action-btn-skeleton shimmer-effect"></div>
+          <div class="action-btn-skeleton shimmer-effect"></div>
+          <div class="action-btn-skeleton shimmer-effect"></div>
+          <div class="action-btn-skeleton shimmer-effect"></div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div class="error-message general-error" *ngIf="errorMessage">
@@ -272,9 +295,18 @@
       </div>
       
       <div class="modal-body">
-        <div class="loading-indicator" *ngIf="isLoadingChapters">
-          <div class="spinner"></div>
-          <p>Loading chapters...</p>
+        <!-- Chapter loading skeleton -->
+        <div class="chapters-loading-skeleton" *ngIf="isLoadingChapters">
+          <div class="chapter-item-skeleton" *ngFor="let i of [1,2,3,4,5]">
+            <div class="chapter-info-skeleton">
+              <div class="chapter-number-skeleton shimmer-effect"></div>
+              <div class="chapter-title-skeleton shimmer-effect"></div>
+              <div class="chapter-date-skeleton shimmer-effect"></div>
+            </div>
+            <div class="chapter-actions-skeleton">
+              <div class="delete-chapter-btn-skeleton shimmer-effect"></div>
+            </div>
+          </div>
         </div>
 
         <div class="empty-chapters" *ngIf="!isLoadingChapters && novelChapters.length === 0">

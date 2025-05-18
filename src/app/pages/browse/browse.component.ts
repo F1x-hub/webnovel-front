@@ -12,6 +12,14 @@ interface StatusOption {
   label: string;
 }
 
+interface NovelApiResponse {
+  novels: Novel[];
+  totalPages: number;
+  totalItems: number;
+  currentPage: number;
+  pageSize: number;
+}
+
 @Component({
   selector: 'app-browse',
   templateUrl: './browse.component.html',
@@ -22,6 +30,7 @@ export class BrowseComponent implements OnInit, OnDestroy {
   currentPage = 1;
   pageSize = 10;
   totalPages = 1;
+  totalItems = 0;
   
   // Filter and sort options
   filters: NovelFilterOptions = {
@@ -43,6 +52,7 @@ export class BrowseComponent implements OnInit, OnDestroy {
   loading = false;
   error: string | null = null;
   loadingGenres = false;
+  maxVisiblePages = 10;
 
   constructor(
     private novelService: NovelService,
@@ -80,9 +90,6 @@ export class BrowseComponent implements OnInit, OnDestroy {
       if (params['sortBy']) {
         this.filters.sortBy = params['sortBy'] as 'popular' | 'rating' | 'newest' | 'a-z';
       }
-      
-      // Initialize totalPages, so it's not less than the current page
-      this.totalPages = Math.max(this.totalPages, this.currentPage);
       
       this.loadNovels();
     });
@@ -168,22 +175,20 @@ export class BrowseComponent implements OnInit, OnDestroy {
     this.novelService.getNovels(this.filters)
       .pipe(finalize(() => this.loading = false))
       .subscribe({
-        next: (data) => {
+        next: (response: NovelApiResponse) => {
           // Set the image URL for each novel
-          this.novels = data.map(novel => {
+          this.novels = response.novels.map(novel => {
             if (novel.id) {
               novel.imageUrl = this.novelService.getNovelImageUrl(novel.id);
             }
             return novel;
           });
           
-          // Always ensure the current page is included in totalPages
-          this.totalPages = Math.max(this.totalPages, this.currentPage);
-          
-          // If we received exactly pageSize novels, assume there are more pages
-          if (data.length === this.pageSize) {
-            this.totalPages = Math.max(this.totalPages, this.currentPage + 1);
-          }
+          // Set pagination data from API response
+          this.totalPages = response.totalPages;
+          this.totalItems = response.totalItems;
+          this.currentPage = response.currentPage;
+          this.pageSize = response.pageSize;
         },
         error: (err) => {
           console.error('Error loading novels:', err);
@@ -286,7 +291,20 @@ export class BrowseComponent implements OnInit, OnDestroy {
   }
 
   getPageNumbers(): number[] {
-    return Array.from({ length: this.totalPages }, (_, i) => i + 1);
+    if (this.totalPages <= this.maxVisiblePages) {
+      return Array.from({ length: this.totalPages }, (_, i) => i + 1);
+    }
+    
+    // Show maximum 10 page buttons with current page in the middle when possible
+    let startPage = Math.max(1, this.currentPage - Math.floor(this.maxVisiblePages / 2));
+    let endPage = startPage + this.maxVisiblePages - 1;
+    
+    if (endPage > this.totalPages) {
+      endPage = this.totalPages;
+      startPage = Math.max(1, endPage - this.maxVisiblePages + 1);
+    }
+    
+    return Array.from({ length: (endPage - startPage) + 1 }, (_, i) => startPage + i);
   }
 
   // Listen for popstate event (browser back/forward button)

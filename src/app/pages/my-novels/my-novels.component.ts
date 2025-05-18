@@ -64,6 +64,9 @@ export class MyNovelsComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    // Scroll to top of page when component initializes
+    window.scrollTo(0, 0);
+    
     if (!this.authService.isLoggedIn) {
       this.router.navigate(['/auth/login']);
       return;
@@ -115,6 +118,9 @@ export class MyNovelsComponent implements OnInit, OnDestroy {
     this.isLoading = true;
     this.errorMessage = '';
     this.imagesLoaded = {}; // Reset images loaded state
+    
+    // Scroll to top when loading novels, especially useful after novel creation
+    window.scrollTo(0, 0);
     
     const userId = this.authService.currentUserValue?.id;
     if (!userId) {
@@ -498,6 +504,11 @@ export class MyNovelsComponent implements OnInit, OnDestroy {
     this.selectedFile = null;
     this.imagePreview = null;
     this.loadUserNovels();
+    
+    // Ensure page scrolls to top to show the success message
+    setTimeout(() => {
+      window.scrollTo(0, 0);
+    }, 100);
   }
 
   showDeleteConfirm(novelId: number | undefined): void {

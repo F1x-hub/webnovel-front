@@ -5,6 +5,14 @@ import { tap, catchError } from 'rxjs/operators';
 import { Novel } from '../components/novel-card/novel-card.component';
 import { environment } from '../../environments/environment';
 
+export interface NovelApiResponse {
+  novels: Novel[];
+  totalPages: number;
+  totalItems: number;
+  currentPage: number;
+  pageSize: number;
+}
+
 export interface NovelFilterOptions {
   pageNumber?: number;
   pageSize?: number;
@@ -78,7 +86,7 @@ export class NovelService {
 
   constructor(private http: HttpClient) {}
 
-  getNovels(options: NovelFilterOptions = {}): Observable<Novel[]> {
+  getNovels(options: NovelFilterOptions = {}): Observable<NovelApiResponse> {
     const { pageNumber = 1, pageSize = 10, genreId, status, sortBy, userId = 0 } = options;
     let url = `${this.apiUrl}/api/Novel/get-all-novels?pageNumber=${pageNumber}&pageSize=${pageSize}&userId=${userId}`;
     
@@ -94,11 +102,17 @@ export class NovelService {
       url += `&sortBy=${sortBy}`;
     }
     
-    return this.http.get<Novel[]>(url)
+    return this.http.get<NovelApiResponse>(url)
       .pipe(
         catchError(error => {
           if (error.status === 404 && error.error === 'Novel not found.') {
-            return of([]);
+            return of({
+              novels: [],
+              totalPages: 0,
+              totalItems: 0,
+              currentPage: pageNumber,
+              pageSize: pageSize
+            });
           }
           // For other errors, rethrow
           throw error;

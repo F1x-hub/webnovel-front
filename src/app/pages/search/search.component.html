@@ -56,10 +56,21 @@
     </div>
 
     <div class="search-content">
-      <!-- Loading state -->
-      <div class="loading-state" *ngIf="loading">
-        <div class="loader"></div>
-        <p>Searching novels...</p>
+      <!-- Loading state with skeleton loader -->
+      <div class="search-content" *ngIf="loading">
+        <div class="novels-skeleton">
+          <div class="novel-grid-skeleton">
+            <div class="novel-card-skeleton" *ngFor="let i of [1,2,3,4,5,6,7,8,9,10]">
+              <div class="novel-cover-skeleton shimmer-effect"></div>
+              <div class="novel-info-skeleton">
+                <div class="novel-title-skeleton shimmer-effect"></div>
+                <div class="novel-author-skeleton shimmer-effect"></div>
+                <div class="novel-genre-skeleton shimmer-effect"></div>
+                <div class="novel-rating-skeleton shimmer-effect"></div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Error state -->

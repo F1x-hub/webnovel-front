@@ -98,7 +98,7 @@ export class SearchModalComponent implements OnInit, OnDestroy {
           }
         });
         
-        this.searchResults = results.slice(0, 7); // Limit to 7 results for better UI
+        this.searchResults = results; // Показывать все результаты
         console.log('Search results:', this.searchResults.length, 'total results');
         this.isLoading = false;
         this.selectedIndex = -1; // Reset selection

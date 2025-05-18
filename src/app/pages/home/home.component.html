@@ -1,9 +1,22 @@
 <div class="container">
   <section class="weekly-book">
     <h2 class="section-title">Weekly Popular Books</h2>
-    <div *ngIf="loading" class="loading-spinner">
-      <div class="spinner"></div>
+    
+    <!-- Skeleton loader for weekly books -->
+    <div *ngIf="loading" class="novels-skeleton">
+      <div class="novel-grid-skeleton">
+        <div class="novel-card-skeleton" *ngFor="let i of [1,2,3,4,5,6,7,8,9,10]">
+          <div class="novel-cover-skeleton shimmer-effect"></div>
+          <div class="novel-info-skeleton">
+            <div class="novel-title-skeleton shimmer-effect"></div>
+            <div class="novel-author-skeleton shimmer-effect"></div>
+            <div class="novel-genre-skeleton shimmer-effect"></div>
+            <div class="novel-rating-skeleton shimmer-effect"></div>
+          </div>
+        </div>
+      </div>
     </div>
+
     <div *ngIf="!loading && weeklyBooks.length === 0" class="no-data">
       No popular books found for this week.
     </div>
@@ -14,9 +27,22 @@
 
   <section class="ranking">
     <h2 class="section-title">Ranking</h2>
-    <div *ngIf="loadingRanked" class="loading-spinner">
-      <div class="spinner"></div>
+    
+    <!-- Skeleton loader for ranked novels -->
+    <div *ngIf="loadingRanked" class="novels-skeleton">
+      <div class="novel-grid-skeleton">
+        <div class="novel-card-skeleton" *ngFor="let i of [1,2,3,4,5,6,7,8,9,10]">
+          <div class="novel-cover-skeleton shimmer-effect"></div>
+          <div class="novel-info-skeleton">
+            <div class="novel-title-skeleton shimmer-effect"></div>
+            <div class="novel-author-skeleton shimmer-effect"></div>
+            <div class="novel-genre-skeleton shimmer-effect"></div>
+            <div class="novel-rating-skeleton shimmer-effect"></div>
+          </div>
+        </div>
+      </div>
     </div>
+    
     <div *ngIf="!loadingRanked && topRankedNovels.length === 0" class="no-data">
       No ranked novels found.
     </div>

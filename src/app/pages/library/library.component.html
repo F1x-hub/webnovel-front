@@ -1,9 +1,21 @@
 <div class="container">
   <h1>My Library</h1>
   
-  <div *ngIf="loading" class="loading-container">
-    <div class="spinner"></div>
-    <p>Loading library...</p>
+  <!-- Skeleton loader -->
+  <div *ngIf="loading" class="novels-skeleton">
+    <div class="novel-grid-skeleton">
+      <div class="novel-card-skeleton" *ngFor="let i of [1,2,3,4,5,6,7,8,9,10,11,12]">
+        <div class="novel-cover-skeleton shimmer-effect"></div>
+        <div class="novel-info-skeleton">
+          <div class="novel-title-skeleton shimmer-effect"></div>
+          <div class="novel-author-skeleton shimmer-effect"></div>
+          <div class="novel-genre-skeleton shimmer-effect"></div>
+          <div class="novel-rating-skeleton shimmer-effect"></div>
+          <!-- Progress bar for library items -->
+          <div class="novel-progress-skeleton shimmer-effect"></div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div *ngIf="error" class="error-message">
