@@ -125,7 +125,6 @@ export class NovelDetailComponent implements OnInit, OnDestroy {
     const navigation = this.router.getCurrentNavigation();
     if (navigation?.extras.state) {
       this.previousUrl = navigation.extras.state['prevUrl'] as string;
-      console.log('Previous URL from novel-detail:', this.previousUrl);
     }
   }
   
@@ -288,7 +287,6 @@ export class NovelDetailComponent implements OnInit, OnDestroy {
         // Set the image URL using the service
         if (novel.id) {
           novel.imageUrl = this.novelService.getNovelImageUrl(novel.id);
-          console.log("Novel image URL set to:", novel.imageUrl);
           
           // Get the rating for the novel
           this.novelService.getNovelRating(novel.id).subscribe({
@@ -334,10 +332,8 @@ export class NovelDetailComponent implements OnInit, OnDestroy {
   }
 
   fetchChapters(novelId: number): void {
-    console.log('Fetching chapters for novel ID:', novelId);
     this.novelService.getAllChapters(novelId).subscribe({
       next: (chapters) => {
-        console.log('Chapters retrieved:', chapters);
         this.chapters = chapters || [];
         this.organizeChapters();
       },
@@ -387,18 +383,12 @@ export class NovelDetailComponent implements OnInit, OnDestroy {
 
   startReading(): void {
     if (this.novel?.id) {
-      console.log(`startReading: isLoggedIn=${this.isLoggedIn()}, lastReadChapter=${this.lastReadChapter}`);
-      
       let chapterToRead = 1;
       
       if (this.isLoggedIn() && this.lastReadChapter !== null && this.lastReadChapter !== undefined) {
         chapterToRead = this.lastReadChapter;
-        console.log(`Using last read chapter: ${chapterToRead}`);
-      } else {
-        console.log('Using default chapter: 1');
       }
       
-      console.log(`Navigating to chapter: ${chapterToRead}`);
       this.router.navigate(['/read', this.novel.id, chapterToRead]);
     }
   }
@@ -413,7 +403,6 @@ export class NovelDetailComponent implements OnInit, OnDestroy {
 
   checkLibraryStatus(novelId: number): void {
     if (!this.currentUser?.id) {
-      console.log('No user logged in, skipping library check');
       this.isInLibrary = false;
       return;
     }
@@ -421,16 +410,13 @@ export class NovelDetailComponent implements OnInit, OnDestroy {
     // Check if token exists
     const token = localStorage.getItem('token');
     if (!token) {
-      console.log('No authentication token, skipping library check');
       this.isInLibrary = false;
       return;
     }
 
-    console.log('Checking library status for novel:', novelId);
     this.libraryService.isNovelInUserLibrary(this.currentUser.id, novelId).subscribe({
       next: (result) => {
         this.isInLibrary = result;
-        console.log('Novel in library status:', result);
       },
       error: (err) => {
         console.error('Error checking library status:', err);
@@ -442,25 +428,21 @@ export class NovelDetailComponent implements OnInit, OnDestroy {
 
   toggleLibrary(): void {
     if (!this.currentUser?.id || !this.novel?.id || this.libraryLoading) {
-      console.log('Cannot toggle library: missing user, novel, or operation in progress');
       return;
     }
     
     // Check if token exists
     const token = localStorage.getItem('token');
     if (!token) {
-      console.log('No authentication token, cannot toggle library');
       return;
     }
     
     this.libraryLoading = true;
-    console.log('Toggling library status for novel:', this.novel.id);
     this.libraryService.toggleNovelInLibrary(this.currentUser.id, this.novel.id).subscribe({
       next: (response) => {
         // Update the UI state
         this.isInLibrary = !this.isInLibrary;
         this.libraryLoading = false;
-        console.log('Library operation successful:', response);
         
         // Verify the updated status after toggling
         if (this.novel && this.novel.id) {
@@ -539,29 +521,18 @@ export class NovelDetailComponent implements OnInit, OnDestroy {
   }
 
   checkLastReadChapter(userId: number, novelId: number): void {
-    console.log(`Checking last read chapter for user: ${userId}, novel: ${novelId}`);
     this.libraryService.getUserLibrary(userId).subscribe({
       next: (libraryEntries) => {
-        console.log('Library entries received:', libraryEntries);
         const novelEntry = libraryEntries.find(entry => entry.novelId === novelId);
-        console.log('Found novel entry:', novelEntry);
         
         // Проверим структуру объекта
         if (novelEntry) {
-          console.log('Novel entry properties:', Object.keys(novelEntry));
-          
           // В C# свойства именуются в PascalCase
           if (novelEntry.LastReadChapter !== undefined) {
             this.lastReadChapter = novelEntry.LastReadChapter;
-            console.log(`Last read chapter set to: ${this.lastReadChapter} (using LastReadChapter)`);
           } else if (novelEntry.lastReadChapter !== undefined) {
             this.lastReadChapter = novelEntry.lastReadChapter;
-            console.log(`Last read chapter set to: ${this.lastReadChapter} (using lastReadChapter)`);
-          } else {
-            console.log('No last read chapter property found in the object');
           }
-        } else {
-          console.log('No novel entry found in library');
         }
       },
       error: (err) => {
@@ -574,8 +545,6 @@ export class NovelDetailComponent implements OnInit, OnDestroy {
     const isLoggedIn = this.isLoggedIn();
     const hasLastReadChapter = this.lastReadChapter && this.lastReadChapter >= 1;
     const buttonText = isLoggedIn && hasLastReadChapter ? 'Continue Reading' : 'Start Reading';
-    
-    console.log(`Reading button text: ${buttonText} (isLoggedIn: ${isLoggedIn}, lastReadChapter: ${this.lastReadChapter})`);
     
     return buttonText;
   }

@@ -56,15 +56,11 @@ export class NovelCardComponent {
     // Это гарантирует, что браузер правильно обработает "назад"
     const currentUrl = this.location.path();
     
-    console.log(`NovelCard navigation: id=${this.novel.id}, currentChapter=${this.novel.currentChapter}, currentUrl=${currentUrl}`);
-    
     if (this.novel.currentChapter && this.novel.currentChapter >= 1) {
-      console.log(`Navigating to chapter: ${this.novel.currentChapter}`);
       this.router.navigate(['/read', this.novel.id, this.novel.currentChapter], { 
         state: { prevUrl: currentUrl }
       });
     } else {
-      console.log('Navigating to novel details page');
       this.router.navigate(['/novel', this.novel.id], { 
         state: { prevUrl: currentUrl }
       });

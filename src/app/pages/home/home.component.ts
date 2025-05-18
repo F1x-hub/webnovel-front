@@ -38,7 +38,6 @@ export class HomeComponent implements OnInit {
     this.novelService.getMostPopularLastWeek(10, userId)
       .subscribe({
         next: (data) => {
-          console.log('Weekly popular books data:', data);
           if (Array.isArray(data)) {
           this.weeklyBooks = data.map(novel => {
             if (novel.id) {
@@ -47,7 +46,6 @@ export class HomeComponent implements OnInit {
             return novel;
           });
           } else {
-            console.error('Unexpected response format:', data);
             this.weeklyBooks = [];
           }
           this.loading = false;
@@ -67,7 +65,6 @@ export class HomeComponent implements OnInit {
     this.novelService.getNovelsByRating(10, userId)
       .subscribe({
         next: (data) => {
-          console.log('Top ranked novels data:', data);
           if (Array.isArray(data)) {
           this.topRankedNovels = data.map(novel => {
             if (novel.id) {
@@ -76,7 +73,6 @@ export class HomeComponent implements OnInit {
             return novel;
           });
           } else {
-            console.error('Unexpected response format:', data);
             this.topRankedNovels = [];
           }
           this.loadingRanked = false;

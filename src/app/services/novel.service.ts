@@ -76,9 +76,7 @@ export class NovelService {
   private readonly IMAGE_CACHE_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
   private readonly DEFAULT_COVER_IMAGE = 'assets/images/default-cover.png';
 
-  constructor(private http: HttpClient) {
-    console.log('NovelService initialized with API URL:', this.apiUrl);
-  }
+  constructor(private http: HttpClient) {}
 
   getNovels(options: NovelFilterOptions = {}): Observable<Novel[]> {
     const { pageNumber = 1, pageSize = 10, genreId, status, sortBy, userId = 0 } = options;
@@ -100,7 +98,6 @@ export class NovelService {
       .pipe(
         catchError(error => {
           if (error.status === 404 && error.error === 'Novel not found.') {
-            console.log('No novels found with the specified filters, returning empty array');
             return of([]);
           }
           // For other errors, rethrow
@@ -140,9 +137,6 @@ export class NovelService {
     // Clear image cache when novel is updated
     this.clearImageCache(novelId);
     
-    console.log(`Sending update to: ${this.apiUrl}/api/Novel/update-novel/${novelId}/${userId}`);
-    console.log('Request body:', JSON.stringify(novelData));
-    
     // Ensure data is properly formatted according to API expectations
     const formattedData = {
       title: novelData.title,
@@ -157,8 +151,6 @@ export class NovelService {
     })
       .pipe(
         catchError(error => {
-          console.error('Novel update failed:', error);
-          // Try to extract a meaningful error message from the response
           let errorMessage = 'Failed to update novel';
           if (error.error && typeof error.error === 'string') {
             try {
@@ -191,19 +183,13 @@ export class NovelService {
   
   getAllChapters(novelId: number): Observable<Chapter[]> {
     // Try the new endpoint first
-    console.log(`Calling direct API to get chapters: ${this.apiUrl}/api/Chapter/novel-chapters-direct/${novelId}`);
     return this.http.get<Chapter[]>(`${this.apiUrl}/api/Chapter/novel-chapters-direct/${novelId}`)
       .pipe(
-        tap(chapters => console.log('Retrieved chapters count:', chapters?.length || 0)),
         catchError(directError => {
-          console.warn('Direct API failed, trying original endpoint:', directError);
-          
           // If the direct endpoint fails, fall back to the original endpoint
           return this.http.get<Chapter[]>(`${this.apiUrl}/api/Chapter/novel-all-chapters/${novelId}`)
             .pipe(
-              tap(chapters => console.log('Retrieved chapters count from fallback:', chapters?.length || 0)),
               catchError(error => {
-                console.error('All API attempts failed when fetching chapters:', error);
                 return of([]);
               })
             );
@@ -238,7 +224,6 @@ export class NovelService {
     
     // No cache or expired, return the API URL
     const imageUrl = `${this.apiUrl}/api/Image/get-novel-image/${novelId}?t=${new Date().getTime()}`;
-    console.log(`Generated image URL: ${imageUrl}`);
     
     // Fetch and cache the image
     this.fetchAndCacheImage(novelId, imageUrl);
@@ -257,7 +242,7 @@ export class NovelService {
         this.clearOldestCachedImages(5);
       }
     } catch (e) {
-      console.warn('Error checking localStorage:', e);
+      // Suppressing error logging
     }
 
     const xhr = new XMLHttpRequest();
@@ -270,7 +255,6 @@ export class NovelService {
         
         // Если размер изображения больше 1MB, не сохраняем в кэш
         if (blob.size > 1024 * 1024) {
-          console.log(`Image for novel ${novelId} is too large (${Math.round(blob.size/1024)}KB), not caching`);
           return;
         }
         
@@ -280,13 +264,11 @@ export class NovelService {
           this.saveImageToCache(novelId, dataUrl);
         };
         reader.readAsDataURL(blob);
-      } else {
-        console.error('Error fetching image, using default');
       }
     };
     
     xhr.onerror = () => {
-      console.error('Error fetching image, using default');
+      // Suppressing error logging
     };
     
     xhr.send();
@@ -299,7 +281,6 @@ export class NovelService {
       
       // Если изображение слишком большое (>1MB), не кэшируем его
       if (estimatedSize > 1024 * 1024) {
-        console.log(`Image for novel ${novelId} is too large (${Math.round(estimatedSize/1024)}KB), skipping cache`);
         return;
       }
 
@@ -313,11 +294,8 @@ export class NovelService {
       
       localStorage.setItem(`${this.IMAGE_CACHE_PREFIX}${novelId}`, JSON.stringify(cacheItem));
     } catch (error) {
-      console.error('Error caching image:', error);
-      
       // При ошибке квоты, очищаем кэш изображений
       if (error instanceof DOMException && (error.name === 'QuotaExceededError' || error.code === 22)) {
-        console.log('Storage quota exceeded, clearing image cache');
         this.clearOldestCachedImages(5); // Удаляем 5 самых старых кэшированных изображений
       }
     }
@@ -333,7 +311,7 @@ export class NovelService {
         this.clearOldestCachedImages(3); // Удаляем несколько самых старых
       }
     } catch (error) {
-      console.error('Error cleaning up cache:', error);
+      // Suppressing error logging
     }
   }
 
@@ -364,10 +342,9 @@ export class NovelService {
       const itemsToRemove = Math.min(count, cacheItems.length);
       for (let i = 0; i < itemsToRemove; i++) {
         localStorage.removeItem(cacheItems[i].key);
-        console.log(`Removed old cache item: ${cacheItems[i].key}`);
       }
     } catch (error) {
-      console.error('Error clearing oldest cached images:', error);
+      // Suppressing error logging
     }
   }
 
@@ -386,7 +363,6 @@ export class NovelService {
       
       return parsedCache;
     } catch (error) {
-      console.error('Error retrieving cached image:', error);
       return null;
     }
   }
@@ -395,13 +371,12 @@ export class NovelService {
     try {
       localStorage.removeItem(`${this.IMAGE_CACHE_PREFIX}${novelId}`);
     } catch (error) {
-      console.error('Error clearing image cache:', error);
+      // Suppressing error logging
     }
   }
 
   clearAllImageCache(): void {
     try {
-      console.log('Clearing all image cache');
       const keysToRemove: string[] = [];
       
       // Сначала соберем все ключи, которые нужно удалить
@@ -417,13 +392,11 @@ export class NovelService {
         try {
           localStorage.removeItem(key);
         } catch (e) {
-          console.warn(`Failed to remove item ${key}:`, e);
+          // Suppressing error logging
         }
       });
-      
-      console.log(`Cleared ${keysToRemove.length} cached images`);
     } catch (error) {
-      console.error('Error clearing all image cache:', error);
+      // Suppressing error logging
     }
   }
 
@@ -435,7 +408,6 @@ export class NovelService {
     return this.http.get<Novel[]>(`${this.apiUrl}/api/Rating/most-popular-last-week?limit=${limit}`)
       .pipe(
         catchError(error => {
-          console.error('Error fetching popular books:', error);
           return of([]);
         })
       );
@@ -445,7 +417,6 @@ export class NovelService {
     return this.http.get<Novel[]>(`${this.apiUrl}/api/Rating/by-rating?limit=${limit}&userId=${userId}`)
       .pipe(
         catchError(error => {
-          console.error('Error fetching ranked novels:', error);
           return of([]);
         })
       );

@@ -58,8 +58,6 @@ export class BrowseComponent implements OnInit, OnDestroy {
     
     // Subscribe to query parameter changes
     this.queryParamsSubscription = this.route.queryParams.subscribe(params => {
-      console.log('Query params changed:', params);
-      
       // Parse page parameter
       const page = Number(params['page']);
       if (page && !isNaN(page) && page > 0) {
@@ -118,7 +116,6 @@ export class BrowseComponent implements OnInit, OnDestroy {
       const page = Number(pageParam);
       if (!isNaN(page) && page > 0) {
         if (page !== this.currentPage) {
-          console.log(`Updating current page from ${this.currentPage} to ${page} based on URL`);
           this.currentPage = page;
           this.filters.pageNumber = page;
           
@@ -129,7 +126,6 @@ export class BrowseComponent implements OnInit, OnDestroy {
         }
       }
     } else if (this.currentPage !== 1) {
-      console.log('No page param in URL, resetting to page 1');
       this.currentPage = 1;
       this.filters.pageNumber = 1;
       this.loadNovels();
@@ -188,8 +184,6 @@ export class BrowseComponent implements OnInit, OnDestroy {
           if (data.length === this.pageSize) {
             this.totalPages = Math.max(this.totalPages, this.currentPage + 1);
           }
-          
-          console.log(`Loaded ${data.length} novels. Current page: ${this.currentPage}, Total pages: ${this.totalPages}`);
         },
         error: (err) => {
           console.error('Error loading novels:', err);
@@ -298,7 +292,6 @@ export class BrowseComponent implements OnInit, OnDestroy {
   // Listen for popstate event (browser back/forward button)
   @HostListener('window:popstate', ['$event'])
   onPopState(event: PopStateEvent): void {
-    console.log('Back/forward button pressed, syncing state with URL');
     // Small delay to allow URL to update
     setTimeout(() => {
       this.syncStateWithUrl();
