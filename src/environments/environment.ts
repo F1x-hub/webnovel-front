@@ -1,7 +1,6 @@
 export const environment = {
   production: false,
-  apiUrl: 'https://localhost:7188',
-  appBaseUrl: 'https://localhost:4200'
+  apiUrl: 'https://localhost:7188'
 }; 
 
 //https://localhost:7188

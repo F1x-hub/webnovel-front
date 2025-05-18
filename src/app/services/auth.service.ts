@@ -479,22 +479,20 @@ export class AuthService {
   }
 
   googleLogin(returnUrl: string = '/'): Observable<any> {
-    // Use environment variable for appBaseUrl to ensure HTTPS
-    const appUrl = environment.appBaseUrl;
-    const callbackUrl = `${appUrl}/auth/callback`;
+    // Fixed redirect URI for Google OAuth
+    const redirectUri = 'https://api.webnovel-project.click/signin-google';
     
     // Redirect to backend to initiate Google login
-    window.location.href = `${this.API_URL}/Auth/google-login?returnUrl=${encodeURIComponent(callbackUrl)}`;
+    window.location.href = `${this.API_URL}/Auth/google-login?redirectUri=${encodeURIComponent(redirectUri)}&returnUrl=${encodeURIComponent(returnUrl)}`;
     return new Observable();
   }
 
   googleRegister(): Observable<any> {
-    // Use environment variable for appBaseUrl to ensure HTTPS
-    const appUrl = environment.appBaseUrl;
-    const callbackUrl = `${appUrl}/auth/callback`;
+    // Fixed redirect URI for Google OAuth
+    const redirectUri = 'https://api.webnovel-project.click/signin-google';
     
     // Redirect to backend to initiate Google registration
-    window.location.href = `${this.API_URL}/Auth/google-login?returnUrl=${encodeURIComponent(callbackUrl)}`;
+    window.location.href = `${this.API_URL}/Auth/google-login?redirectUri=${encodeURIComponent(redirectUri)}`;
     return new Observable();
   }
 
