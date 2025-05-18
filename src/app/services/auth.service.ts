@@ -479,8 +479,8 @@ export class AuthService {
   }
 
   googleLogin(returnUrl: string = '/'): Observable<any> {
-    // Ensure we're using HTTPS
-    const appUrl = this.ensureHttps(window.location.origin);
+    // Use environment variable for appBaseUrl to ensure HTTPS
+    const appUrl = environment.appBaseUrl;
     const callbackUrl = `${appUrl}/auth/callback`;
     
     // Redirect to backend to initiate Google login
@@ -489,8 +489,8 @@ export class AuthService {
   }
 
   googleRegister(): Observable<any> {
-    // Ensure we're using HTTPS
-    const appUrl = this.ensureHttps(window.location.origin);
+    // Use environment variable for appBaseUrl to ensure HTTPS
+    const appUrl = environment.appBaseUrl;
     const callbackUrl = `${appUrl}/auth/callback`;
     
     // Redirect to backend to initiate Google registration

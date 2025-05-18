@@ -4,6 +4,7 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { AuthService, ResetPasswordRequest } from '../../../services/auth.service';
 import { NotificationService } from '../../../services/notification.service';
 import { ThemeService } from '../../../services/theme.service';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-login',
@@ -178,9 +179,13 @@ export class LoginComponent implements OnInit {
     this.isLoading = true;
     this.errorMessage = '';
     
-    // Ensure we're using HTTPS for Google authentication
-    if (window.location.protocol === 'http:') {
-      window.location.href = window.location.href.replace('http:', 'https:');
+    // Ensure we're using the correct base URL with HTTPS
+    const currentUrl = window.location.href;
+    if (!currentUrl.startsWith(environment.appBaseUrl)) {
+      window.location.href = currentUrl.replace(
+        `${window.location.protocol}//${window.location.host}`,
+        environment.appBaseUrl
+      );
       return;
     }
     

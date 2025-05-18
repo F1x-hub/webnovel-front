@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../../services/auth.service';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-google-callback',
@@ -18,9 +19,16 @@ export class GoogleCallbackComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    // Ensure we're using HTTPS for the callback
-    if (window.location.protocol === 'http:') {
-      window.location.href = window.location.href.replace('http:', 'https:');
+    // Get the current protocol and host
+    const currentUrl = window.location.href;
+    const expectedUrl = `${environment.appBaseUrl}/auth/callback`;
+    
+    // Redirect if not using the expected URL (this ensures HTTPS)
+    if (!currentUrl.startsWith(expectedUrl)) {
+      window.location.href = currentUrl.replace(
+        `${window.location.protocol}//${window.location.host}`, 
+        environment.appBaseUrl
+      );
       return;
     }
 

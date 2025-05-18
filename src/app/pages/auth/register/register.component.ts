@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../services/auth.service';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-register',
@@ -40,6 +41,16 @@ export class RegisterComponent implements OnInit {
   signInWithGoogle(): void {
     this.isLoading = true;
     this.errorMessage = '';
+    
+    // Ensure we're using the correct base URL with HTTPS
+    const currentUrl = window.location.href;
+    if (!currentUrl.startsWith(environment.appBaseUrl)) {
+      window.location.href = currentUrl.replace(
+        `${window.location.protocol}//${window.location.host}`,
+        environment.appBaseUrl
+      );
+      return;
+    }
     
     try {
       this.authService.googleRegister().subscribe({
