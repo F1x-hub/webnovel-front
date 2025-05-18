@@ -178,13 +178,27 @@ export class LoginComponent implements OnInit {
     this.isLoading = true;
     this.errorMessage = '';
     
-    // Use the new secure redirect component for Google authentication
-    this.router.navigate(['/auth/google-redirect'], {
-      queryParams: {
-        mode: 'login',
-        returnUrl: this.router.url
-      }
-    });
+    // Ensure we're using HTTPS for Google authentication
+    if (window.location.protocol === 'http:') {
+      window.location.href = window.location.href.replace('http:', 'https:');
+      return;
+    }
+    
+    try {
+      // Get current URL to use as return URL after authentication
+      const returnUrl = this.router.url;
+      this.authService.googleLogin(returnUrl).subscribe({
+        error: (error) => {
+          console.error('Google login error:', error);
+          this.isLoading = false;
+          this.errorMessage = 'Failed to initialize Google sign-in. Please try again later.';
+        }
+      });
+    } catch (error) {
+      console.error('Google Sign-In initialization error:', error);
+      this.isLoading = false;
+      this.errorMessage = 'Failed to initialize Google sign-in. Please try again later.';
+    }
   }
   
   // Forgot password methods

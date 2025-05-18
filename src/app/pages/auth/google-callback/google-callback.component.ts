@@ -18,10 +18,9 @@ export class GoogleCallbackComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    // Strict HTTPS enforcement for OAuth callbacks
+    // Ensure we're using HTTPS for the callback
     if (window.location.protocol === 'http:') {
-      const httpsUrl = window.location.href.replace(/^http:/i, 'https:');
-      window.location.replace(httpsUrl);
+      window.location.href = window.location.href.replace('http:', 'https:');
       return;
     }
 
