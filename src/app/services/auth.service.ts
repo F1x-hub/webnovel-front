@@ -471,30 +471,30 @@ export class AuthService {
       );
   }
 
+  // Helper method to ensure URLs use HTTPS
   private ensureHttps(url: string): string {
-    if (url.startsWith('http:')) {
-      return url.replace('http:', 'https:');
-    }
-    return url;
+    return url.replace(/^http:/i, 'https:');
   }
 
   googleLogin(returnUrl: string = '/'): Observable<any> {
-    // Ensure we're using HTTPS
-    const appUrl = this.ensureHttps(window.location.origin);
+    // Always use HTTPS for OAuth callbacks
+    const appUrl = window.location.origin.replace(/^http:/i, 'https:');
     const callbackUrl = `${appUrl}/auth/callback`;
     
-    // Redirect to backend to initiate Google login
-    window.location.href = `${this.API_URL}/Auth/google-login?returnUrl=${encodeURIComponent(callbackUrl)}`;
+    // Redirect to backend to initiate Google login with explicit HTTPS
+    const apiUrl = this.API_URL.replace(/^http:/i, 'https:');
+    window.location.href = `${apiUrl}/Auth/google-login?returnUrl=${encodeURIComponent(callbackUrl)}`;
     return new Observable();
   }
 
   googleRegister(): Observable<any> {
-    // Ensure we're using HTTPS
-    const appUrl = this.ensureHttps(window.location.origin);
+    // Always use HTTPS for OAuth callbacks
+    const appUrl = window.location.origin.replace(/^http:/i, 'https:');
     const callbackUrl = `${appUrl}/auth/callback`;
     
-    // Redirect to backend to initiate Google registration
-    window.location.href = `${this.API_URL}/Auth/google-login?returnUrl=${encodeURIComponent(callbackUrl)}`;
+    // Redirect to backend to initiate Google registration with explicit HTTPS
+    const apiUrl = this.API_URL.replace(/^http:/i, 'https:');
+    window.location.href = `${apiUrl}/Auth/google-login?returnUrl=${encodeURIComponent(callbackUrl)}`;
     return new Observable();
   }
 

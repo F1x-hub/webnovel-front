@@ -10,6 +10,7 @@ import { VerifyComponent } from './verify/verify.component';
 import { AuthLayoutComponent } from './auth-layout/auth-layout.component';
 import { GoogleCallbackComponent } from './google-callback/google-callback.component';
 import { CompleteProfileComponent } from './complete-profile/complete-profile.component';
+import { GoogleAuthRedirectComponent } from '../../components/google-auth-redirect/google-auth-redirect.component';
 
 @NgModule({
   declarations: [
@@ -18,7 +19,8 @@ import { CompleteProfileComponent } from './complete-profile/complete-profile.co
     VerifyComponent,
     AuthLayoutComponent,
     GoogleCallbackComponent,
-    CompleteProfileComponent
+    CompleteProfileComponent,
+    GoogleAuthRedirectComponent
   ],
   imports: [
     CommonModule,

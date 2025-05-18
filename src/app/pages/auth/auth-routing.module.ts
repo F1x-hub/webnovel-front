@@ -5,6 +5,7 @@ import { LoginComponent } from './login/login.component';
 import { RegisterComponent } from './register/register.component';
 import { VerifyComponent } from './verify/verify.component';
 import { GoogleCallbackComponent } from './google-callback/google-callback.component';
+import { GoogleAuthRedirectComponent } from '../../components/google-auth-redirect/google-auth-redirect.component';
 
 const routes: Routes = [
   {
@@ -15,6 +16,7 @@ const routes: Routes = [
       { path: 'register', component: RegisterComponent },
       { path: 'verify', component: VerifyComponent },
       { path: 'callback', component: GoogleCallbackComponent },
+      { path: 'google-redirect', component: GoogleAuthRedirectComponent },
       { path: '', redirectTo: 'login', pathMatch: 'full' }
     ]
   }

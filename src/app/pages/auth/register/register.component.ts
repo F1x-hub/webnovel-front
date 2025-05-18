@@ -41,19 +41,13 @@ export class RegisterComponent implements OnInit {
     this.isLoading = true;
     this.errorMessage = '';
     
-    try {
-      this.authService.googleRegister().subscribe({
-        error: (error) => {
-          console.error('Google registration error:', error);
-          this.isLoading = false;
-          this.errorMessage = 'Failed to initialize Google registration. Please try again later.';
-        }
-      });
-    } catch (error) {
-      console.error('Google registration initialization error:', error);
-      this.isLoading = false;
-      this.errorMessage = 'Failed to initialize Google registration. Please try again later.';
-    }
+    // Use the new secure redirect component for Google authentication
+    this.router.navigate(['/auth/google-redirect'], {
+      queryParams: {
+        mode: 'register',
+        returnUrl: this.router.url
+      }
+    });
   }
 
   onFileSelected(event: Event): void {
