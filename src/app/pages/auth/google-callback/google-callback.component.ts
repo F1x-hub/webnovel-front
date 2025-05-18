@@ -18,34 +18,26 @@ export class GoogleCallbackComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    console.log('Google callback initiated, current URL:', window.location.href);
-    
-    // Ensure we're using HTTPS
+    // Ensure we're using HTTPS for the callback
     if (window.location.protocol === 'http:') {
-      console.warn('Protocol is HTTP, redirecting to HTTPS...');
       window.location.href = window.location.href.replace('http:', 'https:');
       return;
     }
 
     this.route.queryParams.subscribe(params => {
-      console.log('Query parameters received:', params);
-      
       const token = params['token'];
       const error = params['error'];
       
       if (error) {
         this.isLoading = false;
         this.errorMessage = `Authentication failed: ${error}`;
-        console.error('Authentication error from query params:', error);
         return;
       }
       
       if (token) {
-        console.log('Token received, processing...');
-        // Process the token
+        // Process the token using the new method
         this.authService.processAuthToken(token).subscribe({
           next: () => {
-            console.log('Token processed successfully, redirecting to home');
             this.isLoading = false;
             this.router.navigate(['/']);
           },
@@ -59,7 +51,6 @@ export class GoogleCallbackComponent implements OnInit {
         // If we don't have a token but no error either, something went wrong
         this.isLoading = false;
         this.errorMessage = 'No authentication data received. Please try again.';
-        console.warn('No token or error received in callback');
       }
     });
   }

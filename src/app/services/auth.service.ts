@@ -479,44 +479,22 @@ export class AuthService {
   }
 
   googleLogin(returnUrl: string = '/'): Observable<any> {
-    // Fixed redirect URI for Google OAuth - explicitly using HTTPS
-    const redirectUri = 'https://api.webnovel-project.click/signin-google';
-    
-    console.log('Using redirect URI for Google OAuth:', redirectUri);
-    
-    // Check if the API URL contains any redirect parameters already
-    const loginUrl = `${this.API_URL}/Auth/google-login`;
-    if (loginUrl.includes('redirectUri') || loginUrl.includes('redirect_uri')) {
-      console.warn('API URL already contains redirect URI parameters which may cause conflicts:', loginUrl);
-    }
-    
-    // Construct the full URL ensuring parameters are properly encoded
-    const fullLoginUrl = `${loginUrl}?redirectUri=${encodeURIComponent(redirectUri)}&returnUrl=${encodeURIComponent(returnUrl)}`;
-    console.log('Full Google login URL:', fullLoginUrl);
+    // Ensure we're using HTTPS
+    const appUrl = this.ensureHttps(window.location.origin);
+    const callbackUrl = `${appUrl}/auth/callback`;
     
     // Redirect to backend to initiate Google login
-    window.location.href = fullLoginUrl;
+    window.location.href = `${this.API_URL}/Auth/google-login?returnUrl=${encodeURIComponent(callbackUrl)}`;
     return new Observable();
   }
 
   googleRegister(): Observable<any> {
-    // Fixed redirect URI for Google OAuth - explicitly using HTTPS
-    const redirectUri = 'https://api.webnovel-project.click/signin-google';
-    
-    console.log('Using redirect URI for Google OAuth:', redirectUri);
-    
-    // Check if the API URL contains any redirect parameters already
-    const registerUrl = `${this.API_URL}/Auth/google-login`;
-    if (registerUrl.includes('redirectUri') || registerUrl.includes('redirect_uri')) {
-      console.warn('API URL already contains redirect URI parameters which may cause conflicts:', registerUrl);
-    }
-    
-    // Construct the full URL ensuring parameters are properly encoded
-    const fullRegisterUrl = `${registerUrl}?redirectUri=${encodeURIComponent(redirectUri)}`;
-    console.log('Full Google register URL:', fullRegisterUrl);
+    // Ensure we're using HTTPS
+    const appUrl = this.ensureHttps(window.location.origin);
+    const callbackUrl = `${appUrl}/auth/callback`;
     
     // Redirect to backend to initiate Google registration
-    window.location.href = fullRegisterUrl;
+    window.location.href = `${this.API_URL}/Auth/google-login?returnUrl=${encodeURIComponent(callbackUrl)}`;
     return new Observable();
   }
 
