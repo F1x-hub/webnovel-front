@@ -90,6 +90,7 @@
               <span class="novel-status" *ngIf="novel.status">
                 <span class="status-badge" [ngClass]="getStatusClass(novel.status)">{{ getStatusText(novel.status) }}</span>
               </span>
+              <span class="adult-content-badge" *ngIf="novel.isAdultContent">18+</span>
             </div>
           </div>
         </div>
@@ -104,8 +105,8 @@
   </div>
 
   <!-- Edit Novel Form -->
-  <div class="modal-overlay" *ngIf="editFormVisible">
-    <div class="modal-content">
+  <div class="modal-overlay" *ngIf="editFormVisible" (click)="cancelEdit()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h2>Edit Novel</h2>
         <button class="close-button" (click)="cancelEdit()">&times;</button>
@@ -142,10 +143,54 @@
         <!-- Status field -->
         <div class="form-group">
           <label for="status">Status</label>
+          
+          <div class="status-selector">
+            <div class="status-options">
+              <div 
+                *ngFor="let option of novelStatusOptions" 
+                class="status-option" 
+                [class.selected]="editForm.get('status')?.value == option.value"
+                [ngClass]="getStatusClass(option.value)"
+                (click)="setNovelStatus(option.value)"
+              >
+                <div class="status-icon">
+                  <svg *ngIf="option.value === 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+                    <path fill="currentColor" d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10zm0-2a8 8 0 1 1 0-16 8 8 0 0 1 0 16zm1-8h4v2h-6V7h2v5z"/>
+                  </svg>
+                  <svg *ngIf="option.value === 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+                    <path fill="currentColor" d="M8 17.85c1.275-.368 2.252-.913 3-1.651.748.738 1.725 1.283 3 1.65l-1.8 1.8a.5.5 0 0 0 .7.7l2.55-2.55a.5.5 0 0 0 0-.7L12.9 14.55a.5.5 0 0 0-.7.7l1.8 1.8a8.298 8.298 0 0 1-2-.958A8.298 8.298 0 0 1 10 17.05l1.8-1.8a.5.5 0 0 0-.7-.7l-2.55 2.55a.5.5 0 0 0 0 .7L11.1 20.3a.5.5 0 0 0 .7-.7L10 17.85zM18 18v-3h2v3h3v2h-3v3h-2v-3h-3v-2h3zM4 5v14h8v2H4a2 2 0 0 1-2-2V5c0-1.1.9-2 2-2h12a2 2 0 0 1 2 2v5h-2V5H4z"/>
+                  </svg>
+                  <svg *ngIf="option.value === 3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+                    <path fill="currentColor" d="M20 2a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1h16zm-1 2H5v16h14V4zm-2 4v2h-3V8h3zm-5 0v2H9V8h3zm-5 0v2H6V8h2zm10 4v2h-3v-2h3zm-5 0v2H9v-2h3zm-5 0v2H6v-2h2zm8 4v2H6v-2h10z"/>
+                  </svg>
+                  <svg *ngIf="option.value === 4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+                    <path fill="currentColor" d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm0-2a8 8 0 1 0 0-16 8 8 0 0 0 0 16zm-.997-4L6.76 11.757l1.414-1.414 2.829 2.829 5.656-5.657 1.415 1.414L11.003 16z"/>
+                  </svg>
+                </div>
+                <div class="status-info">
+                  <div class="status-name">{{ option.label }}</div>
+                  <div class="status-description">
+                    <ng-container [ngSwitch]="option.value">
+                      <span *ngSwitchCase="1">Story is actively being updated</span>
+                      <span *ngSwitchCase="2">Updates temporarily paused</span>
+                      <span *ngSwitchCase="3">No longer being updated</span>
+                      <span *ngSwitchCase="4">Story is finished</span>
+                    </ng-container>
+                  </div>
+                </div>
+                <div class="status-check">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+                    <path fill="currentColor" d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm0-2a8 8 0 1 0 0-16 8 8 0 0 0 0 16zm-.997-4L6.76 11.757l1.414-1.414 2.829 2.829 5.656-5.657 1.415 1.414L11.003 16z"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+          
           <select 
             id="status" 
             formControlName="status" 
-            class="form-control"
+            class="form-control visually-hidden"
             [class.is-invalid]="editForm.get('status')?.invalid && editForm.get('status')?.touched"
           >
             <option *ngFor="let option of novelStatusOptions" [value]="option.value">{{ option.label }}</option>
@@ -157,20 +202,31 @@
 
         <!-- Adult Content field -->
         <div class="form-group">
-          <div class="form-check">
-            <input 
-              type="checkbox" 
-              id="isAdultContent"
-              formControlName="isAdultContent"
-              class="form-check-input"
-            >
-            <label class="form-check-label" for="isAdultContent">
-              <strong>Adult Content</strong> - This novel contains adult themes (18+)
-            </label>
+          <div class="adult-content-toggle">
+            <div class="toggle-container">
+              <input 
+                class="toggle-input" 
+                type="checkbox" 
+                id="isAdultContent"
+                formControlName="isAdultContent"
+              >
+              <label class="toggle-label" for="isAdultContent">
+                <span class="toggle-button"></span>
+              </label>
+            </div>
+            <div class="toggle-content">
+              <h4>Adult Content</h4>
+              <p>This novel contains adult themes (18+)</p>
+            </div>
           </div>
-          <small class="form-text text-muted">
-            Adult content will only be accessible to users who have verified their age as 18+
-          </small>
+          <div class="age-verification-note">
+            <div class="note-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
+              </svg>
+            </div>
+            <p>Adult content will only be accessible to users who have verified their age as 18+</p>
+          </div>
         </div>
 
         <!-- Cover Image upload field -->
@@ -241,8 +297,8 @@
   </div>
 
   <!-- Add Chapter Form -->
-  <div class="modal-overlay" *ngIf="addChapterFormVisible">
-    <div class="modal-content">
+  <div class="modal-overlay" *ngIf="addChapterFormVisible" (click)="cancelAddChapter()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h2>Add Chapter</h2>
         <button class="close-button" (click)="cancelAddChapter()">&times;</button>
@@ -287,8 +343,8 @@
   </div>
 
   <!-- Manage Chapters Dialog -->
-  <div class="modal-overlay" *ngIf="manageChaptersVisible">
-    <div class="modal-content">
+  <div class="modal-overlay" *ngIf="manageChaptersVisible" (click)="cancelManageChapters()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h2>Manage Chapters</h2>
         <button class="close-button" (click)="cancelManageChapters()">&times;</button>
@@ -335,8 +391,8 @@
   </div>
 
   <!-- Delete Chapter Confirmation Dialog -->
-  <div class="modal-overlay" *ngIf="deleteChapterConfirmVisible">
-    <div class="modal-content delete-confirm">
+  <div class="modal-overlay" *ngIf="deleteChapterConfirmVisible" (click)="cancelDeleteChapter()">
+    <div class="modal-content delete-confirm" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h2>Delete Chapter</h2>
         <button class="close-button" (click)="cancelDeleteChapter()">&times;</button>
@@ -355,8 +411,8 @@
   </div>
 
   <!-- Delete Novel Confirmation Dialog -->
-  <div class="modal-overlay" *ngIf="deleteConfirmVisible">
-    <div class="modal-content delete-confirm">
+  <div class="modal-overlay" *ngIf="deleteConfirmVisible" (click)="cancelDelete()">
+    <div class="modal-content delete-confirm" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h2>Delete Novel</h2>
         <button class="close-button" (click)="cancelDelete()">&times;</button>

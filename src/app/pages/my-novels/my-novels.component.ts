@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, Renderer2 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { NovelService, UpdateNovelDto, CreateChapterDto, Chapter, NovelFilterOptions, Genre } from '../../services/novel.service';
@@ -58,7 +58,8 @@ export class MyNovelsComponent implements OnInit, OnDestroy {
     private authService: AuthService,
     private router: Router,
     private fb: FormBuilder,
-    private ageVerificationService: AgeVerificationService
+    private ageVerificationService: AgeVerificationService,
+    private renderer: Renderer2
   ) {
     this.initForm();
   }
@@ -98,6 +99,9 @@ export class MyNovelsComponent implements OnInit, OnDestroy {
     if (this.ageVerificationSubscription) {
       this.ageVerificationSubscription.unsubscribe();
     }
+    
+    // Re-enable scrolling when the component is destroyed
+    this.renderer.setStyle(document.body, 'overflow', '');
   }
 
   initForm(): void {
@@ -144,6 +148,14 @@ export class MyNovelsComponent implements OnInit, OnDestroy {
       },
       error: (error) => {
         console.error('Error loading user novels:', error);
+        
+        // If response is 404, treat as "no novels" instead of an error
+        if (error.status === 404) {
+          this.userNovels = [];
+          this.isLoading = false;
+          return;
+        }
+        
         this.errorMessage = error.message || 'Failed to load your novels. Please try again later.';
         this.isLoading = false;
       }
@@ -201,6 +213,9 @@ export class MyNovelsComponent implements OnInit, OnDestroy {
     this.addChapterFormVisible = false;
     this.manageChaptersVisible = false;
     this.deleteChapterConfirmVisible = false;
+    
+    // Disable scrolling when modal opens
+    this.renderer.setStyle(document.body, 'overflow', 'hidden');
   }
 
   showAddChapterForm(novel: Novel): void {
@@ -212,6 +227,9 @@ export class MyNovelsComponent implements OnInit, OnDestroy {
     this.deleteConfirmVisible = false;
     this.manageChaptersVisible = false;
     this.deleteChapterConfirmVisible = false;
+    
+    // Disable scrolling when modal opens
+    this.renderer.setStyle(document.body, 'overflow', 'hidden');
   }
 
   showManageChapters(novel: Novel): void {
@@ -223,6 +241,9 @@ export class MyNovelsComponent implements OnInit, OnDestroy {
     this.addChapterFormVisible = false;
     this.deleteChapterConfirmVisible = false;
     
+    // Disable scrolling when modal opens
+    this.renderer.setStyle(document.body, 'overflow', 'hidden');
+    
     if (novel.id) {
       this.loadNovelChapters(novel.id);
     }
@@ -232,6 +253,9 @@ export class MyNovelsComponent implements OnInit, OnDestroy {
     this.selectedChapter = chapter;
     this.deleteChapterConfirmVisible = true;
     this.manageChaptersVisible = false;
+    
+    // Disable scrolling when modal opens
+    this.renderer.setStyle(document.body, 'overflow', 'hidden');
   }
 
   cancelEdit(): void {
@@ -241,6 +265,9 @@ export class MyNovelsComponent implements OnInit, OnDestroy {
     this.imagePreview = null;
     this.selectedFile = null;
     this.currentImageUrl = null;
+    
+    // Re-enable scrolling
+    this.renderer.setStyle(document.body, 'overflow', '');
   }
 
   cancelAddChapter(): void {
@@ -248,6 +275,9 @@ export class MyNovelsComponent implements OnInit, OnDestroy {
     this.selectedNovelId = null;
     this.selectedNovel = null;
     this.chapterForm.reset();
+    
+    // Re-enable scrolling
+    this.renderer.setStyle(document.body, 'overflow', '');
   }
 
   cancelManageChapters(): void {
@@ -255,11 +285,18 @@ export class MyNovelsComponent implements OnInit, OnDestroy {
     this.selectedNovelId = null;
     this.selectedNovel = null;
     this.novelChapters = [];
+    
+    // Re-enable scrolling
+    this.renderer.setStyle(document.body, 'overflow', '');
   }
 
   cancelDeleteChapter(): void {
     this.deleteChapterConfirmVisible = false;
     this.selectedChapter = null;
+    
+    // Re-enable scrolling
+    this.renderer.setStyle(document.body, 'overflow', '');
+    
     // Return to the manage chapters screen
     if (this.selectedNovel) {
       this.showManageChapters(this.selectedNovel);
@@ -503,6 +540,10 @@ export class MyNovelsComponent implements OnInit, OnDestroy {
     this.selectedChapter = null;
     this.selectedFile = null;
     this.imagePreview = null;
+    
+    // Re-enable scrolling
+    this.renderer.setStyle(document.body, 'overflow', '');
+    
     this.loadUserNovels();
     
     // Ensure page scrolls to top to show the success message
@@ -520,12 +561,18 @@ export class MyNovelsComponent implements OnInit, OnDestroy {
     this.addChapterFormVisible = false;
     this.manageChaptersVisible = false;
     this.deleteChapterConfirmVisible = false;
+    
+    // Disable scrolling when modal opens
+    this.renderer.setStyle(document.body, 'overflow', 'hidden');
   }
 
   cancelDelete(): void {
     this.deleteConfirmVisible = false;
     this.selectedNovelId = null;
     this.selectedNovel = null;
+    
+    // Re-enable scrolling
+    this.renderer.setStyle(document.body, 'overflow', '');
   }
 
   deleteNovel(): void {
@@ -658,5 +705,10 @@ export class MyNovelsComponent implements OnInit, OnDestroy {
         this.loadingGenres = false;
       }
     });
+  }
+
+  setNovelStatus(status: number): void {
+    this.editForm.get('status')?.setValue(status);
+    this.editForm.get('status')?.markAsTouched();
   }
 }

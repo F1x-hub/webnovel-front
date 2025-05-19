@@ -76,6 +76,8 @@
   margin-bottom: 1.5rem;
   color: #aaa;
   max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .novel-list {
@@ -383,6 +385,7 @@
   background-color: var(--input-bg-color);
   color: var(--text-color);
   font-size: 1rem;
+  resize: vertical;
 }
 
 .form-group input:focus, .form-group textarea:focus {
@@ -890,4 +893,340 @@
     margin-left: 0;
     width: 60%;
   }
+}
+
+/* Adult content toggle styling */
+.adult-content-toggle {
+  display: flex;
+  align-items: center;
+  background-color: rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  padding: 15px 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  margin: 15px 0;
+  transition: all 0.3s ease;
+}
+
+.adult-content-toggle:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.toggle-container {
+  margin-right: 15px;
+}
+
+.toggle-content h4 {
+  margin: 0 0 5px 0;
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: #eee;
+}
+
+.toggle-content p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #aaa;
+}
+
+/* Custom toggle switch */
+.toggle-input {
+  height: 0;
+  width: 0;
+  visibility: hidden;
+  position: absolute;
+}
+
+.toggle-label {
+  cursor: pointer;
+  text-indent: -9999px;
+  width: 50px;
+  height: 25px;
+  background: #404B61;
+  display: block;
+  border-radius: 100px;
+  position: relative;
+  margin: 0;
+}
+
+.toggle-label:after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 21px;
+  height: 21px;
+  background: #fff;
+  border-radius: 90px;
+  transition: 0.3s;
+}
+
+.toggle-input:checked + .toggle-label {
+  background: #3498db;
+}
+
+.toggle-input:checked + .toggle-label:after {
+  left: calc(100% - 2px);
+  transform: translateX(-100%);
+}
+
+.toggle-label:active:after {
+  width: 30px;
+}
+
+/* Age verification note styling */
+.age-verification-note {
+  display: flex;
+  align-items: flex-start;
+  background-color: rgba(52, 152, 219, 0.1);
+  border-radius: 6px;
+  padding: 12px 15px;
+  margin-top: 12px;
+}
+
+.note-icon {
+  color: #3498db;
+  margin-right: 12px;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.age-verification-note p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #bbd8ec;
+  line-height: 1.4;
+}
+
+/* Novel Status Selector Styling */
+.status-selector {
+  margin: 15px 0;
+}
+
+.status-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.status-option {
+  display: flex;
+  align-items: center;
+  padding: 15px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  background-color: rgba(255, 255, 255, 0.03);
+  position: relative;
+  overflow: hidden;
+}
+
+.status-option:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+}
+
+.status-option::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  transition: all 0.3s ease;
+}
+
+.status-option.selected {
+  background-color: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+}
+
+.status-option.status-in-progress::before {
+  background-color: #3498db;
+}
+
+.status-option.status-frozen::before {
+  background-color: #95a5a6;
+}
+
+.status-option.status-abandoned::before {
+  background-color: #e74c3c;
+}
+
+.status-option.status-completed::before {
+  background-color: #2ecc71;
+}
+
+.status-option.selected.status-in-progress::before {
+  width: 100%;
+  opacity: 0.1;
+}
+
+.status-option.selected.status-frozen::before {
+  width: 100%;
+  opacity: 0.1;
+}
+
+.status-option.selected.status-abandoned::before {
+  width: 100%;
+  opacity: 0.1;
+}
+
+.status-option.selected.status-completed::before {
+  width: 100%;
+  opacity: 0.1;
+}
+
+.status-icon {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  margin-right: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.08);
+  color: white;
+  transition: all 0.3s ease;
+}
+
+.status-option.status-in-progress .status-icon {
+  color: #3498db;
+}
+
+.status-option.status-frozen .status-icon {
+  color: #95a5a6;
+}
+
+.status-option.status-abandoned .status-icon {
+  color: #e74c3c;
+}
+
+.status-option.status-completed .status-icon {
+  color: #2ecc71;
+}
+
+.status-option.selected .status-icon {
+  transform: scale(1.1);
+}
+
+.status-info {
+  flex-grow: 1;
+}
+
+.status-name {
+  font-weight: 600;
+  font-size: 1.1rem;
+  margin-bottom: 5px;
+  color: #fff;
+}
+
+.status-description {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.status-check {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  margin-left: 10px;
+  color: #3498db;
+  opacity: 0;
+  transform: scale(0);
+  transition: all 0.3s ease;
+}
+
+.status-option.selected .status-check {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.status-option.status-in-progress.selected .status-check {
+  color: #3498db;
+}
+
+.status-option.status-frozen.selected .status-check {
+  color: #95a5a6;
+}
+
+.status-option.status-abandoned.selected .status-check {
+  color: #e74c3c;
+}
+
+.status-option.status-completed.selected .status-check {
+  color: #2ecc71;
+}
+
+.visually-hidden {
+  position: absolute !important;
+  height: 1px;
+  width: 1px;
+  overflow: hidden;
+  clip: rect(1px, 1px, 1px, 1px);
+  white-space: nowrap;
+}
+
+/* Scrollbar styling for Modal Content */
+.modal-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-content::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.modal-content::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.modal-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Scrollbar styling for Description textarea */
+.form-group textarea::-webkit-scrollbar {
+  width: 6px;
+}
+
+.form-group textarea::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.form-group textarea::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.form-group textarea::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Adult content badge styling */
+.adult-content-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #e74c3c;
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: auto;
+  height: 18px;
+}
+
+.adult-content-badge::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background-color: rgba(255, 255, 255, 0.8);
+  border-radius: 50%;
+  margin-right: 4px;
 }

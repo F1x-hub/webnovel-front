@@ -1,3 +1,38 @@
+<!-- Creation animation overlay -->
+<div class="creation-animation" *ngIf="isCreatingNovel">
+  <!-- Particles -->
+  <div class="particle"></div>
+  <div class="particle"></div>
+  <div class="particle"></div>
+  <div class="particle"></div>
+  <div class="particle"></div>
+  
+  <div class="animation-container">
+    <div class="book">
+      <div class="book-page"></div>
+      <div class="book-page"></div>
+      <div class="book-page"></div>
+    </div>
+    <div class="creation-text">
+      <div class="creation-title">Creating Your Novel</div>
+      <div class="creation-steps">
+        <div class="step" [ngClass]="{active: creationStep >= 1, completed: creationStep > 1}">
+          <div class="step-number"><span>1</span></div>
+          <div class="step-label">Saving Details</div>
+        </div>
+        <div class="step" [ngClass]="{active: creationStep >= 2, completed: creationStep > 2}">
+          <div class="step-number"><span>2</span></div>
+          <div class="step-label">{{ selectedFile ? 'Uploading Cover' : 'Setting Up' }}</div>
+        </div>
+        <div class="step" [ngClass]="{active: creationStep >= 3, completed: creationStep > 3}">
+          <div class="step-number"><span>3</span></div>
+          <div class="step-label">Finalizing</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="container">
   <div class="row">
     <div class="col-md-8 mx-auto">
@@ -47,25 +82,48 @@
               </div>
             </div>
 
-            <!-- Cover Image field -->
+            <!-- Cover Image field - improved version -->
             <div class="mb-3">
               <label for="coverImage" class="form-label">Cover Image</label>
-              <input 
-                type="file" 
-                id="coverImage" 
-                class="form-control" 
-                accept="image/*"
-                (change)="onFileSelected($event)"
-              >
-              <small class="form-text text-muted">Recommended size: 300x450 pixels (will be automatically resized to fit)</small>
-              
-              <!-- Image preview -->
-              <div *ngIf="imagePreview" class="mt-3 text-center">
-                <img [src]="imagePreview" alt="Cover preview" class="img-thumbnail" style="max-height: 450px; max-width: 300px; object-fit: cover;">
+              <div class="image-upload-container" 
+                   (dragover)="onDragOver($event)" 
+                   (dragleave)="onDragLeave($event)" 
+                   (drop)="onDrop($event)"
+                   [class.drag-active]="isDragging">
+                <div class="upload-area">
+                  <div *ngIf="!imagePreview" class="upload-placeholder">
+                    <div class="upload-icon">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                        <polyline points="21 15 16 10 5 21"></polyline>
+                      </svg>
+                    </div>
+                    <p class="upload-text">Drag and drop an image<br>or <span class="browse-text">browse to upload</span>.</p>
+                    <button type="button" class="upload-button" (click)="triggerFileInput()">Upload your photo</button>
+                    <p class="upload-requirements">File must be JPG or PNG and up to 40MB</p>
+                    <div class="upload-features">
+                      <span class="feature-item">✓ Free to use</span>
+                      <span class="feature-item">✓ No credit card required</span>
+                    </div>
+                  </div>
+                  <img *ngIf="imagePreview" [src]="imagePreview" alt="Cover preview" class="preview-image">
+                  <button *ngIf="imagePreview" type="button" class="remove-image-btn" (click)="removeImage()">Remove</button>
+                </div>
+                <input 
+                  #fileInput
+                  type="file" 
+                  id="coverImage" 
+                  class="file-input" 
+                  accept="image/jpeg,image/png"
+                  (change)="onFileSelected($event)"
+                  hidden
+                />
               </div>
+              <small class="form-text text-muted">Recommended size: 300x450 pixels (will be automatically resized to fit)</small>
             </div>
 
-            <!-- Genres field -->
+            <!-- Genres field - improved version -->
             <div class="mb-3">
               <label class="form-label">Genres</label>
               <div *ngIf="isLoading" class="text-center">
@@ -73,8 +131,8 @@
                   <span class="visually-hidden">Loading...</span>
                 </div>
               </div>
-              <div class="genre-selection">
-                <div *ngFor="let genre of genres" class="form-check">
+              <div class="genre-grid">
+                <div *ngFor="let genre of genres" class="genre-item">
                   <input 
                     class="form-check-input" 
                     type="checkbox" 
@@ -95,20 +153,31 @@
 
             <!-- Adult Content field -->
             <div class="mb-3">
-              <div class="form-check">
-                <input 
-                  class="form-check-input" 
-                  type="checkbox" 
-                  id="isAdultContent"
-                  formControlName="isAdultContent"
-                >
-                <label class="form-check-label" for="isAdultContent">
-                  <strong>Adult Content</strong> - This novel contains adult themes (18+)
-                </label>
+              <div class="adult-content-toggle">
+                <div class="toggle-container">
+                  <input 
+                    class="toggle-input" 
+                    type="checkbox" 
+                    id="isAdultContent"
+                    formControlName="isAdultContent"
+                  >
+                  <label class="toggle-label" for="isAdultContent">
+                    <span class="toggle-button"></span>
+                  </label>
+                </div>
+                <div class="toggle-content">
+                  <h4>Adult Content</h4>
+                  <p>This novel contains adult themes (18+)</p>
+                </div>
               </div>
-              <small class="form-text text-muted">
-                Adult content will only be accessible to users who have verified their age as 18+
-              </small>
+              <div class="age-verification-note">
+                <div class="note-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
+                  </svg>
+                </div>
+                <p>Adult content will only be accessible to users who have verified their age as 18+</p>
+              </div>
             </div>
 
             <!-- Submit button -->
@@ -116,7 +185,7 @@
               <button 
                 type="submit" 
                 class="btn btn-primary"
-                [disabled]="isLoading"
+                [disabled]="isLoading || isCreatingNovel"
               >
                 <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
                 Create Novel

@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, Renderer2 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -25,7 +25,12 @@ export class NovelCreateComponent implements OnInit, OnDestroy {
   selectedFile: File | null = null;
   imagePreview: string | null = null;
   verifyingAge = false;
+  isDragging = false;
+  isCreatingNovel = false;
+  creationStep = 0;
   private ageVerificationSubscription?: Subscription;
+  
+  @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
 
   constructor(
     private fb: FormBuilder,
@@ -33,7 +38,8 @@ export class NovelCreateComponent implements OnInit, OnDestroy {
     private genreService: GenreService,
     private authService: AuthService,
     private router: Router,
-    private ageVerificationService: AgeVerificationService
+    private ageVerificationService: AgeVerificationService,
+    private renderer: Renderer2
   ) {}
 
   ngOnInit(): void {
@@ -63,6 +69,9 @@ export class NovelCreateComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    // Make sure scrolling is re-enabled when component is destroyed
+    this.renderer.setStyle(document.body, 'overflow', '');
+    
     if (this.ageVerificationSubscription) {
       this.ageVerificationSubscription.unsubscribe();
     }
@@ -114,13 +123,54 @@ export class NovelCreateComponent implements OnInit, OnDestroy {
     
     if (input.files && input.files[0]) {
       this.selectedFile = input.files[0];
-      
-      // Create a preview
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        this.imagePreview = e.target?.result as string;
-      };
-      reader.readAsDataURL(this.selectedFile);
+      this.createImagePreview(this.selectedFile);
+    }
+  }
+
+  createImagePreview(file: File): void {
+    // Create a preview
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      this.imagePreview = e.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  onDragOver(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragging = true;
+  }
+  
+  onDragLeave(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragging = false;
+  }
+  
+  onDrop(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragging = false;
+    
+    if (event.dataTransfer?.files && event.dataTransfer.files.length > 0) {
+      const file = event.dataTransfer.files[0];
+      if (file.type.startsWith('image/')) {
+        this.selectedFile = file;
+        this.createImagePreview(file);
+      }
+    }
+  }
+  
+  triggerFileInput(): void {
+    this.fileInput.nativeElement.click();
+  }
+  
+  removeImage(): void {
+    this.selectedFile = null;
+    this.imagePreview = null;
+    if (this.fileInput?.nativeElement) {
+      this.fileInput.nativeElement.value = '';
     }
   }
 
@@ -155,8 +205,13 @@ export class NovelCreateComponent implements OnInit, OnDestroy {
     if (!userId) return;
 
     this.isLoading = true;
+    this.isCreatingNovel = true;
+    this.creationStep = 1;
     this.errorMessage = '';
     this.successMessage = '';
+    
+    // Disable scrolling when animation starts
+    this.renderer.setStyle(document.body, 'overflow', 'hidden');
 
     const novelData: CreateNovelDto = {
       title: this.novelForm.value.title,
@@ -170,17 +225,32 @@ export class NovelCreateComponent implements OnInit, OnDestroy {
       next: (response) => {
         console.log('Novel created successfully:', response);
         
-        // If a cover image was selected, upload it
-        if (this.selectedFile && response.id) {
-          this.uploadNovelCover(response.id);
-        } else {
-          this.handleSuccess();
-        }
+        // Update progress step - mark step 1 as completed and step 2 as active
+        setTimeout(() => {
+          this.creationStep = 2;
+          
+          // If a cover image was selected, upload it
+          if (this.selectedFile && response.id) {
+            this.uploadNovelCover(response.id);
+          } else {
+            // Skip to final step if no cover - show step 3 as active
+            setTimeout(() => {
+              this.creationStep = 3;
+              // Wait to show step 3 for a moment before completing it
+              setTimeout(() => this.handleSuccess(), 1500);
+            }, 1000);
+          }
+        }, 1000); // Give a brief delay to show the step animation
       },
       error: (error) => {
         console.error('Error creating novel:', error);
         this.errorMessage = error.message || 'Failed to create novel. Please try again later.';
         this.isLoading = false;
+        this.isCreatingNovel = false;
+        this.creationStep = 0;
+        
+        // Re-enable scrolling on error
+        this.renderer.setStyle(document.body, 'overflow', '');
       }
     });
   }
@@ -191,13 +261,21 @@ export class NovelCreateComponent implements OnInit, OnDestroy {
     this.novelService.uploadNovelImage(novelId, this.selectedFile).subscribe({
       next: (response) => {
         console.log('Cover image uploaded successfully:', response);
-        this.handleSuccess();
+        // Final step - show step 3 as active
+        setTimeout(() => {
+          this.creationStep = 3;
+          // Wait to show step 3 for a moment before completing it
+          setTimeout(() => this.handleSuccess(), 1500);
+        }, 1000);
       },
       error: (error) => {
         console.error('Error uploading cover image:', error);
         // Novel was created but cover upload failed
         this.successMessage = 'Novel created successfully, but cover image upload failed.';
         this.isLoading = false;
+        this.isCreatingNovel = false;
+        // Re-enable scrolling on error
+        this.renderer.setStyle(document.body, 'overflow', '');
         setTimeout(() => {
           this.router.navigate(['/my-novels']);
         }, 1500);
@@ -212,10 +290,16 @@ export class NovelCreateComponent implements OnInit, OnDestroy {
     this.imagePreview = null;
     this.isLoading = false;
     
-    // Navigate to my novels page after a short delay
+    // Mark the third step as completed first
+    this.creationStep = 4;
+    
+    // Complete the animation and wait long enough to see the checkmark
     setTimeout(() => {
+      // Re-enable scrolling before navigating away
+      this.renderer.setStyle(document.body, 'overflow', '');
+      // Navigate to my novels page
       this.router.navigate(['/my-novels']);
-    }, 1500);
+    }, 2000);
   }
 
   isGenreSelected(genreId: number): boolean {

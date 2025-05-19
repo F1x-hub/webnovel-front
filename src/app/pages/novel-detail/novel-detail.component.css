@@ -167,6 +167,10 @@
   color: var(--text-secondary);
 }
 
+.genre-tag.book-icon {
+  font-size: 16px;
+}
+
 .novel-metadata {
   margin-bottom: 30px;
   color: var(--text-tertiary);
