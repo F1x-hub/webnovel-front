@@ -483,8 +483,8 @@ export class AuthService {
     const appUrl = this.ensureHttps(window.location.origin);
     const callbackUrl = `${appUrl}/auth/callback`;
     
-    // Redirect to backend to initiate Google login
-    window.location.href = `${this.API_URL}/Auth/google-login?returnUrl=${encodeURIComponent(callbackUrl)}`;
+    // Redirect to backend to initiate Google login with prompt=select_account to force account chooser
+    window.location.href = `${this.API_URL}/Auth/google-login?returnUrl=${encodeURIComponent(callbackUrl)}&prompt=select_account`;
     return new Observable();
   }
 
@@ -493,8 +493,8 @@ export class AuthService {
     const appUrl = this.ensureHttps(window.location.origin);
     const callbackUrl = `${appUrl}/auth/callback`;
     
-    // Redirect to backend to initiate Google registration
-    window.location.href = `${this.API_URL}/Auth/google-login?returnUrl=${encodeURIComponent(callbackUrl)}`;
+    // Redirect to backend to initiate Google registration with prompt=select_account to force account chooser
+    window.location.href = `${this.API_URL}/Auth/google-login?returnUrl=${encodeURIComponent(callbackUrl)}&prompt=select_account`;
     return new Observable();
   }
 
