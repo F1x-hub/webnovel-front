@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef, Renderer2 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { NovelService, UpdateNovelDto, CreateChapterDto, Chapter, NovelFilterOptions, Genre } from '../../services/novel.service';
 import { AuthService } from '../../services/auth.service';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -13,7 +13,7 @@ import { FormsModule } from '@angular/forms';
 @Component({
   selector: 'app-my-novels',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, SharedModule, FormsModule],
+  imports: [CommonModule, ReactiveFormsModule, SharedModule, FormsModule, RouterModule],
   templateUrl: './my-novels.component.html',
   styleUrls: ['./my-novels.component.css']
 })
@@ -29,11 +29,13 @@ export class MyNovelsComponent implements OnInit, OnDestroy {
   addChapterFormVisible = false;
   manageChaptersVisible = false;
   deleteChapterConfirmVisible = false;
+  editChapterFormVisible = false;
   selectedNovelId: number | null = null;
   selectedNovel: Novel | null = null;
   selectedChapter: Chapter | null = null;
   editForm!: FormGroup;
   chapterForm!: FormGroup;
+  editChapterForm!: FormGroup;
   selectedFile: File | null = null;
   imagePreview: string | null = null;
   currentImageUrl: string | null = null;
@@ -115,6 +117,12 @@ export class MyNovelsComponent implements OnInit, OnDestroy {
     this.chapterForm = this.fb.group({
       title: ['', [Validators.required, Validators.minLength(3)]],
       content: ['', [Validators.required, Validators.minLength(50)]]
+    });
+    
+    this.editChapterForm = this.fb.group({
+      title: ['', [Validators.required, Validators.minLength(3)]],
+      content: ['', [Validators.required, Validators.minLength(50)]],
+      chapterNumber: [0]
     });
   }
 
@@ -535,6 +543,7 @@ export class MyNovelsComponent implements OnInit, OnDestroy {
     this.addChapterFormVisible = false;
     this.manageChaptersVisible = false;
     this.deleteChapterConfirmVisible = false;
+    this.editChapterFormVisible = false;
     this.selectedNovelId = null;
     this.selectedNovel = null;
     this.selectedChapter = null;
@@ -710,5 +719,71 @@ export class MyNovelsComponent implements OnInit, OnDestroy {
   setNovelStatus(status: number): void {
     this.editForm.get('status')?.setValue(status);
     this.editForm.get('status')?.markAsTouched();
+  }
+
+  showEditChapterForm(chapter: Chapter): void {
+    this.selectedChapter = chapter;
+    
+    this.editChapterForm.patchValue({
+      title: chapter.title,
+      content: chapter.content,
+      chapterNumber: chapter.chapterNumber
+    });
+    
+    this.editChapterFormVisible = true;
+    this.manageChaptersVisible = false;
+    
+    // Disable scrolling when modal opens
+    this.renderer.setStyle(document.body, 'overflow', 'hidden');
+  }
+  
+  cancelEditChapter(): void {
+    this.editChapterFormVisible = false;
+    
+    // Re-enable scrolling
+    this.renderer.setStyle(document.body, 'overflow', '');
+    
+    // Return to the manage chapters screen
+    if (this.selectedNovel) {
+      this.showManageChapters(this.selectedNovel);
+    }
+  }
+  
+  updateChapter(): void {
+    if (this.editChapterForm.invalid || !this.selectedNovelId || !this.selectedChapter || !this.selectedChapter.id) {
+      return;
+    }
+
+    const userId = this.authService.currentUserValue?.id;
+    if (!userId) {
+      this.errorMessage = 'User not found. Please log in again.';
+      return;
+    }
+
+    this.isLoading = true;
+    this.errorMessage = '';
+    this.successMessage = '';
+
+    const chapterData: CreateChapterDto = {
+      title: this.editChapterForm.value.title,
+      content: this.editChapterForm.value.content,
+      chapterNumber: this.editChapterForm.value.chapterNumber
+    };
+
+    this.novelService.updateChapter(
+      this.selectedNovelId, 
+      this.selectedChapter.id, 
+      userId, 
+      chapterData
+    ).subscribe({
+      next: () => {
+        this.handleSuccess(`Chapter "${chapterData.title}" updated successfully!`);
+      },
+      error: (error) => {
+        console.error('Error updating chapter:', error);
+        this.errorMessage = error.message || 'Failed to update chapter. Please try again later.';
+        this.isLoading = false;
+      }
+    });
   }
 }

@@ -1,0 +1,217 @@
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(5px);
+}
+
+.modal-content {
+  background-color: #1a2236;
+  border-radius: 8px;
+  width: 95%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  position: relative;
+  z-index: 1001;
+}
+
+.chapters-modal {
+  max-width: 800px;
+  background-color: var(--bg-color-secondary, #1a2236);
+  background-image: radial-gradient(circle at top right, rgba(52, 152, 219, 0.05), transparent 70%),
+                    radial-gradient(circle at bottom left, rgba(46, 204, 113, 0.05), transparent 70%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: none;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+}
+
+.chapters-header {
+  background: linear-gradient(145deg, rgba(30, 40, 60, 0.9), rgba(20, 30, 50, 0.9));
+  padding: 18px 25px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  position: relative;
+  overflow: hidden;
+}
+
+.chapters-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(52, 152, 219, 0.5), transparent);
+}
+
+.chapters-header h2 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  font-size: 1.4rem;
+  color: var(--text-color, #fff);
+  font-weight: 600;
+}
+
+.chapter-header-icon {
+  color: #3498db;
+}
+
+.error-icon {
+  color: #e74c3c;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: var(--text-color-secondary, rgba(255, 255, 255, 0.7));
+  cursor: pointer;
+}
+
+.close-button:hover {
+  color: var(--text-color, #fff);
+}
+
+.modal-body {
+  padding: 20px;
+}
+
+.chapters-body {
+  padding: 0;
+}
+
+.connection-error-container {
+  display: flex;
+  padding: 30px 20px;
+  align-items: center;
+  gap: 20px;
+  border-radius: 8px;
+  background: linear-gradient(145deg, rgba(35, 45, 65, 0.9), rgba(25, 35, 55, 0.9));
+  border: 1px solid rgba(231, 76, 60, 0.2);
+  flex-wrap: wrap;
+}
+
+.vpn-icon {
+  flex-shrink: 0;
+  width: 90px;
+  height: 90px;
+  background: rgba(52, 152, 219, 0.1);
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #3498db;
+  margin: 0 auto;
+}
+
+.error-message-content {
+  flex-grow: 1;
+  min-width: 300px;
+}
+
+.error-message-content h3 {
+  margin: 0 0 15px 0;
+  font-size: 1.4rem;
+  color: #fff;
+  font-weight: 600;
+}
+
+.error-message-content p {
+  margin: 0 0 20px 0;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.vpn-note {
+  background-color: rgba(52, 152, 219, 0.1);
+  border-left: 4px solid #3498db;
+  padding: 15px;
+  margin-top: 15px;
+}
+
+.vpn-note h4 {
+  margin: 0 0 10px 0;
+  font-size: 1.1rem;
+  color: #fff;
+}
+
+.vpn-note ul {
+  margin: 0;
+  padding-left: 20px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.vpn-note li {
+  margin-bottom: 8px;
+}
+
+.vpn-note li:last-child {
+  margin-bottom: 0;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+  padding: 15px 20px;
+}
+
+.chapters-actions {
+  background-color: rgba(30, 40, 60, 0.5);
+  padding: 15px 20px;
+  display: flex;
+  justify-content: space-between;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.close-button-styled {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: var(--text-color, #fff);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.close-button-styled:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+@media (max-width: 768px) {
+  .connection-error-container {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .vpn-icon {
+    margin-bottom: 15px;
+  }
+  
+  .vpn-note {
+    text-align: left;
+  }
+} 

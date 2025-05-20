@@ -56,6 +56,9 @@
               (load)="onImageLoad(result.id!)"
               [class.loaded]="isImageLoaded(result.id)"
             >
+            <span class="result-reading-badge" *ngIf="result.currentChapter && result.currentChapter > 0">
+              Reading · {{ result.currentChapter }}chp
+            </span>
           </div>
           <div class="result-info">
             <div class="result-title">{{ result.title }}</div>

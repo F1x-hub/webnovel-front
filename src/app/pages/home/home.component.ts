@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { Novel } from '../../components/novel-card/novel-card.component';
 import { NovelService } from '../../services/novel.service';
 import { AuthService } from '../../services/auth.service';
+import { LibraryService } from '../../services/library.service';
 
 interface WeeklyBook extends Novel {
   author: string;
@@ -22,7 +23,8 @@ export class HomeComponent implements OnInit {
 
   constructor(
     private novelService: NovelService,
-    private authService: AuthService
+    private authService: AuthService,
+    private libraryService: LibraryService
   ) {}
 
   ngOnInit(): void {
@@ -39,12 +41,17 @@ export class HomeComponent implements OnInit {
       .subscribe({
         next: (data) => {
           if (Array.isArray(data)) {
-          this.weeklyBooks = data.map(novel => {
-            if (novel.id) {
-              novel.imageUrl = this.novelService.getNovelImageUrl(novel.id);
+            this.weeklyBooks = data.map(novel => {
+              if (novel.id) {
+                novel.imageUrl = this.novelService.getNovelImageUrl(novel.id);
+              }
+              return novel;
+            });
+            
+            // Проверить прогресс чтения, если пользователь авторизован
+            if (userId && this.weeklyBooks.length > 0) {
+              this.checkLastReadChapters(userId);
             }
-            return novel;
-          });
           } else {
             this.weeklyBooks = [];
           }
@@ -66,12 +73,17 @@ export class HomeComponent implements OnInit {
       .subscribe({
         next: (data) => {
           if (Array.isArray(data)) {
-          this.topRankedNovels = data.map(novel => {
-            if (novel.id) {
-              novel.imageUrl = this.novelService.getNovelImageUrl(novel.id);
+            this.topRankedNovels = data.map(novel => {
+              if (novel.id) {
+                novel.imageUrl = this.novelService.getNovelImageUrl(novel.id);
+              }
+              return novel;
+            });
+            
+            // Проверить прогресс чтения, если пользователь авторизован
+            if (userId && this.topRankedNovels.length > 0) {
+              this.checkLastReadChaptersForRanked(userId);
             }
-            return novel;
-          });
           } else {
             this.topRankedNovels = [];
           }
@@ -82,5 +94,71 @@ export class HomeComponent implements OnInit {
           this.loadingRanked = false;
         }
       });
+  }
+  
+  checkLastReadChapters(userId: number): void {
+    this.libraryService.getUserLibrary(userId).subscribe({
+      next: (libraryEntries) => {
+        if (!libraryEntries || libraryEntries.length === 0) return;
+        
+        // Update reading progress info for weekly books
+        this.weeklyBooks.forEach(novel => {
+          if (novel.id) {
+            const entry = libraryEntries.find(lib => lib.novelId === novel.id);
+            if (entry) {
+              let lastChapter = null;
+              
+              // Check object structure (C# uses PascalCase, JS uses camelCase)
+              if (entry.LastReadChapter !== undefined) {
+                lastChapter = entry.LastReadChapter;
+              } else if (entry.lastReadChapter !== undefined) {
+                lastChapter = entry.lastReadChapter;
+              }
+              
+              // Only set if it's a valid chapter number
+              if (lastChapter !== null && lastChapter > 0) {
+                novel.currentChapter = lastChapter;
+              }
+            }
+          }
+        });
+      },
+      error: (err) => {
+        console.error('Error checking last read chapters for weekly books:', err);
+      }
+    });
+  }
+  
+  checkLastReadChaptersForRanked(userId: number): void {
+    this.libraryService.getUserLibrary(userId).subscribe({
+      next: (libraryEntries) => {
+        if (!libraryEntries || libraryEntries.length === 0) return;
+        
+        // Update reading progress info for ranked novels
+        this.topRankedNovels.forEach(novel => {
+          if (novel.id) {
+            const entry = libraryEntries.find(lib => lib.novelId === novel.id);
+            if (entry) {
+              let lastChapter = null;
+              
+              // Check object structure (C# uses PascalCase, JS uses camelCase)
+              if (entry.LastReadChapter !== undefined) {
+                lastChapter = entry.LastReadChapter;
+              } else if (entry.lastReadChapter !== undefined) {
+                lastChapter = entry.lastReadChapter;
+              }
+              
+              // Only set if it's a valid chapter number
+              if (lastChapter !== null && lastChapter > 0) {
+                novel.currentChapter = lastChapter;
+              }
+            }
+          }
+        });
+      },
+      error: (err) => {
+        console.error('Error checking last read chapters for ranked novels:', err);
+      }
+    });
   }
 }

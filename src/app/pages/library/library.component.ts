@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { finalize } from 'rxjs/operators';
+import { Observable, forkJoin, of } from 'rxjs';
 import { LibraryService } from '../../services/library.service';
 import { NovelService } from '../../services/novel.service';
 import { AuthService } from '../../services/auth.service';
@@ -78,6 +79,9 @@ export class LibraryComponent implements OnInit {
           this.myLibrary = libraryNovels;
           this.totalPages = Math.ceil(this.myLibrary.length / this.pageSize) || 1;
           console.log('Processed library novels:', this.myLibrary);
+          
+          // Fetch chapter counts for all novels without total chapters
+          this.fetchChapterCountsForNovels();
         },
         error: (error) => {
           console.error('Error loading library:', error);
@@ -92,6 +96,33 @@ export class LibraryComponent implements OnInit {
           this.error = 'An error occurred while loading your library. Please try again later.';
         }
       });
+  }
+
+  fetchChapterCountsForNovels(): void {
+    // For each novel that doesn't have totalChapters, fetch the chapter count
+    this.myLibrary.forEach(novel => {
+      if (!novel.totalChapters && novel.id) {
+        this.novelService.getAllChapters(novel.id).subscribe({
+          next: (chapters) => {
+            this.updateNovelTotalChapters(novel.id!, chapters.length);
+          },
+          error: () => {
+            // If error fetching chapters, just set to 0
+            this.updateNovelTotalChapters(novel.id!, 0);
+          }
+        });
+      }
+    });
+  }
+
+  updateNovelTotalChapters(novelId: number, totalChapters: number): void {
+    const novelIndex = this.myLibrary.findIndex(n => n.id === novelId);
+    if (novelIndex !== -1) {
+      this.myLibrary[novelIndex] = {
+        ...this.myLibrary[novelIndex],
+        totalChapters
+      };
+    }
   }
   
   nextPage(): void {

@@ -25,6 +25,9 @@ import { AgeVerificationWrapperComponent } from './components/age-verification-w
 import { AgeVerificationService } from './services/age-verification.service';
 import { SearchComponent } from './pages/search/search.component';
 import { FooterComponent } from './shared/footer/footer.component';
+import { VpnErrorModalComponent } from './components/vpn-error-modal/vpn-error-modal.component';
+import { ConnectionErrorService } from './services/connection-error.service';
+import { TestErrorService } from './services/test-error.service';
 
 @NgModule({
   declarations: [
@@ -43,7 +46,8 @@ import { FooterComponent } from './shared/footer/footer.component';
     AgeVerificationModalComponent,
     AgeVerificationWrapperComponent,
     SearchComponent,
-    FooterComponent
+    FooterComponent,
+    VpnErrorModalComponent
   ],
   imports: [
     BrowserModule,
@@ -57,7 +61,9 @@ import { FooterComponent } from './shared/footer/footer.component';
   providers: [
     { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },
     LibraryService,
-    AgeVerificationService
+    AgeVerificationService,
+    ConnectionErrorService,
+    TestErrorService
   ],
   bootstrap: [AppComponent]
 })

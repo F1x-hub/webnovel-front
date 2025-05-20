@@ -21,7 +21,8 @@ import { RouterModule } from '@angular/router';
     FormsModule,
     TimeAgoPipe,
     SafeHtmlPipe,
-    SearchModalComponent
+    SearchModalComponent,
+    RouterModule
   ]
 })
 export class SharedModule { } 

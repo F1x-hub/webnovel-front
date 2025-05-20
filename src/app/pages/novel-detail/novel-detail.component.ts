@@ -383,9 +383,10 @@ export class NovelDetailComponent implements OnInit, OnDestroy {
 
   startReading(): void {
     if (this.novel?.id) {
-      let chapterToRead = 1;
+      let chapterToRead = 1; // Default to chapter 1
       
-      if (this.isLoggedIn() && this.lastReadChapter !== null && this.lastReadChapter !== undefined) {
+      if (this.isLoggedIn() && this.lastReadChapter !== null && 
+          this.lastReadChapter !== undefined && this.lastReadChapter > 0) {
         chapterToRead = this.lastReadChapter;
       }
       
@@ -525,13 +526,21 @@ export class NovelDetailComponent implements OnInit, OnDestroy {
       next: (libraryEntries) => {
         const novelEntry = libraryEntries.find(entry => entry.novelId === novelId);
         
-        // Проверим структуру объекта
         if (novelEntry) {
-          // В C# свойства именуются в PascalCase
+          let chapter = null;
+          
+          // Check object structure (C# uses PascalCase, JS uses camelCase)
           if (novelEntry.LastReadChapter !== undefined) {
-            this.lastReadChapter = novelEntry.LastReadChapter;
+            chapter = novelEntry.LastReadChapter;
           } else if (novelEntry.lastReadChapter !== undefined) {
-            this.lastReadChapter = novelEntry.lastReadChapter;
+            chapter = novelEntry.lastReadChapter;
+          }
+          
+          // Only set if it's a valid chapter number
+          if (chapter !== null && chapter > 0) {
+            this.lastReadChapter = chapter;
+          } else {
+            this.lastReadChapter = null;
           }
         }
       },
@@ -543,10 +552,13 @@ export class NovelDetailComponent implements OnInit, OnDestroy {
 
   get readingButtonText(): string {
     const isLoggedIn = this.isLoggedIn();
-    const hasLastReadChapter = this.lastReadChapter && this.lastReadChapter >= 1;
-    const buttonText = isLoggedIn && hasLastReadChapter ? 'Continue Reading' : 'Start Reading';
+    const hasLastReadChapter = this.lastReadChapter && this.lastReadChapter > 0;
     
-    return buttonText;
+    if (isLoggedIn && hasLastReadChapter) {
+      return `Continue with chapter ${this.lastReadChapter}`;
+    } else {
+      return 'Start Reading';
+    }
   }
 
   formatViewsCount(views: number | undefined): string {

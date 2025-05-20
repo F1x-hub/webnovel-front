@@ -1,0 +1,42 @@
+<div class="modal-overlay" *ngIf="showModal" (click)="closeModal()">
+  <div class="modal-content chapters-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header chapters-header">
+      <h2>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16" class="chapter-header-icon error-icon">
+          <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+          <path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 4.995z"/>
+        </svg>
+        Connection Error
+      </h2>
+      <button class="close-button" (click)="closeModal()">&times;</button>
+    </div>
+    
+    <div class="modal-body chapters-body">
+      <div class="connection-error-container">
+        <div class="vpn-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M8.211 2.047a.5.5 0 0 0-.422 0l-7.5 3.5a.5.5 0 0 0 .025.917l7.5 3a.5.5 0 0 0 .372 0L14 7.14V13a1 1 0 0 0-1 1v2h3v-2a1 1 0 0 0-1-1V6.739l.686-.275a.5.5 0 0 0 .025-.917l-7.5-3.5Z"/>
+            <path d="M4.176 9.032a.5.5 0 0 0-.656.327l-.5 1.7a.5.5 0 0 0 .294.605l4.5 1.8a.5.5 0 0 0 .372 0l4.5-1.8a.5.5 0 0 0 .294-.605l-.5-1.7a.5.5 0 0 0-.656-.327L8 10.466 4.176 9.032Z"/>
+          </svg>
+        </div>
+        <div class="error-message-content">
+          <h3>Connection Error Detected</h3>
+          <p>The application has encountered a connection error (ERR_CONNECTION_CLOSED). This typically happens when there are issues with your internet connection or when access to the server is restricted in your region.</p>
+          
+          <div class="vpn-note">
+            <h4>Please try the following:</h4>
+            <ul>
+              <li>Check your internet connection</li>
+              <li>Use a VPN service to connect</li>
+              <li>Try accessing the site later</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-actions chapters-actions">
+      <button class="close-button-styled" (click)="closeModal()">Close</button>
+    </div>
+  </div>
+</div> 

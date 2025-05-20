@@ -194,6 +194,10 @@ export class NovelService {
   deleteChapter(novelId: number, chapterId: number, userId: number): Observable<any> {
     return this.http.delete<any>(`${this.apiUrl}/api/Chapter/delete-chapter/${novelId}/${chapterId}/${userId}`);
   }
+
+  updateChapter(novelId: number, chapterId: number, userId: number, chapterData: CreateChapterDto): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/api/Chapter/update-chapter/${novelId}/${chapterId}/${userId}`, chapterData);
+  }
   
   getAllChapters(novelId: number): Observable<Chapter[]> {
     // Try the new endpoint first
@@ -419,7 +423,7 @@ export class NovelService {
   }
 
   getMostPopularLastWeek(limit: number = 10, userId: number = 0): Observable<Novel[]> {
-    return this.http.get<Novel[]>(`${this.apiUrl}/api/Rating/most-popular-last-week?limit=${limit}`)
+    return this.http.get<Novel[]>(`${this.apiUrl}/api/Rating/most-popular-last-week?limit=${limit}&userId=${userId}`)
       .pipe(
         catchError(error => {
           return of([]);

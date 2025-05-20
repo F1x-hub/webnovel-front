@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { Novel, NovelStatus } from '../../components/novel-card/novel-card.component';
 import { NovelService, NovelFilterOptions, Genre } from '../../services/novel.service';
 import { AuthService } from '../../services/auth.service';
+import { LibraryService } from '../../services/library.service';
 import { ActivatedRoute, Router, NavigationEnd } from '@angular/router';
 import { Location } from '@angular/common';
 import { Subscription, filter, finalize } from 'rxjs';
@@ -57,6 +58,7 @@ export class BrowseComponent implements OnInit, OnDestroy {
   constructor(
     private novelService: NovelService,
     private authService: AuthService,
+    private libraryService: LibraryService,
     private route: ActivatedRoute,
     private router: Router,
     private location: Location
@@ -189,6 +191,11 @@ export class BrowseComponent implements OnInit, OnDestroy {
           this.totalItems = response.totalItems;
           this.currentPage = response.currentPage;
           this.pageSize = response.pageSize;
+          
+          // Проверить прогресс чтения, если пользователь авторизован и есть книги
+          if (userId && this.novels.length > 0) {
+            this.checkLastReadChapters(userId);
+          }
         },
         error: (err) => {
           console.error('Error loading novels:', err);
@@ -201,6 +208,39 @@ export class BrowseComponent implements OnInit, OnDestroy {
           }
         }
       });
+  }
+  
+  checkLastReadChapters(userId: number): void {
+    this.libraryService.getUserLibrary(userId).subscribe({
+      next: (libraryEntries) => {
+        if (!libraryEntries || libraryEntries.length === 0) return;
+        
+        // Update reading progress info for novels
+        this.novels.forEach(novel => {
+          if (novel.id) {
+            const entry = libraryEntries.find(lib => lib.novelId === novel.id);
+            if (entry) {
+              let lastChapter = null;
+              
+              // Check object structure (C# uses PascalCase, JS uses camelCase)
+              if (entry.LastReadChapter !== undefined) {
+                lastChapter = entry.LastReadChapter;
+              } else if (entry.lastReadChapter !== undefined) {
+                lastChapter = entry.lastReadChapter;
+              }
+              
+              // Only set if it's a valid chapter number
+              if (lastChapter !== null && lastChapter > 0) {
+                novel.currentChapter = lastChapter;
+              }
+            }
+          }
+        });
+      },
+      error: (err) => {
+        console.error('Error checking last read chapters:', err);
+      }
+    });
   }
 
   applyFilters(): void {
