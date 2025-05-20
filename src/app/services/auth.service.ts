@@ -481,20 +481,26 @@ export class AuthService {
   googleLogin(returnUrl: string = '/'): Observable<any> {
     // Ensure we're using HTTPS
     const appUrl = this.ensureHttps(window.location.origin);
-    const callbackUrl = `${appUrl}/auth/callback`;
+    const callbackUrl = `${appUrl}/signin-google`; // Match backend's CallbackPath setting
     
-    // Redirect to backend to initiate Google login with prompt=select_account to force account chooser
-    window.location.href = `${this.API_URL}/Auth/google-login?returnUrl=${encodeURIComponent(callbackUrl)}&prompt=select_account`;
+    // Include returnUrl as state parameter for security
+    const state = encodeURIComponent(JSON.stringify({ returnUrl }));
+    
+    // Redirect to backend to initiate Google login
+    window.location.href = `${this.API_URL}/Auth/google-login?returnUrl=${encodeURIComponent(callbackUrl)}&state=${state}&prompt=select_account`;
     return new Observable();
   }
 
   googleRegister(): Observable<any> {
     // Ensure we're using HTTPS
     const appUrl = this.ensureHttps(window.location.origin);
-    const callbackUrl = `${appUrl}/auth/callback`;
+    const callbackUrl = `${appUrl}/signin-google`; // Match backend's CallbackPath setting
     
-    // Redirect to backend to initiate Google registration with prompt=select_account to force account chooser
-    window.location.href = `${this.API_URL}/Auth/google-login?returnUrl=${encodeURIComponent(callbackUrl)}&prompt=select_account`;
+    // Include registration flag in state
+    const state = encodeURIComponent(JSON.stringify({ isRegistration: true }));
+    
+    // Redirect to backend to initiate Google registration
+    window.location.href = `${this.API_URL}/Auth/google-login?returnUrl=${encodeURIComponent(callbackUrl)}&state=${state}&prompt=select_account`;
     return new Observable();
   }
 
