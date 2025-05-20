@@ -14,6 +14,7 @@ import { ReadComponent } from './pages/read/read.component';
 import { LibraryComponent } from './pages/library/library.component';
 import { CreateComponent } from './pages/create/create.component';
 import { AuthInterceptor } from './services/auth.interceptor';
+import { NetworkErrorService } from './services/network-error.service';
 import { NovelDetailComponent } from './pages/novel-detail/novel-detail.component';
 import { ChapterCommentsComponent } from './components/chapter-comments/chapter-comments.component';
 import { NovelCommentsComponent } from './components/novel-comments/novel-comments.component';
@@ -60,6 +61,7 @@ import { TestErrorService } from './services/test-error.service';
   ],
   providers: [
     { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },
+    { provide: HTTP_INTERCEPTORS, useClass: NetworkErrorService, multi: true },
     LibraryService,
     AgeVerificationService,
     ConnectionErrorService,
