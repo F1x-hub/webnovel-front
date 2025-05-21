@@ -1,8 +1,10 @@
-import { Component, Input, OnInit } from '@angular/core';
-import { Router, ActivatedRoute } from '@angular/router';
+import { Component, Input, OnInit, OnDestroy } from '@angular/core';
+import { Router, ActivatedRoute, NavigationEnd } from '@angular/router';
 import { Location } from '@angular/common';
 import { LibraryService } from '../../services/library.service';
 import { AuthService } from '../../services/auth.service';
+import { Subscription } from 'rxjs';
+import { filter } from 'rxjs/operators';
 
 export enum NovelStatus {
   InProgress = 1,
@@ -27,6 +29,7 @@ export interface Novel {
   views?: number;
   status?: NovelStatus;
   isAdultContent?: boolean;
+  addedChapter?: boolean;
 }
 
 @Component({
@@ -34,7 +37,7 @@ export interface Novel {
   templateUrl: './novel-card.component.html',
   styleUrls: ['./novel-card.component.css']
 })
-export class NovelCardComponent implements OnInit {
+export class NovelCardComponent implements OnInit, OnDestroy {
   @Input() novel: Novel = {
     title: '',
     genre: ''
@@ -42,6 +45,7 @@ export class NovelCardComponent implements OnInit {
   @Input() showProgress: boolean = true;
   imageLoaded: boolean = false;
   isLibraryPage: boolean = false;
+  private routerSubscription: Subscription | undefined;
 
   constructor(
     private router: Router,
@@ -52,13 +56,26 @@ export class NovelCardComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    // Определяем, находимся ли мы на странице библиотеки
+    // Set initial value based on current URL
     this.isLibraryPage = this.router.url.includes('/library');
     
-    // Если у нас нет информации о текущей главе, но есть id новеллы, 
-    // и пользователь авторизован - запросим данные из библиотеки
+    // Subscribe to router events to update isLibraryPage when navigation occurs
+    this.routerSubscription = this.router.events.pipe(
+      filter(event => event instanceof NavigationEnd)
+    ).subscribe(() => {
+      this.isLibraryPage = this.router.url.includes('/library');
+    });
+    
+    // If we don't have current chapter info but have novel id and user is logged in
     if (!this.novel.currentChapter && this.novel.id && this.authService.isLoggedIn) {
       this.checkLastReadChapter();
+    }
+  }
+
+  ngOnDestroy(): void {
+    // Clean up subscription when component is destroyed
+    if (this.routerSubscription) {
+      this.routerSubscription.unsubscribe();
     }
   }
 
@@ -99,10 +116,34 @@ export class NovelCardComponent implements OnInit {
     if (!this.novel.id) return;
 
     // Сохраняем текущий URL перед навигацией
-    // Это гарантирует, что браузер правильно обработает "назад"
     const currentUrl = this.location.path();
     
-    // Всегда переходим на детальную страницу новеллы, даже если есть сохраненный прогресс чтения
+    // Если есть индикатор новой главы, сбрасываем его в фоновом режиме
+    if (this.novel.addedChapter && this.novel.id) {
+      const userId = this.authService.currentUserValue?.id;
+      if (userId) {
+        // Запускаем запрос на сброс в фоновом режиме
+        this.libraryService.resetAddedChapter(userId, this.novel.id).subscribe({
+          next: () => {
+            console.log('Successfully reset added chapter status');
+            this.novel.addedChapter = false;
+          },
+          error: (err) => {
+            console.error('Error resetting added chapter status:', err);
+          }
+        });
+      }
+    }
+    
+    // Выполняем навигацию немедленно, не дожидаясь завершения запроса выше
+    
+    // In the library page, navigate directly to the last read chapter
+    if (this.isLibraryPage && this.novel.currentChapter && this.novel.currentChapter > 0) {
+      this.router.navigate(['/read', this.novel.id, this.novel.currentChapter]);
+      return;
+    }
+    
+    // Otherwise go to the novel detail page
     this.router.navigate(['/novel', this.novel.id], { 
       state: { prevUrl: currentUrl }
     });
@@ -119,5 +160,14 @@ export class NovelCardComponent implements OnInit {
 
   onImageLoad(): void {
     this.imageLoaded = true;
+  }
+  
+  getProgressPercentage(): string {
+    if (!this.novel.currentChapter || !this.novel.totalChapters || this.novel.totalChapters === 0) {
+      return '0%';
+    }
+    
+    const percentage = Math.min(100, Math.round((this.novel.currentChapter / this.novel.totalChapters) * 100));
+    return `${percentage}%`;
   }
 }

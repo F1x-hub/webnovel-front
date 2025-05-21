@@ -86,4 +86,16 @@ export class LibraryService {
       { headers: this.getHeaders() }
     );
   }
+
+  resetAddedChapter(userId: number, novelId: number): Observable<any> {
+    console.log('Resetting added chapter for novel:', userId, novelId);
+    return this.http.put(
+      `${this.apiUrl}/api/UserLibrary/reset-added-chapter/${userId}/${novelId}`,
+      null,
+      { 
+        headers: this.getHeaders(),
+        responseType: 'text' 
+      }
+    );
+  }
 } 

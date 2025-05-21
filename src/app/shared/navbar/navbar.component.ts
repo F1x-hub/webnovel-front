@@ -23,6 +23,9 @@ export class NavbarComponent implements OnInit, OnDestroy {
   
   // Search modal
   isSearchModalOpen: boolean = false;
+  
+  // New chapters notification
+  hasNewChapters: boolean = false;
 
   constructor(
     private themeService: ThemeService,
@@ -43,6 +46,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
       this.userFirstName = user?.firstName || '';
       this.userEmail = user?.email || '';
       this.userId = user?.id || null;
+      this.hasNewChapters = user?.hasNewChapters || false;
       
       // Load cached profile image when user ID changes
       if (this.userId) {
@@ -66,6 +70,8 @@ export class NavbarComponent implements OnInit, OnDestroy {
     const refreshSub = this.authService.getCurrentUserById().subscribe({
       next: (userData) => {
         console.log('User data refreshed successfully');
+        // Update hasNewChapters from fresh user data
+        this.hasNewChapters = userData?.hasNewChapters || false;
       },
       error: (err) => {
         console.error('Error refreshing user data:', err);
@@ -142,5 +148,15 @@ export class NavbarComponent implements OnInit, OnDestroy {
   @HostListener('document:click')
   closeUserMenu(): void {
     this.isUserMenuOpen = false;
+  }
+
+  // Check for library updates
+  checkForLibraryUpdates(): void {
+    if (this.hasNewChapters) {
+      // Clear the notification when the user visits the library
+      this.router.navigate(['/library']);
+    } else {
+      this.router.navigate(['/library']);
+    }
   }
 }

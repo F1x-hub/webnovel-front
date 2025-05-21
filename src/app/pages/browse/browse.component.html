@@ -8,9 +8,7 @@
           <option [ngValue]="undefined">All Genres</option>
           <option *ngFor="let genre of genres" [ngValue]="genre.id">{{ genre.name }}</option>
         </select>
-        <div *ngIf="loadingGenres" class="genres-loading-indicator">
-          <div class="mini-shimmer shimmer-effect"></div>
-        </div>
+        
       </div>
       <div class="filter-group">
         <label>Status</label>
@@ -50,14 +48,6 @@
         </div>
       </div>
     </div>
-    
-    <div class="pagination-skeleton">
-      <div class="prev-btn-skeleton shimmer-effect"></div>
-      <div class="page-numbers-skeleton">
-        <div class="page-number-skeleton shimmer-effect" *ngFor="let i of [1,2,3,4,5,6,7,8,9,10]"></div>
-      </div>
-      <div class="next-btn-skeleton shimmer-effect"></div>
-    </div>
   </div>
 
   <div *ngIf="error" class="error-message">
@@ -72,22 +62,18 @@
     <button class="clear-filters-btn" (click)="clearFilters()">Clear Filters</button>
   </div>
 
-  <div class="novel-grid" *ngIf="!loading && novels.length > 0">
+  <div class="novel-grid" *ngIf="novels.length > 0">
     <app-novel-card *ngFor="let novel of novels" [novel]="novel"></app-novel-card>
   </div>
 
-  <div class="pagination" *ngIf="!loading && novels.length > 0">
-    <button class="pagination-btn" [disabled]="currentPage === 1" (click)="previousPage()">Previous</button>
-    <div class="page-numbers">
-      <button 
-        *ngFor="let page of getPageNumbers()" 
-        class="page-number" 
-        [class.active]="page === currentPage"
-        [attr.data-current]="page === currentPage"
-        (click)="goToPage(page)">
-        {{ page }}
-      </button>
-    </div>
-    <button class="pagination-btn" [disabled]="currentPage === totalPages" (click)="nextPage()">Next</button>
+  <!-- Loading indicator for infinite scroll -->
+  <div *ngIf="loadingMore" class="loading-more">
+    <div class="spinner"></div>
+    <span>Loading more novels...</span>
+  </div>
+
+  <!-- End of results message -->
+  <div *ngIf="allPagesLoaded && novels.length > 0" class="end-of-results">
+    <p>You've reached the end of the results.</p>
   </div>
 </div>

@@ -8,20 +8,7 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { NovelService } from '../../services/novel.service';
 import { Novel } from '../../components/novel-card/novel-card.component';
-
-export interface UserProfile {
-  id: number;
-  userName: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  age: number;
-  roleId: number;
-  roleName?: string;
-  imageUrl?: string;
-  memberSince?: Date;
-  createdAt?: string;
-}
+import { UserProfile } from '../../models/user.profile';
 
 @Component({
   selector: 'app-profile',

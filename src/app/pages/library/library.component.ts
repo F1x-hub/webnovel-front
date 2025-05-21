@@ -6,6 +6,7 @@ import { NovelService } from '../../services/novel.service';
 import { AuthService } from '../../services/auth.service';
 import { Novel } from '../../components/novel-card/novel-card.component';
 import { environment } from '../../../environments/environment';
+import { UserService } from '../../services/user.service';
 
 @Component({
   selector: 'app-library',
@@ -23,11 +24,17 @@ export class LibraryComponent implements OnInit {
   constructor(
     private libraryService: LibraryService,
     private novelService: NovelService,
-    private authService: AuthService
+    private authService: AuthService,
+    private userService: UserService
   ) { }
 
   ngOnInit(): void {
     this.loadUserLibrary();
+    
+    // Clear the new chapters notification when user visits the library
+    if (this.authService.currentUserValue?.hasNewChapters) {
+      this.clearNewChaptersNotification();
+    }
   }
   
   loadUserLibrary(): void {
@@ -72,7 +79,8 @@ export class LibraryComponent implements OnInit {
               currentChapter: item.lastReadChapter || item.novel?.currentChapter || item.currentChapter,
               totalChapters: item.totalChapters || item.novel?.totalChapters,
               author: item.novelAuthor || item.novel?.author || item.author,
-              rating: item.novelRating || item.novel?.rating || item.rating
+              rating: item.novelRating || item.novel?.rating || item.rating,
+              addedChapter: item.addedChapter || false
             } as Novel;
           }) : [];
           
@@ -181,5 +189,21 @@ export class LibraryComponent implements OnInit {
     }
     
     return pages;
+  }
+
+  private clearNewChaptersNotification(): void {
+    const userId = this.authService.currentUserValue?.id;
+    if (!userId) return;
+    
+    this.userService.clearNewChaptersNotification(userId).subscribe({
+      next: () => {
+        console.log('New chapters notification cleared');
+        // Update the currentUser in the AuthService
+        this.authService.refreshUserData().subscribe();
+      },
+      error: (error) => {
+        console.error('Error clearing new chapters notification:', error);
+      }
+    });
   }
 } 

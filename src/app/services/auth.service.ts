@@ -14,6 +14,7 @@ export interface User {
   roleName?: string;
   roleId?: number;
   isAdult?: boolean;
+  hasNewChapters?: boolean;
 }
 
 export interface LoginRequest {
@@ -52,6 +53,20 @@ export interface ChangePasswordRequest {
   userId: number;
   currentPassword: string;
   newPassword: string;
+}
+
+export interface CurrentUser {
+  id: number;
+  userName: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  token: string;
+  refreshToken: string;
+  expires: Date;
+  roleId: number;
+  roleName: string;
+  hasNewChapters: boolean;
 }
 
 @Injectable({
@@ -634,5 +649,33 @@ export class AuthService {
       localStorage.setItem('currentUser', JSON.stringify(updatedUser));
       this.currentUserSubject.next(updatedUser);
     }
+  }
+
+  // Update the handleUser method to include hasNewChapters
+  private handleUser(user: any): CurrentUser {
+    if (!user) return null as any;
+    
+    // Transform the user object to match our CurrentUser interface
+    const currentUser: CurrentUser = {
+      id: user.id,
+      userName: user.userName,
+      email: user.email,
+      firstName: user.firstName || '',
+      lastName: user.lastName || '',
+      token: user.token,
+      refreshToken: user.refreshToken,
+      expires: new Date(user.expires),
+      roleId: user.roleId,
+      roleName: user.roleName || '',
+      hasNewChapters: user.hasNewChapters || false
+    };
+    
+    // Store the user in localStorage
+    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+    
+    // Update the BehaviorSubject
+    this.currentUserSubject.next(currentUser);
+    
+    return currentUser;
   }
 } 

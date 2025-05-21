@@ -32,11 +32,13 @@ export class BrowseComponent implements OnInit, OnDestroy {
   pageSize = 10;
   totalPages = 1;
   totalItems = 0;
+  allPagesLoaded = false;
+  loadingMore = false;
   
   // Filter and sort options
   filters: NovelFilterOptions = {
     pageNumber: 1,
-    pageSize: 10
+    pageSize: 20
   };
   
   genres: Genre[] = [];
@@ -70,16 +72,6 @@ export class BrowseComponent implements OnInit, OnDestroy {
     
     // Subscribe to query parameter changes
     this.queryParamsSubscription = this.route.queryParams.subscribe(params => {
-      // Parse page parameter
-      const page = Number(params['page']);
-      if (page && !isNaN(page) && page > 0) {
-        this.currentPage = page;
-        this.filters.pageNumber = page;
-      } else {
-        this.currentPage = 1;
-        this.filters.pageNumber = 1;
-      }
-      
       // Parse filter parameters
       if (params['genreId']) {
         this.filters.genreId = Number(params['genreId']);
@@ -93,7 +85,12 @@ export class BrowseComponent implements OnInit, OnDestroy {
         this.filters.sortBy = params['sortBy'] as 'popular' | 'rating' | 'newest' | 'a-z';
       }
       
-      this.loadNovels();
+      // Reset pagination and load first page
+      this.currentPage = 1;
+      this.filters.pageNumber = 1;
+      this.novels = [];
+      this.allPagesLoaded = false;
+      this.loadNovels(false);
     });
 
     // Subscribe to navigation end events
@@ -115,30 +112,32 @@ export class BrowseComponent implements OnInit, OnDestroy {
     }
   }
 
+  // Detect when user scrolls near bottom of page
+  @HostListener('window:scroll', [])
+  onWindowScroll(): void {
+    if (this.loading || this.loadingMore || this.allPagesLoaded) {
+      return;
+    }
+    
+    const scrollPosition = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+    const windowHeight = window.innerHeight;
+    const documentHeight = Math.max(
+      document.body.scrollHeight,
+      document.body.offsetHeight,
+      document.documentElement.clientHeight,
+      document.documentElement.scrollHeight,
+      document.documentElement.offsetHeight
+    );
+    
+    // Load more when user scrolls to 70% of page
+    if (scrollPosition + windowHeight > documentHeight * 0.7) {
+      this.loadMoreNovels();
+    }
+  }
+
   // Sync component state with URL
   syncStateWithUrl(): void {
     const urlParams = new URLSearchParams(window.location.search);
-    
-    // Parse page parameter
-    const pageParam = urlParams.get('page');
-    if (pageParam) {
-      const page = Number(pageParam);
-      if (!isNaN(page) && page > 0) {
-        if (page !== this.currentPage) {
-          this.currentPage = page;
-          this.filters.pageNumber = page;
-          
-          // Force reload with updated params
-          setTimeout(() => {
-            this.loadNovels();
-          }, 0);
-        }
-      }
-    } else if (this.currentPage !== 1) {
-      this.currentPage = 1;
-      this.filters.pageNumber = 1;
-      this.loadNovels();
-    }
     
     // Parse filter parameters
     const genreIdParam = urlParams.get('genreId');
@@ -165,8 +164,12 @@ export class BrowseComponent implements OnInit, OnDestroy {
     });
   }
 
-  loadNovels(): void {
-    this.loading = true;
+  loadNovels(append: boolean = false): void {
+    if (!append) {
+      this.loading = true;
+    } else {
+      this.loadingMore = true;
+    }
     this.error = null;
 
     // Get current user ID if logged in
@@ -175,16 +178,26 @@ export class BrowseComponent implements OnInit, OnDestroy {
 
     // Pass filters to the service
     this.novelService.getNovels(this.filters)
-      .pipe(finalize(() => this.loading = false))
+      .pipe(finalize(() => {
+        this.loading = false;
+        this.loadingMore = false;
+      }))
       .subscribe({
         next: (response: NovelApiResponse) => {
           // Set the image URL for each novel
-          this.novels = response.novels.map(novel => {
+          const loadedNovels = response.novels.map(novel => {
             if (novel.id) {
               novel.imageUrl = this.novelService.getNovelImageUrl(novel.id);
             }
             return novel;
           });
+          
+          // Update novels array (append or replace)
+          if (append) {
+            this.novels = [...this.novels, ...loadedNovels];
+          } else {
+            this.novels = loadedNovels;
+          }
           
           // Set pagination data from API response
           this.totalPages = response.totalPages;
@@ -192,8 +205,11 @@ export class BrowseComponent implements OnInit, OnDestroy {
           this.currentPage = response.currentPage;
           this.pageSize = response.pageSize;
           
+          // Check if all pages are loaded
+          this.allPagesLoaded = this.currentPage >= this.totalPages;
+          
           // Проверить прогресс чтения, если пользователь авторизован и есть книги
-          if (userId && this.novels.length > 0) {
+          if (userId && loadedNovels.length > 0) {
             this.checkLastReadChapters(userId);
           }
         },
@@ -208,6 +224,14 @@ export class BrowseComponent implements OnInit, OnDestroy {
           }
         }
       });
+  }
+  
+  loadMoreNovels(): void {
+    if (this.currentPage < this.totalPages) {
+      this.currentPage++;
+      this.filters.pageNumber = this.currentPage;
+      this.loadNovels(true);
+    }
   }
   
   checkLastReadChapters(userId: number): void {
@@ -247,12 +271,14 @@ export class BrowseComponent implements OnInit, OnDestroy {
     // Reset to page 1 when filters change
     this.currentPage = 1;
     this.filters.pageNumber = 1;
+    this.novels = [];
+    this.allPagesLoaded = false;
     
     // Update URL with filter parameters
     this.updateUrlWithFilters();
     
     // Load novels with new filters
-    this.loadNovels();
+    this.loadNovels(false);
   }
   
   clearFilters(): void {
@@ -265,10 +291,12 @@ export class BrowseComponent implements OnInit, OnDestroy {
     
     // Reset page
     this.currentPage = 1;
+    this.novels = [];
+    this.allPagesLoaded = false;
     
     // Update URL and reload
     this.updateUrlWithFilters();
-    this.loadNovels();
+    this.loadNovels(false);
   }
   
   hasActiveFilters(): boolean {
@@ -277,36 +305,9 @@ export class BrowseComponent implements OnInit, OnDestroy {
            this.filters.sortBy !== undefined;
   }
 
-  goToPage(page: number): void {
-    if (page >= 1 && page <= this.totalPages && page !== this.currentPage) {
-      this.currentPage = page;
-      this.filters.pageNumber = page;
-      this.updateUrlWithFilters();
-      this.loadNovels();
-    }
-  }
-
-  nextPage(): void {
-    if (this.currentPage < this.totalPages) {
-      this.currentPage++;
-      this.filters.pageNumber = this.currentPage;
-      this.updateUrlWithFilters();
-      this.loadNovels();
-    }
-  }
-
-  previousPage(): void {
-    if (this.currentPage > 1) {
-      this.currentPage--;
-      this.filters.pageNumber = this.currentPage;
-      this.updateUrlWithFilters();
-      this.loadNovels();
-    }
-  }
-
   updateUrlWithFilters(): void {
     // Build query params object
-    const queryParams: any = { page: this.currentPage };
+    const queryParams: any = {};
     
     // Add filter parameters if defined
     if (this.filters.genreId !== undefined) {

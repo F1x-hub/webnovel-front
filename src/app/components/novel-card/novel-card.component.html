@@ -1,4 +1,5 @@
 <div class="novel-card" (click)="navigateToNovel($event)">
+  <div *ngIf="novel.addedChapter" class="new-chapter-indicator"></div>
   <div class="novel-image">
     <div class="image-placeholder" [class.loaded]="imageLoaded"></div>
     <img [src]="novel.imageUrl || '/assets/images/default-cover.png'" 
@@ -15,6 +16,15 @@
     <div class="novel-meta">
       <span class="novel-genre">{{ novel.genre }}</span>
       <app-star-rating *ngIf="novel.rating" [rating]="novel.rating" [readonly]="true" [showRatingsCount]="false"></app-star-rating>
+    </div>
+    
+    <div *ngIf="showProgress && novel.currentChapter && isLibraryPage" class="reading-progress">
+      <div class="progress-bar">
+        <div class="progress-fill" [style.width]="getProgressPercentage()"></div>
+      </div>
+      <div class="progress-text">
+        Chapter {{ novel.currentChapter }} / {{ novel.totalChapters || '?' }}
+      </div>
     </div>
   </div>
 </div>

@@ -55,6 +55,12 @@ export class MyNovelsComponent implements OnInit, OnDestroy {
   genres: Genre[] = [];
   loadingGenres = false;
 
+  // Add new properties for the novel menu functionality
+  activeNovelMenuId: number | null = null;
+  private closeNovelMenuHandler = (): void => {
+    this.closeNovelMenu();
+  }
+
   constructor(
     private novelService: NovelService,
     private authService: AuthService,
@@ -104,6 +110,9 @@ export class MyNovelsComponent implements OnInit, OnDestroy {
     
     // Re-enable scrolling when the component is destroyed
     this.renderer.setStyle(document.body, 'overflow', '');
+    
+    // Remove any active event listeners
+    document.removeEventListener('click', this.closeNovelMenuHandler);
   }
 
   initForm(): void {
@@ -785,5 +794,26 @@ export class MyNovelsComponent implements OnInit, OnDestroy {
         this.isLoading = false;
       }
     });
+  }
+
+  // Add new methods for the novel menu functionality
+  toggleNovelMenu(event: Event, novel: Novel): void {
+    event.stopPropagation();
+    
+    if (this.activeNovelMenuId === novel.id) {
+      this.closeNovelMenu();
+    } else {
+      this.activeNovelMenuId = novel.id || null;
+      
+      // Close menu when clicking outside
+      setTimeout(() => {
+        document.addEventListener('click', this.closeNovelMenuHandler);
+      });
+    }
+  }
+  
+  closeNovelMenu(): void {
+    this.activeNovelMenuId = null;
+    document.removeEventListener('click', this.closeNovelMenuHandler);
   }
 }

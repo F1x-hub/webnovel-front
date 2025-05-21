@@ -16,6 +16,7 @@ export interface UserProfile {
   imageUrl?: string;
   memberSince?: Date;
   createdAt?: string; // Backend might return this instead of memberSince
+  hasNewChapters?: boolean;
 }
 
 @Injectable({
@@ -297,5 +298,20 @@ export class UserService {
     
     console.error('API error:', error);
     return throwError(() => ({ message: errorMessage, originalError: error }));
+  }
+
+  clearNewChaptersNotification(userId: number): Observable<any> {
+    console.log('Clearing new chapters notification for user ID:', userId);
+    
+    const token = localStorage.getItem('token');
+    const options = token ? { 
+      headers: { Authorization: `Bearer ${token}` },
+      responseType: 'text' as 'json'
+    } : { responseType: 'text' as 'json' };
+    
+    return this.http.post(`${this.API_URL}/User/clear-new-chapters/${userId}`, {}, options)
+      .pipe(
+        catchError(this.handleError)
+      );
   }
 } 
