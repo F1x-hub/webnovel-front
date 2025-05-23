@@ -5,16 +5,28 @@ import { Novel, NovelStatus } from '../../components/novel-card/novel-card.compo
 import { AuthService, User } from '../../services/auth.service';
 import { UserService } from '../../services/user.service';
 import { LibraryService } from '../../services/library.service';
-import { CommentService, CreateNovelCommentDto } from '../../services/comment.service';
-import { NovelComment } from '../../models/novel-comment.model';
 import { Subscription } from 'rxjs';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Location } from '@angular/common';
 import { AgeVerificationService } from '../../services/age-verification.service';
+import { HttpClient } from '@angular/common/http';
 
 interface Volume {
   name: string;
   chapters: Chapter[];
+}
+
+interface NovelComment {
+  id: number;
+  displayName: string;
+  content: string;
+  publishedDate: string;
+  likesCount: number;
+  imageUrl?: string;
+  isLiked?: boolean;
+  userId?: number;
+  novelId?: number;
+  showOptions?: boolean;
 }
 
 @Component({
@@ -37,14 +49,15 @@ export class NovelDetailComponent implements OnInit, OnDestroy {
   lastReadChapter: number | null = null;
   sortDirection: 'asc' | 'desc' = 'asc';
   coverImageLoaded = false;
-  // Comments
+  
+  // Comment-related properties
   comments: NovelComment[] = [];
   commentsLoading = false;
   commentForm: FormGroup;
-  commentsSubscription: Subscription | null = null;
-  
-  // Cache for user avatars
-  private userAvatarCache: {[userId: number]: string} = {};
+  commentError = '';
+  likedComments: Set<number> = new Set();
+  deletingComment = false;
+  showDeleteSuccess = false;
   
   private previousUrl: string | null = null;
   
@@ -55,24 +68,29 @@ export class NovelDetailComponent implements OnInit, OnDestroy {
     private authService: AuthService,
     private userService: UserService,
     private libraryService: LibraryService,
-    private commentService: CommentService,
     private fb: FormBuilder,
     private location: Location,
-    private ageVerificationService: AgeVerificationService
-  ) {
+    private ageVerificationService: AgeVerificationService,
+    private http: HttpClient
+  ) { 
     this.commentForm = this.fb.group({
-      content: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(500)]]
+      content: ['', [Validators.required, Validators.minLength(1), Validators.maxLength(1000)]]
     });
   }
 
   onImageError(event: Event): void {
     const img = event.target as HTMLImageElement;
     if (img) {
-      img.src = 'assets/images/default-cover.png';
-      // Force a re-render by triggering onload
-      setTimeout(() => {
-        this.coverImageLoaded = true;
-      }, 100);
+      // Check if the image is an avatar or a novel cover
+      if (img.alt && img.alt.includes('avatar')) {
+        img.src = 'assets/images/default-avatar.png';
+      } else {
+        img.src = 'assets/images/default-cover.png';
+        // Force a re-render by triggering onload
+        setTimeout(() => {
+          this.coverImageLoaded = true;
+        }, 100);
+      }
     }
   }
 
@@ -90,7 +108,7 @@ export class NovelDetailComponent implements OnInit, OnDestroy {
       if (id) {
         this.fetchNovel(id);
         this.fetchChapters(id);
-        this.loadComments(id);
+        this.fetchComments(id);
         
         // Check library status after a slight delay to ensure 
         // authentication is fully initialized
@@ -115,13 +133,8 @@ export class NovelDetailComponent implements OnInit, OnDestroy {
         this.isInLibrary = false;
       }
     });
-    
-    // Subscribe to novel comments
-    this.commentsSubscription = this.commentService.novelComments$.subscribe(comments => {
-      this.comments = comments;
-    });
 
-    // Пытаемся получить предыдущий URL из истории состояния
+    // Try to get previous URL from history state
     const navigation = this.router.getCurrentNavigation();
     if (navigation?.extras.state) {
       this.previousUrl = navigation.extras.state['prevUrl'] as string;
@@ -129,142 +142,7 @@ export class NovelDetailComponent implements OnInit, OnDestroy {
   }
   
   ngOnDestroy(): void {
-    if (this.commentsSubscription) {
-      this.commentsSubscription.unsubscribe();
-    }
-  }
-  
-  loadComments(novelId: number): void {
-    this.commentsLoading = true;
-    this.commentService.getNovelComments(novelId).subscribe({
-      next: (comments) => {
-        this.comments = comments;
-        this.commentsLoading = false;
-        
-        // Load user avatars for all comments
-        this.loadUserAvatars();
-        
-        // Check if the current user has liked any of the comments
-        if (this.currentUser?.id) {
-          this.checkUserLikedComments();
-        }
-      },
-      error: (err) => {
-        console.error('Error loading comments:', err);
-        this.commentsLoading = false;
-      }
-    });
-  }
-  
-  loadUserAvatars(): void {
-    // Process all comments to load avatars
-    this.comments.forEach(comment => {
-      if (comment.userId && !comment.userAvatar) {
-        this.getUserAvatar(comment.userId).then(avatarUrl => {
-          comment.userAvatar = avatarUrl;
-        });
-      }
-    });
-  }
-  
-  getUserAvatar(userId: number): Promise<string> {
-    // Check cache first
-    if (this.userAvatarCache[userId]) {
-      return Promise.resolve(this.userAvatarCache[userId]);
-    }
-    
-    // Otherwise get from userService
-    return new Promise((resolve) => {
-      this.userService.getProfileImageWithCache(userId).subscribe({
-        next: (avatarUrl) => {
-          this.userAvatarCache[userId] = avatarUrl;
-          resolve(avatarUrl);
-        },
-        error: () => {
-          // On error, use default
-          const defaultAvatar = 'assets/images/default-avatar.png';
-          resolve(defaultAvatar);
-        }
-      });
-    });
-  }
-  
-  checkUserLikedComments(): void {
-    if (!this.currentUser?.id) return;
-    
-    const userId = this.currentUser.id; // Store userId as a constant to help TypeScript
-    
-    // Check each comment to see if the current user has liked it
-    this.comments.forEach(comment => {
-      if (comment.id !== undefined) {
-        this.commentService.hasUserLikedNovelComment(comment.id, userId).subscribe({
-          next: (hasLiked) => {
-            comment.isLikedByCurrentUser = hasLiked;
-          },
-          error: (err) => {
-            console.error(`Error checking if user liked comment ${comment.id}:`, err);
-          }
-        });
-      }
-    });
-  }
-  
-  submitComment(): void {
-    if (!this.commentForm.valid || !this.currentUser?.id || !this.novel?.id) {
-      return;
-    }
-    
-    const commentData: CreateNovelCommentDto = {
-      displayName: this.currentUser.userName || 'Anonymous',
-      content: this.commentForm.value.content,
-      publishedDate: new Date().toISOString(),
-      likeCount: 0
-    };
-    
-    this.commentService.sendNovelComment(this.currentUser.id, this.novel.id, commentData).subscribe({
-      next: (newComment) => {
-        // Set the avatar URL for the new comment
-        if (newComment && newComment.userId) {
-          this.getUserAvatar(newComment.userId).then(avatarUrl => {
-            newComment.userAvatar = avatarUrl;
-          });
-        }
-        
-        this.commentForm.reset({ content: '' });
-      },
-      error: (err) => {
-        console.error('Error posting comment:', err);
-      }
-    });
-  }
-  
-  toggleCommentLike(comment: NovelComment): void {
-    if (!this.currentUser?.id || comment.id === undefined) return;
-    
-    this.commentService.toggleNovelCommentLike(comment.id, this.currentUser.id).subscribe({
-      next: (likes) => {
-        comment.likes = likes;
-        comment.isLikedByCurrentUser = !comment.isLikedByCurrentUser;
-      },
-      error: (err) => {
-        console.error('Error toggling like:', err);
-      }
-    });
-  }
-  
-  deleteComment(comment: NovelComment): void {
-    if (!this.currentUser?.id || !this.novel?.id || comment.id === undefined) return;
-    
-    if (confirm('Are you sure you want to delete this comment?')) {
-      this.commentService.deleteNovelComment(comment.id, this.novel.id, this.currentUser.id).subscribe({
-        next: () => {
-          // Comment will be removed from the list via SignalR
-        },
-        error: (err) => {
-          console.error('Error deleting comment:', err);
-        }
-      });
-    }
+    // Cleanup
   }
 
   fetchNovel(id: number): void {
@@ -307,13 +185,16 @@ export class NovelDetailComponent implements OnInit, OnDestroy {
         if (novel.userId) {
           this.fetchAuthor(novel.userId);
         }
-
-        if (this.currentUser && this.novel?.id) {
-          this.checkLastReadChapter(this.currentUser.id as number, this.novel.id as number);
+        
+        // Check if the user has a last read chapter
+        if (this.currentUser?.id && novel.id) {
+          this.checkLastReadChapter(this.currentUser.id, novel.id);
         }
+        
+        this.loading = false;
       },
-      error: (err) => {
-        console.error('Error fetching novel:', err);
+      error: (error) => {
+        console.error('Error fetching novel:', error);
         this.error = true;
         this.loading = false;
       }
@@ -325,8 +206,8 @@ export class NovelDetailComponent implements OnInit, OnDestroy {
       next: (user) => {
         this.author = user;
       },
-      error: (err) => {
-        console.error('Error fetching author:', err);
+      error: (error) => {
+        console.error('Error fetching author:', error);
       }
     });
   }
@@ -334,63 +215,70 @@ export class NovelDetailComponent implements OnInit, OnDestroy {
   fetchChapters(novelId: number): void {
     this.novelService.getAllChapters(novelId).subscribe({
       next: (chapters) => {
-        this.chapters = chapters || [];
+        this.chapters = chapters;
+        if (chapters.length > 0) {
+          // Set latest chapter 
+          this.latestChapter = this.sortDirection === 'asc' 
+            ? chapters[chapters.length - 1] 
+            : chapters[0];
+        }
         this.organizeChapters();
       },
-      error: (err) => {
-        console.error('Error fetching chapters:', err);
-        // Ensure UI shows even if there's an error
+      error: (error) => {
+        console.error('Error fetching chapters:', error);
         this.chapters = [];
-        this.volumes = [];
-        this.latestChapter = null;
+        this.organizeChapters();
       }
     });
   }
 
   organizeChapters(): void {
-    if (!this.chapters || this.chapters.length === 0) {
-      this.volumes = [];
-      this.latestChapter = null;
-      return;
+    // Sort chapters
+    const sortedChapters = [...this.chapters];
+    if (this.sortDirection === 'desc') {
+      sortedChapters.sort((a, b) => b.chapterNumber - a.chapterNumber);
+    } else {
+      sortedChapters.sort((a, b) => a.chapterNumber - b.chapterNumber);
     }
-
-    // Sort chapters based on chapter number and current sort direction
-    this.chapters.sort((a, b) => {
-      if (this.sortDirection === 'asc') {
-        return a.chapterNumber - b.chapterNumber;
-      } else {
-        return b.chapterNumber - a.chapterNumber;
-      }
-    });
-
-    // Set latest chapter (always the chapter with the highest number)
-    const sortedForLatest = [...this.chapters].sort((a, b) => b.chapterNumber - a.chapterNumber);
-    this.latestChapter = sortedForLatest[0];
-
+    
     // Group chapters by volume
     const volumeMap = new Map<string, Chapter[]>();
-    this.chapters.forEach(chapter => {
-      const volumeName = 'Volume 1'; // Default all chapters to Volume 1 since volumeName doesn't exist in the Chapter interface
+    
+    sortedChapters.forEach(chapter => {
+      // Since volumeName doesn't exist in the interface, use a default
+      const volumeName = 'Volume 1';
       if (!volumeMap.has(volumeName)) {
         volumeMap.set(volumeName, []);
       }
-      volumeMap.get(volumeName)?.push(chapter);
+      volumeMap.get(volumeName)!.push(chapter);
     });
-
-    // Convert map to array
-    this.volumes = Array.from(volumeMap.entries()).map(([name, chapters]) => ({ name, chapters }));
+    
+    // Convert to array of volumes
+    this.volumes = Array.from(volumeMap.entries()).map(([name, chapters]) => {
+      return { name, chapters };
+    });
+    
+    // Sort volumes by name
+    this.volumes.sort((a, b) => {
+      const volNumA = parseInt(a.name.replace(/\D/g, '')) || 0;
+      const volNumB = parseInt(b.name.replace(/\D/g, '')) || 0;
+      return volNumA - volNumB;
+    });
   }
 
   startReading(): void {
-    if (this.novel?.id) {
-      let chapterToRead = 1; // Default to chapter 1
-      
-      if (this.isLoggedIn() && this.lastReadChapter !== null && 
-          this.lastReadChapter !== undefined && this.lastReadChapter > 0) {
-        chapterToRead = this.lastReadChapter;
+    if (this.novel && this.chapters.length > 0) {
+      // If the user has a last read chapter, go to that
+      if (this.lastReadChapter && this.chapters.some(c => c.chapterNumber === this.lastReadChapter)) {
+        this.router.navigate(['/read', this.novel.id, this.lastReadChapter]);
+      } else {
+        // Otherwise go to the first chapter
+        const firstChapter = this.chapters.reduce(
+          (min, chapter) => chapter.chapterNumber < min.chapterNumber ? chapter : min,
+          this.chapters[0]
+        );
+        this.router.navigate(['/read', this.novel.id, firstChapter.chapterNumber]);
       }
-      
-      this.router.navigate(['/read', this.novel.id, chapterToRead]);
     }
   }
 
@@ -407,22 +295,17 @@ export class NovelDetailComponent implements OnInit, OnDestroy {
       this.isInLibrary = false;
       return;
     }
-
-    // Check if token exists
-    const token = localStorage.getItem('token');
-    if (!token) {
-      this.isInLibrary = false;
-      return;
-    }
-
+    
+    this.libraryLoading = true;
+    
     this.libraryService.isNovelInUserLibrary(this.currentUser.id, novelId).subscribe({
-      next: (result) => {
-        this.isInLibrary = result;
+      next: (inLibrary) => {
+        this.isInLibrary = inLibrary;
+        this.libraryLoading = false;
       },
-      error: (err) => {
-        console.error('Error checking library status:', err);
-        // If there's an auth error, we'll assume not in library
-        this.isInLibrary = false;
+      error: (error) => {
+        console.error('Error checking library status:', error);
+        this.libraryLoading = false;
       }
     });
   }
@@ -432,26 +315,15 @@ export class NovelDetailComponent implements OnInit, OnDestroy {
       return;
     }
     
-    // Check if token exists
-    const token = localStorage.getItem('token');
-    if (!token) {
-      return;
-    }
-    
     this.libraryLoading = true;
+    
     this.libraryService.toggleNovelInLibrary(this.currentUser.id, this.novel.id).subscribe({
-      next: (response) => {
-        // Update the UI state
+      next: () => {
         this.isInLibrary = !this.isInLibrary;
         this.libraryLoading = false;
-        
-        // Verify the updated status after toggling
-        if (this.novel && this.novel.id) {
-          this.checkLibraryStatus(this.novel.id);
-        }
       },
-      error: (err) => {
-        console.error('Error toggling library status:', err);
+      error: (error) => {
+        console.error('Error toggling library status:', error);
         this.libraryLoading = false;
       }
     });
@@ -460,65 +332,37 @@ export class NovelDetailComponent implements OnInit, OnDestroy {
   isLoggedIn(): boolean {
     return !!this.currentUser;
   }
-  
+
   rateNovel(rating: number): void {
-    if (!this.currentUser?.id || !this.novel?.id) return;
+    if (!this.currentUser?.id || !this.novel?.id) {
+      return;
+    }
     
     this.novelService.rateNovel(this.novel.id, this.currentUser.id, rating).subscribe({
       next: () => {
-        // Update the current novel's rating
+        // Update the novel's rating
         this.refreshNovelRating();
       },
-      error: (err) => {
-        console.error('Error rating novel:', err);
+      error: (error) => {
+        console.error('Error rating novel:', error);
       }
     });
   }
-  
+
   refreshNovelRating(): void {
     if (!this.novel?.id) return;
     
-    const userId = this.currentUser?.id || 0;
     this.novelService.getNovelRating(this.novel.id).subscribe({
-      next: (response) => {
+      next: (ratingData) => {
         if (this.novel) {
-          this.novel.rating = response.averageRating;
-          this.novel.ratingsCount = response.ratingsCount;
+          this.novel.rating = ratingData.averageRating;
+          this.novel.ratingsCount = ratingData.ratingsCount;
         }
       },
-      error: (err) => {
-        console.error('Error fetching novel rating:', err);
+      error: (error) => {
+        console.error('Error refreshing novel rating:', error);
       }
     });
-  }
-
-  @HostListener('document:click', ['$event'])
-  closeAllCommentMenus(event: MouseEvent): void {
-    // Закрыть все открытые меню комментариев при клике вне них
-    if (this.comments) {
-      this.comments.forEach(comment => {
-        // Проверяем, был ли клик по кнопке с тремя точками (по классу options-btn)
-        const target = event.target as HTMLElement;
-        if (!target.classList.contains('options-btn')) {
-          comment.showOptions = false;
-        }
-      });
-    }
-  }
-
-  toggleCommentOptions(comment: NovelComment, event: MouseEvent): void {
-    // Остановить всплытие события, чтобы не сработал document:click
-    event.stopPropagation();
-    
-    // Закрыть все остальные открытые меню
-    this.comments.forEach(c => {
-      if (c !== comment) {
-        c.showOptions = false;
-      }
-    });
-    
-    // Переключить меню для текущего комментария
-    comment.showOptions = !comment.showOptions;
   }
 
   checkLastReadChapter(userId: number, novelId: number): void {
@@ -544,8 +388,8 @@ export class NovelDetailComponent implements OnInit, OnDestroy {
           }
         }
       },
-      error: (err) => {
-        console.error('Error checking last read chapter:', err);
+      error: (error) => {
+        console.error('Error getting last read chapter:', error);
       }
     });
   }
@@ -562,60 +406,284 @@ export class NovelDetailComponent implements OnInit, OnDestroy {
   }
 
   formatViewsCount(views: number | undefined): string {
-    if (!views) return '0';
+    if (views === undefined) return '0';
     
-    if (views > 999999) {
-      return (views / 1000000).toFixed(1) + 'M';
-    } else if (views > 999) {
-      return (views / 1000).toFixed(1) + 'K';
+    if (views < 1000) return views.toString();
+    
+    if (views < 1000000) {
+      return (views / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
     }
     
-    return views.toString();
+    return (views / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
   }
 
   getNovelStatus(): { text: string; class: string } {
-    if (!this.novel?.status) {
+    if (!this.novel || this.novel.status === undefined) {
       return { text: 'Unknown', class: 'status-unknown' };
     }
     
     switch (this.novel.status) {
       case NovelStatus.InProgress:
         return { text: 'In Progress', class: 'status-in-progress' };
-      case NovelStatus.Frozen:
-        return { text: 'Frozen', class: 'status-frozen' };
-      case NovelStatus.Abandoned:
-        return { text: 'Abandoned', class: 'status-abandoned' };
       case NovelStatus.Completed:
         return { text: 'Completed', class: 'status-completed' };
+      case NovelStatus.Frozen:
+        return { text: 'On Hiatus', class: 'status-hiatus' };
+      case NovelStatus.Abandoned:
+        return { text: 'Dropped', class: 'status-dropped' };
       default:
         return { text: 'Unknown', class: 'status-unknown' };
     }
   }
 
   goBackToList(): void {
-    if (this.previousUrl && this.previousUrl.includes('/browse')) {
-      // Если предыдущий URL содержит /browse, используем его
+    if (this.previousUrl) {
       this.router.navigateByUrl(this.previousUrl);
     } else {
-      // Иначе просто возвращаемся на страницу browse
-      this.router.navigate(['/browse']);
+      this.location.back();
     }
   }
 
   toggleSort(): void {
     this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
-    this.saveSortDirection();
     this.organizeChapters();
+    this.saveSortDirection();
   }
-  
+
   private saveSortDirection(): void {
-    localStorage.setItem('novel-chapters-sort', this.sortDirection);
+    localStorage.setItem('chapterSortDirection', this.sortDirection);
   }
-  
+
   private loadSortDirection(): void {
-    const savedDirection = localStorage.getItem('novel-chapters-sort');
+    const savedDirection = localStorage.getItem('chapterSortDirection');
     if (savedDirection === 'asc' || savedDirection === 'desc') {
       this.sortDirection = savedDirection;
     }
+  }
+
+  // Comments-related methods
+  fetchComments(novelId: number): void {
+    this.commentsLoading = true;
+    this.http.get<NovelComment[]>(`https://localhost:7188/api/Comment/get-novel-comment/${novelId}`)
+      .subscribe({
+        next: (comments) => {
+          // Sort comments by date (newest first)
+          this.comments = comments.sort((a, b) => {
+            return new Date(b.publishedDate).getTime() - new Date(a.publishedDate).getTime();
+          });
+          
+          // Set novelId for all comments to current novel
+          this.comments.forEach(comment => {
+            comment.novelId = novelId; // Ensure novelId is set
+            this.loadCommentUserAvatar(comment);
+            this.fetchCommentLikes(comment);
+            
+            // Check if current user has liked the comment
+            if (this.currentUser?.id) {
+              this.checkIfCommentLiked(comment.id, this.currentUser.id);
+            }
+          });
+          
+          this.commentsLoading = false;
+        },
+        error: (error) => {
+          console.error('Error fetching comments:', error);
+          this.commentsLoading = false;
+        }
+      });
+  }
+  
+  fetchCommentLikes(comment: NovelComment): void {
+    this.http.get<number>(`https://localhost:7188/api/Comment/get-novel-comment-like/${comment.id}`)
+      .subscribe({
+        next: (likeCount) => {
+          comment.likesCount = likeCount;
+        },
+        error: (error) => {
+          console.error(`Error fetching likes for comment ${comment.id}:`, error);
+        }
+      });
+  }
+  
+  checkIfCommentLiked(commentId: number, userId: number): void {
+    this.http.get<boolean>(`https://localhost:7188/api/Comment/has-user-liked-novel-comment/${commentId}/${userId}`)
+      .subscribe({
+        next: (hasLiked) => {
+          const comment = this.comments.find(c => c.id === commentId);
+          if (comment) {
+            comment.isLiked = hasLiked;
+            
+            // Update local tracking of likes for consistency
+            if (hasLiked) {
+              this.likedComments.add(commentId);
+            } else {
+              this.likedComments.delete(commentId);
+            }
+          }
+        },
+        error: (error) => {
+          console.error(`Error checking like status for comment ${commentId}:`, error);
+        }
+      });
+  }
+  
+  loadCommentUserAvatar(comment: NovelComment): void {
+    comment.imageUrl = this.userService.getProfileImageUrl(comment.id);
+  }
+
+  submitComment(): void {
+    if (!this.commentForm.valid || !this.currentUser?.id || !this.novel?.id) {
+      return;
+    }
+
+    const commentData = {
+      displayName: this.currentUser.userName || 'Anonymous',
+      content: this.commentForm.value.content,
+      publishedDate: new Date().toISOString(),
+      likeCount: 0
+    };
+
+    this.http.post(
+      `https://localhost:7188/api/Comment/send-novel-comment/${this.currentUser.id}/${this.novel.id}`,
+      commentData
+    ).subscribe({
+      next: () => {
+        // Refresh comments list
+        if (this.novel?.id) {
+          this.fetchComments(this.novel.id);
+        }
+        // Reset form
+        this.commentForm.reset();
+      },
+      error: (error) => {
+        console.error('Error submitting comment:', error);
+        this.commentError = 'Failed to submit comment. Please try again.';
+      }
+    });
+  }
+
+  formatDate(dateString: string): string {
+    const date = new Date(dateString);
+    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+  }
+
+  // Add a method to handle liking a comment
+  likeComment(commentId: number): void {
+    if (!this.currentUser?.id) {
+      return;
+    }
+    
+    // Call the API to toggle like status
+    this.http.post<boolean>(`https://localhost:7188/api/Comment/set-novel-comment-like/${commentId}/${this.currentUser.id}`, {})
+      .subscribe({
+        next: (isLiked) => {
+          // Update the UI based on server response
+          const comment = this.comments.find(c => c.id === commentId);
+          if (comment) {
+            comment.isLiked = isLiked;
+            
+            // Update like count
+            this.fetchCommentLikes(comment);
+            
+            // Update local tracking of liked comments for consistency
+            if (isLiked) {
+              this.likedComments.add(commentId);
+            } else {
+              this.likedComments.delete(commentId);
+            }
+          }
+        },
+        error: (error) => {
+          console.error('Error toggling comment like:', error);
+          
+          // If there was an error, refresh the like status to ensure UI is correct
+          if (this.currentUser?.id) {
+            this.checkIfCommentLiked(commentId, this.currentUser.id);
+          }
+        }
+      });
+  }
+
+  isCommentLiked(commentId: number): boolean {
+    const comment = this.comments.find(c => c.id === commentId);
+    return comment?.isLiked || false;
+  }
+
+  formatLikeCount(count: number): string {
+    if (!count && count !== 0) return '0';
+    
+    if (count < 1000) {
+      return count.toString();
+    }
+    
+    if (count < 1000000) {
+      return (count / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+    }
+    
+    return (count / 1000000).toFixed(1).replace(/\.0$/, '') + 'm';
+  }
+
+  // New methods for comment options management
+  toggleCommentOptions(comment: NovelComment, event: Event): void {
+    event.stopPropagation();
+    // Close all other comment options
+    this.comments.forEach(c => {
+      if (c.id !== comment.id) {
+        c.showOptions = false;
+      }
+    });
+    // Toggle this comment's options
+    comment.showOptions = !comment.showOptions;
+  }
+  
+  closeAllCommentOptions(): void {
+    this.comments.forEach(comment => comment.showOptions = false);
+  }
+  
+  // Add click listener to document to close comment options when clicking outside
+  @HostListener('document:click')
+  closeOptionsOnOutsideClick(): void {
+    this.closeAllCommentOptions();
+  }
+  
+  // Delete comment method
+  deleteComment(comment: NovelComment): void {
+    if (!this.currentUser?.id || this.deletingComment || !this.novel?.id) {
+      return;
+    }
+    
+    const userId = this.currentUser.id;
+    const novelId = this.novel.id;
+    this.deletingComment = true;
+    
+    // Use the appropriate API endpoint for novel comments
+    this.http.delete(`https://localhost:7188/api/Comment/delete-novel-comments/${comment.id}/${novelId}/${userId}`)
+      .subscribe({
+        next: () => {
+          // Show success notification
+          this.showDeleteSuccess = true;
+          setTimeout(() => {
+            this.showDeleteSuccess = false;
+          }, 3000);
+          
+          // Remove comment from list
+          this.comments = this.comments.filter(c => c.id !== comment.id);
+          this.deletingComment = false;
+        },
+        error: (error) => {
+          console.error('Error deleting comment:', error);
+          this.deletingComment = false;
+          // You could show an error message here if needed
+        }
+      });
+  }
+  
+  // Check if user can delete a comment (either author or admin)
+  canDeleteComment(comment: NovelComment): boolean {
+    if (!this.currentUser) return false;
+    
+    // User can delete if they are the author or an admin
+    return this.currentUser.id === comment.userId || 
+           this.currentUser.roleName === 'Admin';
   }
 }

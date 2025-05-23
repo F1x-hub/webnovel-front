@@ -44,31 +44,7 @@
       <div class="text-line-skeleton shimmer-effect"></div>
     </div>
 
-    <!-- Comments skeleton -->
-    <div class="comments-skeleton">
-      <div class="title-skeleton shimmer-effect"></div>
-      <div class="comment-form-skeleton shimmer-effect"></div>
-      
-      <div class="comments-list-skeleton">
-        <div class="comment-skeleton">
-          <div class="comment-header-skeleton">
-            <div class="avatar-skeleton shimmer-effect"></div>
-            <div class="username-skeleton shimmer-effect"></div>
-          </div>
-          <div class="comment-content-skeleton shimmer-effect"></div>
-          <div class="comment-content-skeleton shimmer-effect" style="width: 70%;"></div>
-        </div>
-        
-        <div class="comment-skeleton">
-          <div class="comment-header-skeleton">
-            <div class="avatar-skeleton shimmer-effect"></div>
-            <div class="username-skeleton shimmer-effect"></div>
-          </div>
-          <div class="comment-content-skeleton shimmer-effect"></div>
-          <div class="comment-content-skeleton shimmer-effect" style="width: 85%;"></div>
-        </div>
-      </div>
-    </div>
+
 
     <!-- TOC skeleton --> 
     <div class="toc-skeleton">
@@ -176,89 +152,78 @@
       <div class="comments-section">
         <h2 class="section-title">Comments</h2>
         
-        <!-- Comment Form (for authenticated users) -->
-        <div *ngIf="currentUser" class="comment-form-container">
+        <!-- Comment Form -->
+        <div class="comment-form-container" *ngIf="isLoggedIn(); else loginPrompt">
           <form [formGroup]="commentForm" (ngSubmit)="submitComment()" class="comment-form">
             <textarea 
               formControlName="content" 
               class="comment-textarea" 
-              placeholder="Share your thoughts about this novel..."
-              rows="3"
-            ></textarea>
-            <div class="form-controls">
-              <button 
-                type="submit" 
-                class="submit-comment-btn" 
-                [disabled]="!commentForm.valid"
-              >
-                Post Comment
-              </button>
-            </div>
+              placeholder="Leave a comment..."
+              rows="4"></textarea>
             <div *ngIf="commentForm.get('content')?.invalid && commentForm.get('content')?.touched" class="validation-error">
-              <span *ngIf="commentForm.get('content')?.errors?.['required']">Comment cannot be empty.</span>
-              <span *ngIf="commentForm.get('content')?.errors?.['minlength']">Comment must be at least 3 characters.</span>
-              <span *ngIf="commentForm.get('content')?.errors?.['maxlength']">Comment cannot exceed 500 characters.</span>
+              Comment cannot be empty and must be less than 1000 characters.
+            </div>
+            <div *ngIf="commentError" class="validation-error">
+              {{ commentError }}
+            </div>
+            <div class="form-controls">
+              <button type="submit" [disabled]="commentForm.invalid" class="submit-comment-btn">Post Comment</button>
             </div>
           </form>
         </div>
         
-        <!-- Login prompt for non-authenticated users -->
-        <div *ngIf="!currentUser" class="login-prompt">
-          <p>Please <a routerLink="/auth/login" [queryParams]="{returnUrl: '/novel/' + novel.id}">login</a> to post comments.</p>
-        </div>
+        <ng-template #loginPrompt>
+          <div class="login-prompt">
+            <p>Please <a routerLink="/auth/login">log in</a> to leave a comment.</p>
+          </div>
+        </ng-template>
         
         <!-- Comments List -->
-        <div class="comments-list">
-          <div *ngIf="commentsLoading" class="loading-comments-skeleton">
-            <div class="comment-skeleton">
-              <div class="comment-header-skeleton">
-                <div class="avatar-skeleton shimmer-effect"></div>
-                <div class="username-skeleton shimmer-effect"></div>
-              </div>
-              <div class="comment-content-skeleton shimmer-effect"></div>
-              <div class="comment-content-skeleton shimmer-effect" style="width: 70%;"></div>
-            </div>
-            
-            <div class="comment-skeleton">
-              <div class="comment-header-skeleton">
-                <div class="avatar-skeleton shimmer-effect"></div>
-                <div class="username-skeleton shimmer-effect"></div>
-              </div>
-              <div class="comment-content-skeleton shimmer-effect"></div>
-              <div class="comment-content-skeleton shimmer-effect" style="width: 85%;"></div>
-            </div>
-          </div>
-          
-          <div *ngIf="!commentsLoading && comments.length === 0" class="no-comments">
-            <p>No comments yet. Be the first to comment!</p>
-          </div>
-          
-          <div *ngIf="!commentsLoading && comments.length > 0" class="comments-container">
-            <div *ngFor="let comment of comments" class="comment-item">
-              <div class="comment-header">
-                <div class="comment-user">
-                  <img [src]="comment.userAvatar || 'assets/images/default-avatar.png'" alt="User avatar" class="user-avatar">
-                  <div class="user-info">
-                    <span class="username">{{ comment.displayName || comment.username }}</span>
-                    <span class="comment-date">{{ comment.createdAt | date:'medium' }}</span>
-                  </div>
+        <div *ngIf="commentsLoading" class="loading-comments-skeleton">
+          <div class="comment-skeleton shimmer-effect"></div>
+          <div class="comment-skeleton shimmer-effect"></div>
+          <div class="comment-skeleton shimmer-effect"></div>
+        </div>
+        
+        <div *ngIf="!commentsLoading && comments.length === 0" class="no-comments">
+          No comments yet. Be the first to comment!
+        </div>
+        
+        <div *ngIf="!commentsLoading && comments.length > 0" class="comments-container">
+          <div *ngFor="let comment of comments" class="comment-item">
+            <div class="comment-header">
+              <div class="comment-user">
+                <div class="user-avatar">
+                  <img [src]="comment.imageUrl || 'assets/images/default-avatar.png'" alt="{{ comment.displayName }}'s avatar" (error)="onImageError($event)">
                 </div>
-                <div class="comment-actions" *ngIf="currentUser && (currentUser.id === comment.userId || currentUser.roleId === 1)">
-                  <button class="options-btn" (click)="toggleCommentOptions(comment, $event)">⋮</button>
-                  <div class="comment-options-menu" *ngIf="comment.showOptions">
-                    <button class="delete-btn" (click)="deleteComment(comment)">Delete</button>
-                  </div>
+                <div class="user-info">
+                  <div class="username">{{ comment.displayName }}</div>
+                  <div class="comment-date">{{ formatDate(comment.publishedDate) }}</div>
                 </div>
               </div>
-              <div class="comment-content">
-                <p>{{ comment.content }}</p>
-              </div>
-              <div class="comment-footer">
-                <button class="like-btn" (click)="toggleCommentLike(comment)" [class.liked]="comment.isLikedByCurrentUser">
-                  <span class="like-icon">❤</span>
-                  <span class="like-count">{{ comment.likes || comment.likesCount || 0 }}</span>
+              
+              <!-- Comment Options Button -->
+              <div class="comment-actions" *ngIf="canDeleteComment(comment)">
+                <button class="options-btn" (click)="toggleCommentOptions(comment, $event)" aria-label="Comment options">
+                  <span class="options-icon">⋮</span>
                 </button>
+                
+                <!-- Options Menu -->
+                <div class="comment-options-menu" *ngIf="comment.showOptions">
+                  <button class="delete-btn" (click)="deleteComment(comment)" [disabled]="deletingComment">
+                    <span class="delete-icon">🗑️</span> Delete
+                  </button>
+                </div>
               </div>
+            </div>
+            <div class="comment-content">
+              {{ comment.content }}
+            </div>
+            <div class="comment-footer">
+              <button class="like-btn" [class.liked]="isCommentLiked(comment.id)" (click)="likeComment(comment.id)" [disabled]="!isLoggedIn()">
+                <span class="like-icon">{{ isCommentLiked(comment.id) ? '❤️' : '🤍' }}</span>
+                <span class="like-count">{{ formatLikeCount(comment.likesCount) }}</span>
+              </button>
             </div>
           </div>
         </div>
@@ -321,5 +286,15 @@
         </div>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- Delete Comment Success Notification -->
+<div *ngIf="showDeleteSuccess" class="read-notification">
+  <div class="notification-content notification-success">
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    <span>Comment deleted successfully</span>
   </div>
 </div>

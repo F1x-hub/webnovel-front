@@ -1,16 +1,34 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { NovelService, GetChapterDto } from '../../services/novel.service';
-import { AuthService } from '../../services/auth.service';
+import { AuthService, User } from '../../services/auth.service';
 import { LibraryService, ToggleReadResponse } from '../../services/library.service';
 import { Location } from '@angular/common';
 import { AgeVerificationService } from '../../services/age-verification.service';
 import { DomSanitizer } from '@angular/platform-browser';
+import { HttpClient } from '@angular/common/http';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { UserService } from '../../services/user.service';
+import { HostListener } from '@angular/core';
 
 interface ChapterItem {
   id: number;
   number: number;
   title: string;
+}
+
+interface ChapterComment {
+  id: number;
+  displayName: string;
+  userId: number;
+  novelId: number;
+  chapterId: number;
+  content: string;
+  publishedDate: string;
+  likesCount: number;
+  imageUrl?: string; 
+  isLiked?: boolean;
+  showOptions?: boolean;
 }
 
 @Component({
@@ -34,6 +52,15 @@ export class ReadComponent implements OnInit {
   chaptersList: ChapterItem[] = [];
   private previousUrl: string | null = null;
 
+  // Comment-related properties
+  comments: ChapterComment[] = [];
+  commentsLoading: boolean = false;
+  commentForm: FormGroup;
+  commentError: string = '';
+  likedComments: Set<number> = new Set();
+  deletingComment: boolean = false;
+  showDeleteSuccess: boolean = false;
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
@@ -42,7 +69,10 @@ export class ReadComponent implements OnInit {
     private libraryService: LibraryService,
     private location: Location,
     private ageVerificationService: AgeVerificationService,
-    private sanitizer: DomSanitizer
+    private sanitizer: DomSanitizer,
+    private http: HttpClient,
+    private fb: FormBuilder,
+    private userService: UserService
   ) {
     // Пытаемся получить предыдущий URL из истории состояния
     const navigation = this.router.getCurrentNavigation();
@@ -50,6 +80,11 @@ export class ReadComponent implements OnInit {
       this.previousUrl = navigation.extras.state['prevUrl'] as string;
       console.log('Previous URL from state:', this.previousUrl);
     }
+
+    // Initialize comment form
+    this.commentForm = this.fb.group({
+      content: ['', [Validators.required, Validators.minLength(1), Validators.maxLength(1000)]]
+    });
   }
 
   ngOnInit(): void {
@@ -176,6 +211,11 @@ export class ReadComponent implements OnInit {
           
           // Check if this is the last read chapter after loading chapter
           this.checkIfLastReadChapter();
+          
+          // Load chapter comments
+          if (chapter.id) {
+            this.fetchComments(chapter.id);
+          }
           
           // Scroll to the top of the page when a new chapter is loaded
           window.scrollTo(0, 0);
@@ -329,5 +369,242 @@ export class ReadComponent implements OnInit {
         this.errorMessage = 'Failed to load the novel. Please try again.';
       }
     });
+  }
+
+  // Comment-related methods
+  fetchComments(chapterId: number): void {
+    this.commentsLoading = true;
+    
+    this.http.get<ChapterComment[]>(`https://localhost:7188/api/Comment/get-chapter-comment/${chapterId}`)
+      .subscribe({
+        next: (comments) => {
+          // Sort comments by date (newest first)
+          this.comments = comments.sort((a, b) => {
+            return new Date(b.publishedDate).getTime() - new Date(a.publishedDate).getTime();
+          });
+          
+          // Ensure chapterId is set for all comments
+          this.comments.forEach(comment => {
+            comment.chapterId = chapterId; // Ensure chapterId is set
+            this.loadCommentUserAvatar(comment);
+            
+            // Check if current user has liked the comment
+            const currentUser = this.authService.currentUserValue;
+            if (currentUser?.id) {
+              this.checkIfCommentLiked(comment.id, currentUser.id);
+            }
+          });
+          
+          this.commentsLoading = false;
+        },
+        error: (error) => {
+          console.error('Error fetching comments:', error);
+          // If the error is "Not Have Comments", set comments to empty array
+          if (error.error === "Not Have Comments" || error.message?.includes("Not Have Comments")) {
+            this.comments = [];
+          }
+          this.commentsLoading = false;
+        }
+      });
+  }
+  
+  loadCommentUserAvatar(comment: ChapterComment): void {
+    comment.imageUrl = this.userService.getProfileImageUrl(comment.userId);
+  }
+  
+  checkIfCommentLiked(commentId: number, userId: number): void {
+    this.http.get<boolean>(`https://localhost:7188/api/Comment/has-user-liked-chapter-comment/${commentId}/${userId}`)
+      .subscribe({
+        next: (hasLiked) => {
+          const comment = this.comments.find(c => c.id === commentId);
+          if (comment) {
+            comment.isLiked = hasLiked;
+            
+            // Update local tracking of likes for consistency
+            if (hasLiked) {
+              this.likedComments.add(commentId);
+            } else {
+              this.likedComments.delete(commentId);
+            }
+          }
+        },
+        error: (error) => {
+          console.error(`Error checking like status for comment ${commentId}:`, error);
+        }
+      });
+  }
+  
+  submitComment(): void {
+    if (!this.commentForm.valid || !this.authService.currentUserValue?.id || !this.chapter?.id) {
+      return;
+    }
+    
+    const userId = this.authService.currentUserValue.id;
+    const chapterId = this.chapter.id;
+    
+    // Create the DTO that matches CreateChapterCommentDto expected by the API
+    const commentData = {
+      displayName: this.authService.currentUserValue.userName || 'Anonymous',
+      content: this.commentForm.value.content,
+      publishedDate: new Date().toISOString(),
+      likeCount: 0
+    };
+    
+    this.http.post(
+      `https://localhost:7188/api/Comment/send-chapter-comment/${userId}/${chapterId}`,
+      commentData
+    ).subscribe({
+      next: (response) => {
+        // Refresh comments list
+        if (this.chapter?.id) {
+          this.fetchComments(this.chapter.id);
+        }
+        // Reset form
+        this.commentForm.reset();
+        this.commentError = '';
+      },
+      error: (error: any) => {
+        console.error('Error submitting comment:', error);
+        this.commentError = error.error || error.message || 'Failed to submit comment. Please try again.';
+      }
+    });
+  }
+  
+  likeComment(commentId: number): void {
+    const currentUser = this.authService.currentUserValue;
+    if (!currentUser?.id) {
+      return;
+    }
+    
+    // Call the API to toggle like status
+    this.http.post<boolean>(`https://localhost:7188/api/Comment/set-chapter-comment-like/${commentId}/${currentUser.id}`, {})
+      .subscribe({
+        next: (isLiked) => {
+          // Update the UI based on server response
+          const comment = this.comments.find(c => c.id === commentId);
+          if (comment) {
+            comment.isLiked = isLiked;
+            
+            // Update like count - increment or decrement based on liked status
+            if (isLiked) {
+              comment.likesCount += 1;
+              this.likedComments.add(commentId);
+            } else {
+              comment.likesCount = Math.max(0, comment.likesCount - 1);
+              this.likedComments.delete(commentId);
+            }
+          }
+          
+          // If the chapter ID is available, refresh all comments to get the updated data
+          if (this.chapter?.id) {
+            this.fetchComments(this.chapter.id);
+          }
+        },
+        error: (error: any) => {
+          console.error('Error toggling comment like:', error);
+          
+          // If there was an error, refresh the like status to ensure UI is correct
+          if (currentUser?.id) {
+            this.checkIfCommentLiked(commentId, currentUser.id);
+          }
+        }
+      });
+  }
+  
+  isCommentLiked(commentId: number): boolean {
+    const comment = this.comments.find(c => c.id === commentId);
+    return comment?.isLiked || false;
+  }
+  
+  formatLikeCount(count: number): string {
+    if (!count && count !== 0) return '0';
+    
+    if (count < 1000) {
+      return count.toString();
+    }
+    
+    if (count < 1000000) {
+      return (count / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+    }
+    
+    return (count / 1000000).toFixed(1).replace(/\.0$/, '') + 'm';
+  }
+  
+  formatDate(dateString: string): string {
+    const date = new Date(dateString);
+    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+  }
+  
+  onImageError(event: Event): void {
+    const img = event.target as HTMLImageElement;
+    if (img) {
+      if (img.alt && img.alt.includes('avatar')) {
+        img.src = 'assets/images/default-avatar.png';
+      }
+    }
+  }
+
+  // New methods for comment option management
+  toggleCommentOptions(comment: ChapterComment, event: Event): void {
+    event.stopPropagation();
+    // Close all other comment options
+    this.comments.forEach(c => {
+      if (c.id !== comment.id) {
+        c.showOptions = false;
+      }
+    });
+    // Toggle this comment's options
+    comment.showOptions = !comment.showOptions;
+  }
+  
+  closeAllCommentOptions(): void {
+    this.comments.forEach(comment => comment.showOptions = false);
+  }
+  
+  // Add click listener to document to close comment options when clicking outside
+  @HostListener('document:click')
+  closeOptionsOnOutsideClick(): void {
+    this.closeAllCommentOptions();
+  }
+  
+  // Delete comment method
+  deleteComment(comment: ChapterComment): void {
+    if (!this.authService.currentUserValue?.id || this.deletingComment) {
+      return;
+    }
+    
+    const userId = this.authService.currentUserValue.id;
+    this.deletingComment = true;
+    
+    // Use the appropriate API endpoint for chapter comments
+    this.http.delete(`https://localhost:7188/api/Comment/delete-chapter-comments/${comment.id}/${comment.chapterId}/${userId}`)
+      .subscribe({
+        next: () => {
+          // Show success notification
+          this.showDeleteSuccess = true;
+          setTimeout(() => {
+            this.showDeleteSuccess = false;
+          }, 3000);
+          
+          // Remove comment from list
+          this.comments = this.comments.filter(c => c.id !== comment.id);
+          this.deletingComment = false;
+        },
+        error: (error: any) => {
+          console.error('Error deleting comment:', error);
+          this.deletingComment = false;
+          // You could show an error message here if needed
+        }
+      });
+  }
+  
+  // Check if user can delete a comment (either author or admin)
+  canDeleteComment(comment: ChapterComment): boolean {
+    const currentUser = this.authService.currentUserValue;
+    if (!currentUser) return false;
+    
+    // User can delete if they are the author or an admin
+    return currentUser.id === comment.userId || 
+           currentUser.roleName === 'Admin';
   }
 }

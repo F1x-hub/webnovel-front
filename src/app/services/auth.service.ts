@@ -577,7 +577,11 @@ export class AuthService {
   }
 
   forgotPassword(email: string): Observable<any> {
-    return this.http.post<any>(`${this.API_URL}/User/forgot-password`, { email })
+    return this.http.post<any>(`${this.API_URL}/User/forgot-password`, JSON.stringify(email), {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
       .pipe(
         catchError((error: HttpErrorResponse) => {
           let errorMsg = 'Failed to send password reset code';
@@ -585,6 +589,10 @@ export class AuthService {
             errorMsg = error.error;
           } else if (error.error?.message) {
             errorMsg = error.error.message;
+          } else if (error.error?.errors?.email) {
+            errorMsg = error.error.errors.email[0];
+          } else if (error.error?.errors?.$) {
+            errorMsg = error.error.errors.$[0];
           }
           
           return throwError(() => ({ 

@@ -16,8 +16,7 @@ import { CreateComponent } from './pages/create/create.component';
 import { AuthInterceptor } from './services/auth.interceptor';
 import { NetworkErrorService } from './services/network-error.service';
 import { NovelDetailComponent } from './pages/novel-detail/novel-detail.component';
-import { ChapterCommentsComponent } from './components/chapter-comments/chapter-comments.component';
-import { NovelCommentsComponent } from './components/novel-comments/novel-comments.component';
+
 import { LibraryService } from './services/library.service';
 import { StarRatingComponent } from './shared/star-rating/star-rating.component';
 import { SharedModule } from './shared/shared.module';
@@ -41,8 +40,6 @@ import { TestErrorService } from './services/test-error.service';
     LibraryComponent,
     CreateComponent,
     NovelDetailComponent,
-    ChapterCommentsComponent,
-    NovelCommentsComponent,
     StarRatingComponent,
     AgeVerificationModalComponent,
     AgeVerificationWrapperComponent,

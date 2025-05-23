@@ -72,6 +72,16 @@
     </div>
   </div>
 
+  <!-- Delete Comment Success Notification -->
+  <div *ngIf="showDeleteSuccess" class="read-notification">
+    <div class="notification-content notification-success">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="20 6 9 17 4 12"></polyline>
+      </svg>
+      <span>Comment deleted successfully</span>
+    </div>
+  </div>
+
   <div *ngIf="chapter && !loading && !error" class="chapter-container">
     <div class="novel-chapter-header">
       <h1>
@@ -217,6 +227,87 @@
       <div class="back-button-container">
         <a (click)="goBack()" class="btn secondary-btn">Back to Novel</a>
       </div>
+
+      <!-- Comments section -->
+      <div class="comments-section">
+        <h2 class="comments-title">Comments</h2>
+        
+        <!-- Comment Form -->
+        <div class="comment-form-container" *ngIf="authService.currentUserValue; else loginPrompt">
+          <form [formGroup]="commentForm" (ngSubmit)="submitComment()" class="comment-form">
+            <textarea 
+              formControlName="content" 
+              class="comment-textarea" 
+              placeholder="Share your thoughts about this chapter..."
+              rows="4"></textarea>
+            <div *ngIf="commentForm.get('content')?.invalid && commentForm.get('content')?.touched" class="validation-error">
+              Comment cannot be empty and must be less than 1000 characters.
+            </div>
+            <div *ngIf="commentError" class="validation-error">
+              {{ commentError }}
+            </div>
+            <div class="form-controls">
+              <button type="submit" [disabled]="commentForm.invalid" class="submit-comment-btn">Post Comment</button>
+            </div>
+          </form>
+        </div>
+        
+        <ng-template #loginPrompt>
+          <div class="login-prompt">
+            <p>Please <a routerLink="/auth/login">log in</a> to leave a comment.</p>
+          </div>
+        </ng-template>
+        
+        <!-- Comments List -->
+        <div *ngIf="commentsLoading" class="loading-comments-skeleton">
+          <div class="comment-skeleton shimmer-effect"></div>
+          <div class="comment-skeleton shimmer-effect"></div>
+          <div class="comment-skeleton shimmer-effect"></div>
+        </div>
+        
+        <div *ngIf="!commentsLoading && comments.length === 0" class="no-comments">
+          No comments yet. Be the first to comment!
+        </div>
+        
+        <div *ngIf="!commentsLoading && comments.length > 0" class="comments-container">
+          <div *ngFor="let comment of comments" class="comment-item">
+            <div class="comment-header">
+              <div class="comment-user">
+                <div class="user-avatar">
+                  <img [src]="comment.imageUrl || 'assets/images/default-avatar.png'" alt="{{ comment.displayName }}'s avatar" (error)="onImageError($event)">
+                </div>
+                <div class="user-info">
+                  <div class="username">{{ comment.displayName }}</div>
+                  <div class="comment-date">{{ formatDate(comment.publishedDate) }}</div>
+                </div>
+              </div>
+              
+              <!-- Comment Options Button -->
+              <div class="comment-actions" *ngIf="canDeleteComment(comment)">
+                <button class="options-btn" (click)="toggleCommentOptions(comment, $event)" aria-label="Comment options">
+                  <span class="options-icon">⋮</span>
+                </button>
+                
+                <!-- Options Menu -->
+                <div class="comment-options-menu" *ngIf="comment.showOptions">
+                  <button class="delete-btn" (click)="deleteComment(comment)" [disabled]="deletingComment">
+                    <span class="delete-icon">🗑️</span> Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="comment-content">
+              {{ comment.content }}
+            </div>
+            <div class="comment-footer">
+              <button class="like-btn" [class.liked]="isCommentLiked(comment.id)" (click)="likeComment(comment.id)" [disabled]="!authService.currentUserValue">
+                <span class="like-icon">{{ isCommentLiked(comment.id) ? '❤️' : '🤍' }}</span>
+                <span class="like-count">{{ formatLikeCount(comment.likesCount) }}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
     
     <!-- Chapters popup overlay -->
@@ -268,6 +359,5 @@
       </div>
     </div>
     
-    <app-chapter-comments [chapterId]="chapter.id"></app-chapter-comments>
   </div>
 </div>
