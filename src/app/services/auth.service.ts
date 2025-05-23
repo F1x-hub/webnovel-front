@@ -421,17 +421,14 @@ export class AuthService {
     return this.http.get(`${this.API_URL}/User/get-user/${user.id}`)
       .pipe(
         tap(userData => {
-          console.log('User data from server:', userData);
           if (userData) {
             // Update stored user data
             const updatedUser = { ...user, ...userData };
-            console.log('Updated user data:', updatedUser);
             localStorage.setItem('currentUser', JSON.stringify(updatedUser));
             this.currentUserSubject.next(updatedUser);
           }
         }),
         catchError(error => {
-          console.error(`Error getting user data for ID ${user.id}:`, error);
           return throwError(() => error);
         })
       );

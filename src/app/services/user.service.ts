@@ -34,13 +34,10 @@ export class UserService {
 
   getCurrentUserProfile(): Observable<UserProfile> {
     const userId = this.getUserIdFromToken();
-    console.log('Getting profile for user ID:', userId);
     return this.getUserProfile(userId);
   }
 
   getUserProfile(userId: number): Observable<UserProfile> {
-    console.log(`Fetching user profile for ID: ${userId} from ${this.API_URL}/User/get-user/${userId}`);
-    
     // Include the role information in the request headers
     const token = localStorage.getItem('token');
     const options = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
@@ -48,15 +45,11 @@ export class UserService {
     return this.http.get<UserProfile>(`${this.API_URL}/User/get-user/${userId}`, options)
       .pipe(
         catchError((error) => {
-          console.error(`Error fetching profile for user ID ${userId}:`, error);
-          
           if (error.status === 401 || error.status === 403) {
             // If unauthorized, try to refresh the token/user data
-            console.log('Authorization error, attempting to refresh token...');
             localStorage.removeItem('currentUser'); // Force re-fetch user data
             return this.authService.refreshUserData().pipe(
               catchError(err => {
-                console.error('Failed to refresh token:', err);
                 return throwError(() => ({
                   message: 'Your session has expired. Please log in again.',
                   originalError: error
@@ -71,8 +64,6 @@ export class UserService {
   }
 
   updateUserProfile(userId: number, userData: Partial<UserProfile>): Observable<any> {
-    console.log('Updating profile for user ID:', userId, 'with data:', userData);
-    
     // Make sure roleId is properly formatted for the API
     const formattedData = {...userData};
     if (formattedData.roleId === undefined && this.authService.currentUserValue?.roleId) {
@@ -108,8 +99,6 @@ export class UserService {
     // Make sure the field name exactly matches what the backend expects
     formData.append('imageFiles', imageFile);
     
-    console.log('Uploading image for user ID:', userId, 'File name:', imageFile.name);
-    
     // Get authorization token but WITHOUT setting Content-Type header
     // Angular will automatically set the correct Content-Type with boundary for multipart/form-data
     const token = localStorage.getItem('token');
@@ -143,8 +132,6 @@ export class UserService {
     // First check if we have a cached version in localStorage
     const cachedImage = this.getCachedProfileImage(userId);
     if (cachedImage) {
-      console.log('Using cached profile image for user ID:', userId);
-      
       // Return cached image immediately
       const cachedImageObs = of(cachedImage);
       
@@ -153,14 +140,12 @@ export class UserService {
       const oneHourAgo = Date.now() - 3600000;
       
       if (!timestamp || timestamp < oneHourAgo) {
-        console.log('Cache is stale, fetching fresh image in background');
         // Fetch fresh image in background
         this.fetchAndCacheProfileImage(userId).subscribe();
       }
       
       return cachedImageObs;
     } else {
-      console.log('No cached image found, fetching from server for user ID:', userId);
       // No cached image, fetch from server and cache it
       return this.fetchAndCacheProfileImage(userId);
     }
@@ -189,7 +174,6 @@ export class UserService {
           reader.readAsDataURL(blob);
         },
         error: (error) => {
-          console.error('Error fetching image:', error);
           // If error, return default image path
           const defaultImage = `assets/images/default-avatar.png?t=${Date.now()}`;
           observer.next(defaultImage);
@@ -203,9 +187,7 @@ export class UserService {
     try {
       localStorage.setItem(this.IMAGE_CACHE_PREFIX + userId, base64Image);
       localStorage.setItem(this.IMAGE_CACHE_TIMESTAMP + userId, Date.now().toString());
-      console.log('Profile image cached for user ID:', userId);
     } catch (e) {
-      console.error('Error caching profile image:', e);
       // If localStorage is full, clear old images
       this.clearOldImageCache();
       try {
@@ -213,7 +195,7 @@ export class UserService {
         localStorage.setItem(this.IMAGE_CACHE_PREFIX + userId, base64Image);
         localStorage.setItem(this.IMAGE_CACHE_TIMESTAMP + userId, Date.now().toString());
       } catch (e) {
-        console.error('Failed to cache image even after clearing old cache:', e);
+        // Failed to cache
       }
     }
   }
@@ -230,7 +212,6 @@ export class UserService {
   private clearCachedProfileImage(userId: number): void {
     localStorage.removeItem(this.IMAGE_CACHE_PREFIX + userId);
     localStorage.removeItem(this.IMAGE_CACHE_TIMESTAMP + userId);
-    console.log('Cleared cached profile image for user ID:', userId);
   }
 
   private clearOldImageCache(): void {
@@ -251,20 +232,16 @@ export class UserService {
     keysToRemove.forEach(key => {
       localStorage.removeItem(key);
     });
-    
-    console.log(`Cleared ${keysToRemove.length} cached images from local storage`);
   }
 
   private getUserIdFromToken(): number {
     const user = this.authService.currentUserValue;
-    console.log('Current user from auth service:', user);
     
     if (!user) {
       throw new Error('User not authenticated');
     }
     
     if (!user.id) {
-      console.error('User ID not found in current user object:', user);
       // We'll still throw the error to be handled by the caller
       // The profile component will catch this and attempt a refresh
       throw new Error('User ID not available');
@@ -296,13 +273,10 @@ export class UserService {
       }
     }
     
-    console.error('API error:', error);
     return throwError(() => ({ message: errorMessage, originalError: error }));
   }
 
   clearNewChaptersNotification(userId: number): Observable<any> {
-    console.log('Clearing new chapters notification for user ID:', userId);
-    
     const token = localStorage.getItem('token');
     const options = token ? { 
       headers: { Authorization: `Bearer ${token}` },

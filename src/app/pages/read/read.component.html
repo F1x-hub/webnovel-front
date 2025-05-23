@@ -153,10 +153,12 @@
         </button>
       </div>
       
-      <h1 class="chapter-title">{{ chapter.title }}</h1>
+      <h1 class="chapter-title">
+        {{ chapter.title }}
+      </h1>
     </div>
     
-    <div class="chapter-content">
+    <div class="chapter-content" [class.pdf-content]="isPdfChapter">
       <div [innerHTML]="chapter.content | safeHtml"></div>
     </div>
     

@@ -40,18 +40,23 @@ export interface UpdateNovelDto {
 }
 
 export interface CreateChapterDto {
-  chapterNumber: number;
   title: string;
   content: string;
+  chapterNumber: number;
+  pdfPath?: string;
+  usePdfContent?: boolean;
 }
 
 export interface Chapter {
-  id: number;
+  id?: number;
+  novelId?: number;
   chapterNumber: number;
   title: string;
   content: string;
-  isRead: boolean;
-  createdAt?: string;
+  pdfPath?: string;
+  usePdfContent?: boolean;
+  createdAt?: Date;
+  isRead?: boolean;
 }
 
 export interface GetChapterDto {
@@ -62,6 +67,8 @@ export interface GetChapterDto {
   content: string;
   isRead: boolean;
   createdAt?: string;
+  pdfPath?: string;
+  usePdfContent?: boolean;
 }
 
 export interface RatingResponse {
@@ -188,6 +195,16 @@ export class NovelService {
   }
   
   createChapter(userId: number, novelId: number, chapterData: CreateChapterDto): Observable<GetChapterDto> {
+    // Ensure content is not empty
+    if (!chapterData.content || chapterData.content.trim().length === 0) {
+      chapterData.content = "Content placeholder";
+    }
+    
+    // Ensure we have a valid chapter number (even if it's 0 and backend will overwrite it)
+    if (chapterData.chapterNumber === undefined || chapterData.chapterNumber === null) {
+      chapterData.chapterNumber = 0;
+    }
+    
     return this.http.post<GetChapterDto>(`${this.apiUrl}/api/Chapter/create-chapter/${userId}/${novelId}`, chapterData);
   }
   
@@ -200,17 +217,12 @@ export class NovelService {
   }
   
   getAllChapters(novelId: number): Observable<Chapter[]> {
-    // Try the new endpoint first
-    return this.http.get<Chapter[]>(`${this.apiUrl}/api/Chapter/novel-chapters-direct/${novelId}`)
+    // Only use the working endpoint
+    return this.http.get<Chapter[]>(`${this.apiUrl}/api/Chapter/novel-all-chapters/${novelId}`)
       .pipe(
-        catchError(directError => {
-          // If the direct endpoint fails, fall back to the original endpoint
-          return this.http.get<Chapter[]>(`${this.apiUrl}/api/Chapter/novel-all-chapters/${novelId}`)
-            .pipe(
-              catchError(error => {
-                return of([]);
-              })
-            );
+        catchError(error => {
+          // Return empty array on error
+          return of([]);
         })
       );
   }
@@ -282,6 +294,10 @@ export class NovelService {
           this.saveImageToCache(novelId, dataUrl);
         };
         reader.readAsDataURL(blob);
+      } else if (xhr.status === 406) {
+        // Handle the case when the novel has no cover image (Not Acceptable)
+        // Save the default image to cache to prevent future requests
+        this.saveImageToCache(novelId, this.DEFAULT_COVER_IMAGE);
       }
     };
     
@@ -336,31 +352,39 @@ export class NovelService {
   // Удаление самых старых кэшированных изображений
   private clearOldestCachedImages(count: number): void {
     try {
-      const cacheItems: {key: string; timestamp: number}[] = [];
+      // Collect all image cache keys with their timestamps
+      const cacheItems = [];
       
-      // Собираем все кэшированные изображения с временными метками
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         if (key && key.startsWith(this.IMAGE_CACHE_PREFIX)) {
           try {
-            const item = JSON.parse(localStorage.getItem(key) || '{}');
-            if (item && item.timestamp) {
-              cacheItems.push({key, timestamp: item.timestamp});
+            const item = localStorage.getItem(key);
+            if (item) {
+              const parsedItem = JSON.parse(item);
+              cacheItems.push({
+                key,
+                timestamp: parsedItem.timestamp || 0
+              });
             }
           } catch (e) {
-            // Если не удалось разобрать JSON, просто пропускаем этот элемент
+            // If we can't parse it, add it with a zero timestamp so it gets removed
+            cacheItems.push({
+              key,
+              timestamp: 0
+            });
           }
         }
       }
       
-      // Сортируем по временной метке (от старых к новым)
+      // Sort by timestamp, oldest first
       cacheItems.sort((a, b) => a.timestamp - b.timestamp);
       
-      // Удаляем самые старые
-      const itemsToRemove = Math.min(count, cacheItems.length);
-      for (let i = 0; i < itemsToRemove; i++) {
-        localStorage.removeItem(cacheItems[i].key);
-      }
+      // Remove the oldest ones up to count
+      const toRemove = cacheItems.slice(0, count);
+      toRemove.forEach(item => {
+        localStorage.removeItem(item.key);
+      });
     } catch (error) {
       // Suppressing error logging
     }
@@ -469,5 +493,17 @@ export class NovelService {
 
   getAllGenres(): Observable<Genre[]> {
     return this.http.get<Genre[]>(`${this.apiUrl}/api/Genre/get-all-genre`);
+  }
+
+  // Add a new method to upload PDF for a chapter
+  uploadChapterPdf(userId: number, novelId: number, chapterId: number | null, file: File): Observable<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const url = chapterId !== null
+      ? `${this.apiUrl}/api/Chapter/upload-pdf/${userId}/${novelId}/${chapterId}`
+      : `${this.apiUrl}/api/Chapter/upload-pdf/${userId}/${novelId}`;
+      
+    return this.http.post<any>(url, formData);
   }
 } 

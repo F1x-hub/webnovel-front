@@ -18,7 +18,6 @@ export class AuthInterceptor implements HttpInterceptor {
     const token = localStorage.getItem('token');
     
     if (token) {
-      console.log('Adding auth token to request:', request.url);
       const cloned = request.clone({
         setHeaders: {
           Authorization: `Bearer ${token}`
@@ -27,7 +26,6 @@ export class AuthInterceptor implements HttpInterceptor {
       return next.handle(cloned).pipe(
         catchError((error: HttpErrorResponse) => {
           if (error.status === 401) {
-            console.error('Authentication error:', error);
             // Optional: Redirect to login on auth errors
             // this.router.navigate(['/login']);
           }

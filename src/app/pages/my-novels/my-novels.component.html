@@ -363,33 +363,103 @@
       </div>
       <form [formGroup]="chapterForm" (ngSubmit)="addChapter()" class="chapter-form">
         <div class="modal-body chapters-body">
-        <div class="form-group">
-          <label for="chapterTitle">Chapter Title</label>
-          <input 
-            type="text" 
-            id="chapterTitle" 
-            formControlName="title" 
-            [class.is-invalid]="chapterForm.get('title')?.invalid && chapterForm.get('title')?.touched"
+          <div class="form-group">
+            <label for="chapterTitle">Chapter Title</label>
+            <input 
+              type="text" 
+              id="chapterTitle" 
+              formControlName="title" 
+              [class.is-invalid]="chapterForm.get('title')?.invalid && chapterForm.get('title')?.touched"
               placeholder="Enter chapter title"
-          />
-          <div class="error-message" *ngIf="chapterForm.get('title')?.invalid && chapterForm.get('title')?.touched">
-            <span *ngIf="chapterForm.get('title')?.errors?.['required']">Title is required</span>
-            <span *ngIf="chapterForm.get('title')?.errors?.['minlength']">Title must be at least 3 characters</span>
+            />
+            <div class="error-message" *ngIf="chapterForm.get('title')?.invalid && chapterForm.get('title')?.touched">
+              <span *ngIf="chapterForm.get('title')?.errors?.['required']">Title is required</span>
+              <span *ngIf="chapterForm.get('title')?.errors?.['minlength']">Title must be at least 3 characters</span>
+            </div>
           </div>
-        </div>
 
-        <div class="form-group">
-          <label for="chapterContent">Chapter Content</label>
-          <textarea 
-            id="chapterContent" 
-            formControlName="content" 
-            rows="15"
-            [class.is-invalid]="chapterForm.get('content')?.invalid && chapterForm.get('content')?.touched"
-              placeholder="Start writing your chapter content here..."
-          ></textarea>
-          <div class="error-message" *ngIf="chapterForm.get('content')?.invalid && chapterForm.get('content')?.touched">
-            <span *ngIf="chapterForm.get('content')?.errors?.['required']">Content is required</span>
-            <span *ngIf="chapterForm.get('content')?.errors?.['minlength']">Content must be at least 50 characters</span>
+          <!-- PDF Content Option -->
+          <div class="form-group">
+            <div class="pdf-content-toggle">
+              <div class="toggle-container">
+                <input 
+                  class="toggle-input" 
+                  type="checkbox" 
+                  id="usePdfContent"
+                  formControlName="usePdfContent"
+                  (change)="toggleUsePdfContent()"
+                >
+                <label class="toggle-label" for="usePdfContent">
+                  <span class="toggle-button"></span>
+                </label>
+              </div>
+              <div class="toggle-content">
+                <h4>Use PDF Instead of Text</h4>
+                <p>Upload a PDF file instead of writing content directly</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- PDF Upload Section -->
+          <div class="form-group" *ngIf="chapterForm.get('usePdfContent')?.value">
+            <label for="pdfFile">PDF Upload</label>
+            <div class="pdf-upload-container" 
+                (click)="triggerPdfInput()">
+              <div class="upload-area">
+                <div *ngIf="!pdfPreview" class="upload-placeholder">
+                  <div class="upload-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                      <polyline points="14 2 14 8 20 8"></polyline>
+                      <line x1="16" y1="13" x2="8" y2="13"></line>
+                      <line x1="16" y1="17" x2="8" y2="17"></line>
+                      <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                  </div>
+                  <p class="upload-text">Click to select a PDF file</p>
+                </div>
+                <div *ngIf="pdfPreview" class="pdf-preview">
+                  <div class="pdf-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                      <polyline points="14 2 14 8 20 8"></polyline>
+                      <line x1="16" y1="13" x2="8" y2="13"></line>
+                      <line x1="16" y1="17" x2="8" y2="17"></line>
+                      <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                  </div>
+                  <p class="pdf-file-name">{{ pdfPreview }}</p>
+                  <button type="button" class="remove-pdf-btn" (click)="removePdf(); $event.stopPropagation()">Remove</button>
+                </div>
+              </div>
+              <input 
+                type="file" 
+                id="pdfFile" 
+                accept="application/pdf"
+                (change)="onPdfFileSelected($event)"
+                hidden
+              />
+            </div>
+            <small class="form-text">Only PDF files are supported (Max. size: 40MB)</small>
+          </div>
+
+          <!-- Text Content Section -->
+          <div class="form-group" *ngIf="!chapterForm.get('usePdfContent')?.value">
+            <label for="chapterContent">Chapter Content</label>
+            <textarea 
+              id="chapterContent" 
+              formControlName="content" 
+              [class.is-invalid]="chapterForm.get('content')?.invalid && chapterForm.get('content')?.touched"
+              rows="10" 
+              placeholder="Enter chapter content"
+              [attr.disabled]="chapterForm.get('usePdfContent')?.value ? '' : null"
+              [style.opacity]="chapterForm.get('usePdfContent')?.value ? 0.6 : 1"
+            ></textarea>
+            <div class="form-text" *ngIf="chapterForm.get('usePdfContent')?.value">
+              Content will be extracted from the PDF file. This text field is optional.
+            </div>
+            <div class="error-message" *ngIf="chapterForm.get('content')?.invalid && chapterForm.get('content')?.touched">
+              Chapter content is required and must be at least 50 characters long.
             </div>
           </div>
         </div>
@@ -467,15 +537,32 @@
             <div class="chapter-column-title">Actions</div>
           </div>
           <div class="chapters-list">
-            <div class="chapter-item" *ngFor="let chapter of novelChapters; let i = index" [ngClass]="{'even': i % 2 === 0}">
-            <div class="chapter-info">
+            <div class="chapter-item" *ngFor="let chapter of novelChapters; let i = index" [ngClass]="{'even': i % 2 === 0, 'has-pdf': chapter.usePdfContent, 'has-text': !chapter.usePdfContent}">
+              <div class="chapter-info">
                 <div class="chapter-number-badge">
                   <span>{{ chapter.chapterNumber }}</span>
                 </div>
-              <span class="chapter-title">{{ chapter.title }}</span>
-              <span class="chapter-date" *ngIf="chapter.createdAt">{{ chapter.createdAt | timeAgo }}</span>
-            </div>
-            <div class="chapter-actions">
+                <span class="chapter-title">
+                  {{ chapter.title }}
+                  <span class="chapter-format format-pdf" *ngIf="chapter.usePdfContent">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" class="chapter-format-icon">
+                      <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V9H3V2a1 1 0 0 1 1-1h5.5v2z"/>
+                      <path d="M3 12h10v2H3v-2z"/>
+                    </svg>
+                    PDF
+                  </span>
+                  <span class="chapter-format format-text" *ngIf="!chapter.usePdfContent">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" class="chapter-format-icon">
+                      <path d="M5 10.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5zm0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5z"/>
+                      <path d="M3 0h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2v-1h1v1a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v1H1V2a2 2 0 0 1 2-2z"/>
+                      <path d="M1 5v-.5a.5.5 0 0 1 1 0V5h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1H1zm0 3v-.5a.5.5 0 0 1 1 0V8h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1H1zm0 3v-.5a.5.5 0 0 1 1 0v.5h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1H1z"/>
+                    </svg>
+                    TXT
+                  </span>
+                </span>
+                <span class="chapter-date" *ngIf="chapter.createdAt">{{ chapter.createdAt | timeAgo }}</span>
+              </div>
+              <div class="chapter-actions">
                 <button class="edit-chapter-button" (click)="showEditChapterForm(chapter)">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                     <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293l6.5-6.5zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325z"/>
@@ -633,7 +720,73 @@
             </div>
           </div>
 
+          <!-- PDF Content Option -->
           <div class="form-group">
+            <div class="pdf-content-toggle">
+              <div class="toggle-container">
+                <input 
+                  class="toggle-input" 
+                  type="checkbox" 
+                  id="editUsePdfContent"
+                  formControlName="usePdfContent"
+                  (change)="toggleEditUsePdfContent()"
+                >
+                <label class="toggle-label" for="editUsePdfContent">
+                  <span class="toggle-button"></span>
+                </label>
+              </div>
+              <div class="toggle-content">
+                <h4>Use PDF Instead of Text</h4>
+                <p>Upload a PDF file instead of writing content directly</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- PDF Upload Section -->
+          <div class="form-group" *ngIf="editChapterForm.get('usePdfContent')?.value">
+            <label for="editPdfFile">PDF Upload</label>
+            <div class="pdf-upload-container" 
+                (click)="triggerPdfInput()">
+              <div class="upload-area">
+                <div *ngIf="!pdfPreview && !selectedChapter?.pdfPath" class="upload-placeholder">
+                  <div class="upload-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                      <polyline points="14 2 14 8 20 8"></polyline>
+                      <line x1="16" y1="13" x2="8" y2="13"></line>
+                      <line x1="16" y1="17" x2="8" y2="17"></line>
+                      <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                  </div>
+                  <p class="upload-text">Click to select a PDF file</p>
+                </div>
+                <div *ngIf="pdfPreview || selectedChapter?.pdfPath" class="pdf-preview">
+                  <div class="pdf-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                      <polyline points="14 2 14 8 20 8"></polyline>
+                      <line x1="16" y1="13" x2="8" y2="13"></line>
+                      <line x1="16" y1="17" x2="8" y2="17"></line>
+                      <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                  </div>
+                  <p class="pdf-file-name">{{ pdfPreview || 'Existing PDF (click to replace)' }}</p>
+                  <button type="button" class="remove-pdf-btn" (click)="removePdf(); $event.stopPropagation()">Remove</button>
+                </div>
+              </div>
+              <input 
+                type="file" 
+                id="editPdfFile" 
+                accept="application/pdf"
+                (change)="onPdfFileSelected($event)"
+                hidden
+              />
+            </div>
+            <small class="form-text">Only PDF files are supported (Max. size: 40MB)</small>
+          </div>
+
+          <!-- Text Content Section -->
+          <div class="form-group" *ngIf="!editChapterForm.get('usePdfContent')?.value">
             <label for="editChapterContent">Chapter Content</label>
             <textarea 
               id="editChapterContent" 

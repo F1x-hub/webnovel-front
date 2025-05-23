@@ -487,6 +487,13 @@ export class NovelDetailComponent implements OnInit, OnDestroy {
           this.commentsLoading = false;
         },
         error: (error) => {
+          // Handle 400 Bad Request with "Not Have Comments" message as a valid empty result
+          if (error.status === 400 || error.error === "Not Have Comments" || error.message?.includes("Not Have Comments")) {
+            this.comments = [];
+            this.commentsLoading = false;
+            return;
+          }
+          
           console.error('Error fetching comments:', error);
           this.commentsLoading = false;
         }

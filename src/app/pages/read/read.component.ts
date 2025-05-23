@@ -12,9 +12,10 @@ import { UserService } from '../../services/user.service';
 import { HostListener } from '@angular/core';
 
 interface ChapterItem {
-  id: number;
+  id?: number;
   number: number;
   title: string;
+  usePdfContent?: boolean;
 }
 
 interface ChapterComment {
@@ -60,6 +61,8 @@ export class ReadComponent implements OnInit {
   likedComments: Set<number> = new Set();
   deletingComment: boolean = false;
   showDeleteSuccess: boolean = false;
+
+  isPdfChapter: boolean = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -139,7 +142,8 @@ export class ReadComponent implements OnInit {
         this.chaptersList = chapters.map(chapter => ({
           id: chapter.id,
           number: chapter.chapterNumber,
-          title: chapter.title
+          title: chapter.title,
+          usePdfContent: chapter.usePdfContent
         }));
       },
       error: (err) => {
@@ -205,6 +209,9 @@ export class ReadComponent implements OnInit {
         next: (chapter) => {
           this.chapter = chapter;
           this.loading = false;
+          
+          // Check if chapter uses PDF content
+          this.isPdfChapter = chapter.usePdfContent || false;
           
           // Update URL to reflect current chapter
           this.updateUrl();
@@ -398,11 +405,14 @@ export class ReadComponent implements OnInit {
           this.commentsLoading = false;
         },
         error: (error) => {
-          console.error('Error fetching comments:', error);
-          // If the error is "Not Have Comments", set comments to empty array
-          if (error.error === "Not Have Comments" || error.message?.includes("Not Have Comments")) {
+          // Handle 400 Bad Request with "Not Have Comments" message as a valid empty result
+          if (error.status === 400 || error.error === "Not Have Comments" || error.message?.includes("Not Have Comments")) {
             this.comments = [];
+            this.commentsLoading = false;
+            return;
           }
+          
+          console.error('Error fetching comments:', error);
           this.commentsLoading = false;
         }
       });

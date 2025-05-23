@@ -58,9 +58,6 @@ export class LibraryComponent implements OnInit {
       )
       .subscribe({
         next: (data) => {
-          // Log raw data from API for debugging
-          console.log('Raw library data from API:', data);
-          
           // Temporary array to hold novels with basic info
           const libraryNovels = Array.isArray(data) ? data.map(item => {
             // Get the novel ID
@@ -86,7 +83,6 @@ export class LibraryComponent implements OnInit {
           
           this.myLibrary = libraryNovels;
           this.totalPages = Math.ceil(this.myLibrary.length / this.pageSize) || 1;
-          console.log('Processed library novels:', this.myLibrary);
           
           // Fetch chapter counts for all novels without total chapters
           this.fetchChapterCountsForNovels();
@@ -197,7 +193,6 @@ export class LibraryComponent implements OnInit {
     
     this.userService.clearNewChaptersNotification(userId).subscribe({
       next: () => {
-        console.log('New chapters notification cleared');
         // Update the currentUser in the AuthService
         this.authService.refreshUserData().subscribe();
       },

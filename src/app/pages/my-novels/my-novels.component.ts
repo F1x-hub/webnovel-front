@@ -61,6 +61,10 @@ export class MyNovelsComponent implements OnInit, OnDestroy {
     this.closeNovelMenu();
   }
 
+  selectedPdfFile: File | null = null;
+  pdfPreview: string | null = null;
+  usePdfContent: boolean = false;
+
   constructor(
     private novelService: NovelService,
     private authService: AuthService,
@@ -125,13 +129,15 @@ export class MyNovelsComponent implements OnInit, OnDestroy {
 
     this.chapterForm = this.fb.group({
       title: ['', [Validators.required, Validators.minLength(3)]],
-      content: ['', [Validators.required, Validators.minLength(50)]]
+      content: ['', [Validators.required, Validators.minLength(50)]],
+      usePdfContent: [false]
     });
     
     this.editChapterForm = this.fb.group({
       title: ['', [Validators.required, Validators.minLength(3)]],
       content: ['', [Validators.required, Validators.minLength(50)]],
-      chapterNumber: [0]
+      chapterNumber: [0],
+      usePdfContent: [false]
     });
   }
 
@@ -476,22 +482,50 @@ export class MyNovelsComponent implements OnInit, OnDestroy {
     this.errorMessage = '';
     this.successMessage = '';
 
+    // Get the usePdfContent value
+    const usePdfContent = this.chapterForm.get('usePdfContent')?.value || false;
+    
+    // If user selected to use PDF but didn't upload a file
+    if (usePdfContent && !this.selectedPdfFile) {
+      this.errorMessage = 'Please upload a PDF file or disable the PDF content option.';
+      this.isLoading = false;
+      return;
+    }
+
+    // Define the chapter data
     const chapterData: CreateChapterDto = {
       title: this.chapterForm.value.title,
-      content: this.chapterForm.value.content,
-      chapterNumber: 0 // This will be set by the backend
+      content: usePdfContent ? "Content will be extracted from PDF file." : this.chapterForm.value.content,
+      chapterNumber: 0, // Let the backend assign the chapter number
+      usePdfContent: usePdfContent
     };
 
-    this.novelService.createChapter(userId, this.selectedNovelId, chapterData).subscribe({
-      next: (chapter) => {
-        this.handleSuccess(`Chapter "${chapter.title}" added successfully!`);
-      },
-      error: (error) => {
-        console.error('Error adding chapter:', error);
-        this.errorMessage = error.message || 'Failed to add chapter. Please try again later.';
-        this.isLoading = false;
-      }
-    });
+    // If using PDF, upload it first and ALWAYS wait for pdfPath before creating the chapter
+    if (usePdfContent && this.selectedPdfFile) {
+      this.novelService.uploadChapterPdf(userId, this.selectedNovelId!, null, this.selectedPdfFile)
+        .subscribe({
+          next: (response) => {
+            // Set the PDF path from the response
+            if (response && response.pdfPath) {
+              chapterData.pdfPath = response.pdfPath;
+              // Now create the chapter with the PDF information
+              this.createChapterWithData(userId, this.selectedNovelId!, chapterData);
+            } else {
+              this.errorMessage = 'Failed to get valid PDF path from server. Please try again.';
+              this.isLoading = false;
+            }
+          },
+          error: (error) => {
+            this.errorMessage = error.message || 'Failed to upload PDF. Please try again.';
+            this.isLoading = false;
+          }
+        });
+    } else {
+      // Create chapter without PDF
+      chapterData.usePdfContent = false; // Ensure we don't set usePdfContent without a pdfPath
+      chapterData.pdfPath = "";
+      this.createChapterWithData(userId, this.selectedNovelId!, chapterData);
+    }
   }
 
   deleteChapter(): void {
@@ -736,11 +770,16 @@ export class MyNovelsComponent implements OnInit, OnDestroy {
     this.editChapterForm.patchValue({
       title: chapter.title,
       content: chapter.content,
-      chapterNumber: chapter.chapterNumber
+      chapterNumber: chapter.chapterNumber,
+      usePdfContent: chapter.usePdfContent || false
     });
     
     this.editChapterFormVisible = true;
     this.manageChaptersVisible = false;
+    
+    // Reset PDF selection
+    this.selectedPdfFile = null;
+    this.pdfPreview = null;
     
     // Disable scrolling when modal opens
     this.renderer.setStyle(document.body, 'overflow', 'hidden');
@@ -773,23 +812,72 @@ export class MyNovelsComponent implements OnInit, OnDestroy {
     this.errorMessage = '';
     this.successMessage = '';
 
+    // Get the usePdfContent value
+    const usePdfContent = this.editChapterForm.get('usePdfContent')?.value || false;
+    
+    // If user selected to use PDF but didn't upload a file and there's no existing PDF
+    if (usePdfContent && !this.selectedPdfFile && !this.selectedChapter.pdfPath) {
+      this.errorMessage = 'Please upload a PDF file or disable the PDF content option.';
+      this.isLoading = false;
+      return;
+    }
+
     const chapterData: CreateChapterDto = {
       title: this.editChapterForm.value.title,
-      content: this.editChapterForm.value.content,
-      chapterNumber: this.editChapterForm.value.chapterNumber
+      content: usePdfContent ? "Content will be extracted from PDF file." : this.editChapterForm.value.content,
+      chapterNumber: this.editChapterForm.value.chapterNumber,
+      usePdfContent: usePdfContent,
+      pdfPath: this.selectedChapter.pdfPath
     };
 
-    this.novelService.updateChapter(
-      this.selectedNovelId, 
-      this.selectedChapter.id, 
-      userId, 
-      chapterData
-    ).subscribe({
+    // If using PDF and a new file is selected, upload it first
+    if (usePdfContent && this.selectedPdfFile) {
+      this.novelService.uploadChapterPdf(userId, this.selectedNovelId, this.selectedChapter.id, this.selectedPdfFile)
+        .subscribe({
+          next: (response) => {
+            // Set the PDF path from the response
+            if (response && response.pdfPath) {
+              chapterData.pdfPath = response.pdfPath;
+              
+              // Now update the chapter with the PDF information
+              this.updateChapterWithData(userId, this.selectedNovelId!, this.selectedChapter!.id!, chapterData);
+            } else {
+              this.errorMessage = 'Failed to get valid PDF path from server. Please try again.';
+              this.isLoading = false;
+            }
+          },
+          error: (error) => {
+            this.errorMessage = error.message || 'Failed to upload PDF. Please try again.';
+            this.isLoading = false;
+          }
+        });
+    } else if (usePdfContent && this.selectedChapter.pdfPath) {
+      // Using existing PDF, proceed with update
+      this.updateChapterWithData(userId, this.selectedNovelId, this.selectedChapter.id, chapterData);
+    } else {
+      // Update chapter without PDF
+      chapterData.usePdfContent = false;
+      chapterData.pdfPath = undefined; // Clear any PDF path
+      this.updateChapterWithData(userId, this.selectedNovelId, this.selectedChapter.id, chapterData);
+    }
+  }
+
+  // Helper method to update a chapter after potential PDF upload
+  private updateChapterWithData(userId: number, novelId: number, chapterId: number, chapterData: CreateChapterDto): void {
+    // Safety check - if usePdfContent is true, pdfPath must not be empty
+    if (chapterData.usePdfContent && (!chapterData.pdfPath || chapterData.pdfPath.trim() === '')) {
+      this.errorMessage = 'Failed to update chapter: PDF path is missing. Please try again with a PDF file.';
+      this.isLoading = false;
+      return;
+    }
+
+    this.novelService.updateChapter(novelId, chapterId, userId, chapterData).subscribe({
       next: () => {
         this.handleSuccess(`Chapter "${chapterData.title}" updated successfully!`);
+        this.selectedPdfFile = null;
+        this.pdfPreview = null;
       },
       error: (error) => {
-        console.error('Error updating chapter:', error);
         this.errorMessage = error.message || 'Failed to update chapter. Please try again later.';
         this.isLoading = false;
       }
@@ -815,5 +903,116 @@ export class MyNovelsComponent implements OnInit, OnDestroy {
   closeNovelMenu(): void {
     this.activeNovelMenuId = null;
     document.removeEventListener('click', this.closeNovelMenuHandler);
+  }
+
+  // Add new methods for PDF handling
+  onPdfFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    
+    if (input.files && input.files[0]) {
+      this.selectedPdfFile = input.files[0];
+      this.createPdfPreview(this.selectedPdfFile);
+    }
+  }
+
+  createPdfPreview(file: File): void {
+    this.pdfPreview = file.name;
+  }
+
+  removePdf(): void {
+    this.selectedPdfFile = null;
+    this.pdfPreview = null;
+    // Reset file input
+    const pdfInput = document.getElementById('pdfFile') as HTMLInputElement;
+    if (pdfInput) pdfInput.value = '';
+  }
+
+  triggerPdfInput(): void {
+    const pdfInput = document.getElementById('pdfFile') as HTMLInputElement;
+    if (pdfInput) pdfInput.click();
+  }
+
+  toggleUsePdfContent(): void {
+    this.usePdfContent = !this.usePdfContent;
+    
+    const contentControl = this.chapterForm.get('content');
+    if (this.usePdfContent) {
+      // When enabling PDF mode
+      if (contentControl) {
+        // Set a default content value for PDF chapters
+        contentControl.setValue('Content will be extracted from PDF file.');
+        // Remove validation requirements for PDF mode
+        contentControl.setValidators(null);
+        contentControl.updateValueAndValidity();
+      }
+    } else {
+      // When disabling PDF mode, restore original validators
+      if (contentControl) {
+        contentControl.setValidators([Validators.required, Validators.minLength(50)]);
+        contentControl.updateValueAndValidity();
+      }
+    }
+    
+    this.chapterForm.get('usePdfContent')?.setValue(this.usePdfContent);
+  }
+
+  toggleEditUsePdfContent(): void {
+    const currentValue = this.editChapterForm.get('usePdfContent')?.value;
+    this.editChapterForm.get('usePdfContent')?.setValue(!currentValue);
+    
+    const contentControl = this.editChapterForm.get('content');
+    if (!currentValue) {
+      // Switching to PDF mode
+      if (contentControl) {
+        // Set a default content value for PDF chapters
+        contentControl.setValue('Content will be extracted from PDF file.');
+        // Remove validation requirements for PDF mode
+        contentControl.setValidators(null);
+        contentControl.updateValueAndValidity();
+      }
+    } else {
+      // Switching to text mode, restore original validators
+      if (contentControl) {
+        contentControl.setValidators([Validators.required, Validators.minLength(50)]);
+        contentControl.updateValueAndValidity();
+      }
+    }
+  }
+
+  // Helper method to create a chapter after potential PDF upload
+  private createChapterWithData(userId: number, novelId: number, chapterData: CreateChapterDto): void {
+    // Safety check - if usePdfContent is true, pdfPath must not be empty
+    if (chapterData.usePdfContent && (!chapterData.pdfPath || chapterData.pdfPath.trim() === '')) {
+      this.errorMessage = 'Failed to add chapter: PDF path is missing. Please try again with a PDF file.';
+      this.isLoading = false;
+      return;
+    }
+    
+    this.novelService.createChapter(userId, novelId, chapterData).subscribe({
+      next: (chapter) => {
+        this.handleSuccess(`Chapter "${chapter.title}" added successfully!`);
+        this.selectedPdfFile = null;
+        this.pdfPreview = null;
+        this.usePdfContent = false;
+      },
+      error: (error) => {
+        // Try to extract more detailed error information
+        let errorDetails = '';
+        if (error.error && error.error.errors) {
+          const validationErrors = error.error.errors;
+          Object.keys(validationErrors).forEach(key => {
+            errorDetails += `${key}: ${validationErrors[key].join(', ')}\n`;
+          });
+        }
+        
+        if (errorDetails) {
+          this.errorMessage = `Failed to add chapter. Validation errors:\n${errorDetails}`;
+        } else {
+          this.errorMessage = error.message || error.error?.title || 'Failed to add chapter. Please try again later.';
+        }
+        
+        this.isLoading = false;
+      }
+    });
   }
 }

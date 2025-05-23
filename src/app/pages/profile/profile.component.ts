@@ -158,7 +158,6 @@ export class ProfileComponent implements OnInit, OnDestroy {
     
     this.userService.getUserProfile(userId).subscribe({
       next: (profile) => {
-        console.log('Profile loaded successfully:', profile);
         this.userProfile = profile;
         
         // Format member since date (try both memberSince and createdAt properties)
@@ -232,7 +231,6 @@ export class ProfileComponent implements OnInit, OnDestroy {
       
       if (!userId) {
         if (!isRetry) {
-          console.log('User ID not found, trying to refresh token data...');
           this.refreshAndRetry();
           return;
         }
@@ -241,10 +239,8 @@ export class ProfileComponent implements OnInit, OnDestroy {
         return;
       }
 
-      console.log('Loading profile for user ID:', userId);
       this.userService.getCurrentUserProfile().subscribe({
         next: (profile) => {
-          console.log('Profile loaded successfully:', profile);
           this.userProfile = profile;
           this.resetForm();
           
@@ -282,7 +278,6 @@ export class ProfileComponent implements OnInit, OnDestroy {
           console.error('Error loading profile:', error);
           
           if (!isRetry) {
-            console.log('Profile load failed, trying to refresh token data...');
             this.refreshAndRetry();
             return;
           }
@@ -295,7 +290,6 @@ export class ProfileComponent implements OnInit, OnDestroy {
       console.error('Error in loadUserProfile:', error);
       
       if (!isRetry) {
-        console.log('Error caught, trying to refresh token data...');
         this.refreshAndRetry();
         return;
       }
@@ -308,7 +302,6 @@ export class ProfileComponent implements OnInit, OnDestroy {
   private refreshAndRetry(): void {
     this.authService.refreshUserData().subscribe({
       next: () => {
-        console.log('User data refreshed, retrying profile load...');
         this.currentUserId = this.authService.currentUserValue?.id || null;
         this.tryLoadProfile(true);
       },
@@ -412,11 +405,9 @@ export class ProfileComponent implements OnInit, OnDestroy {
     }
     
     this.isLoading = true;
-    console.log('Uploading profile image for user ID:', userId, 'File:', this.selectedFile.name, 'Size:', this.selectedFile.size);
     
     this.userService.uploadProfileImage(userId, this.selectedFile).subscribe({
       next: (response) => {
-        console.log('Image upload successful:', response);
         this.successMessage = 'Profile and image updated successfully';
         
         // Use NgZone to prevent ExpressionChangedAfterItHasBeenCheckedError

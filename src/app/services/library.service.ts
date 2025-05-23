@@ -26,7 +26,6 @@ export class LibraryService {
   }
 
   getUserLibrary(userId: number): Observable<any[]> {
-    console.log('Getting user library for user:', userId);
     return this.http.get<any[]>(
       `${this.apiUrl}/api/UserLibrary/user-library/${userId}`,
       { headers: this.getHeaders() }
@@ -34,7 +33,6 @@ export class LibraryService {
   }
 
   isNovelInUserLibrary(userId: number, novelId: number): Observable<boolean> {
-    console.log('Checking if novel is in library:', userId, novelId);
     return this.http.get<boolean>(
       `${this.apiUrl}/api/UserLibrary/check-novel/${userId}/${novelId}`,
       { headers: this.getHeaders() }
@@ -42,7 +40,6 @@ export class LibraryService {
   }
 
   toggleNovelInLibrary(userId: number, novelId: number): Observable<any> {
-    console.log('Toggling novel in library:', userId, novelId);
     // For POST with a primitive value, we need to stringify the number
     const body = JSON.stringify(0);
     return this.http.post(
@@ -88,7 +85,6 @@ export class LibraryService {
   }
 
   resetAddedChapter(userId: number, novelId: number): Observable<any> {
-    console.log('Resetting added chapter for novel:', userId, novelId);
     return this.http.put(
       `${this.apiUrl}/api/UserLibrary/reset-added-chapter/${userId}/${novelId}`,
       null,
