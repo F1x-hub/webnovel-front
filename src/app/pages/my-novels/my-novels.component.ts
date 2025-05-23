@@ -497,7 +497,8 @@ export class MyNovelsComponent implements OnInit, OnDestroy {
       title: this.chapterForm.value.title,
       content: usePdfContent ? "Content will be extracted from PDF file." : this.chapterForm.value.content,
       chapterNumber: 0, // Let the backend assign the chapter number
-      usePdfContent: usePdfContent
+      usePdfContent: usePdfContent,
+      pdfPath: ""  // Initialize with empty string
     };
 
     // If using PDF, upload it first and ALWAYS wait for pdfPath before creating the chapter
@@ -827,7 +828,7 @@ export class MyNovelsComponent implements OnInit, OnDestroy {
       content: usePdfContent ? "Content will be extracted from PDF file." : this.editChapterForm.value.content,
       chapterNumber: this.editChapterForm.value.chapterNumber,
       usePdfContent: usePdfContent,
-      pdfPath: this.selectedChapter.pdfPath
+      pdfPath: usePdfContent ? this.selectedChapter.pdfPath || "" : ""
     };
 
     // If using PDF and a new file is selected, upload it first
@@ -857,7 +858,7 @@ export class MyNovelsComponent implements OnInit, OnDestroy {
     } else {
       // Update chapter without PDF
       chapterData.usePdfContent = false;
-      chapterData.pdfPath = undefined; // Clear any PDF path
+      chapterData.pdfPath = ""; // Set an empty string instead of undefined
       this.updateChapterWithData(userId, this.selectedNovelId, this.selectedChapter.id, chapterData);
     }
   }
@@ -869,6 +870,11 @@ export class MyNovelsComponent implements OnInit, OnDestroy {
       this.errorMessage = 'Failed to update chapter: PDF path is missing. Please try again with a PDF file.';
       this.isLoading = false;
       return;
+    }
+
+    // When not using PDF content, ensure pdfPath is an empty string, not undefined
+    if (!chapterData.usePdfContent) {
+      chapterData.pdfPath = "";
     }
 
     this.novelService.updateChapter(novelId, chapterId, userId, chapterData).subscribe({
@@ -986,6 +992,11 @@ export class MyNovelsComponent implements OnInit, OnDestroy {
       this.errorMessage = 'Failed to add chapter: PDF path is missing. Please try again with a PDF file.';
       this.isLoading = false;
       return;
+    }
+    
+    // When not using PDF content, ensure pdfPath is an empty string
+    if (!chapterData.usePdfContent) {
+      chapterData.pdfPath = "";
     }
     
     this.novelService.createChapter(userId, novelId, chapterData).subscribe({
