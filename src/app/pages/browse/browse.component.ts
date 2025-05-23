@@ -5,7 +5,7 @@ import { AuthService } from '../../services/auth.service';
 import { LibraryService } from '../../services/library.service';
 import { ActivatedRoute, Router, NavigationEnd } from '@angular/router';
 import { Location } from '@angular/common';
-import { Subscription, filter, finalize } from 'rxjs';
+import { Subscription, filter, finalize, of, catchError } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 
 interface StatusOption {
@@ -56,6 +56,8 @@ export class BrowseComponent implements OnInit, OnDestroy {
   error: string | null = null;
   loadingGenres = false;
   maxVisiblePages = 10;
+  isOffline = false;
+  forceRefresh = false;
 
   constructor(
     private novelService: NovelService,
@@ -64,7 +66,22 @@ export class BrowseComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private router: Router,
     private location: Location
-  ) {}
+  ) {
+    // Listen for online/offline events
+    window.addEventListener('online', () => {
+      this.isOffline = false;
+      if (this.forceRefresh) {
+        this.refreshData();
+      }
+    });
+    
+    window.addEventListener('offline', () => {
+      this.isOffline = true;
+    });
+    
+    // Check initial network status
+    this.isOffline = !navigator.onLine;
+  }
 
   ngOnInit(): void {
     // Load genres from API
@@ -75,14 +92,20 @@ export class BrowseComponent implements OnInit, OnDestroy {
       // Parse filter parameters
       if (params['genreId']) {
         this.filters.genreId = Number(params['genreId']);
+      } else {
+        this.filters.genreId = undefined;
       }
       
       if (params['status']) {
         this.filters.status = Number(params['status']);
+      } else {
+        this.filters.status = undefined;
       }
       
       if (params['sortBy']) {
         this.filters.sortBy = params['sortBy'] as 'popular' | 'rating' | 'newest' | 'a-z';
+      } else {
+        this.filters.sortBy = undefined;
       }
       
       // Reset pagination and load first page
@@ -90,7 +113,13 @@ export class BrowseComponent implements OnInit, OnDestroy {
       this.filters.pageNumber = 1;
       this.novels = [];
       this.allPagesLoaded = false;
-      this.loadNovels(false);
+      
+      // Only call API if this is not initial page load with empty params
+      if (Object.keys(params).length > 0 || this.forceRefresh) {
+        this.loadNovels(false);
+      } else {
+        this.loadNovels(false);
+      }
     });
 
     // Subscribe to navigation end events
@@ -110,6 +139,15 @@ export class BrowseComponent implements OnInit, OnDestroy {
     if (this.queryParamsSubscription) {
       this.queryParamsSubscription.unsubscribe();
     }
+    
+    // Remove event listeners
+    window.removeEventListener('online', () => {
+      this.isOffline = false;
+    });
+    
+    window.removeEventListener('offline', () => {
+      this.isOffline = true;
+    });
   }
 
   // Detect when user scrolls near bottom of page
@@ -178,10 +216,31 @@ export class BrowseComponent implements OnInit, OnDestroy {
 
     // Pass filters to the service
     this.novelService.getNovels(this.filters)
-      .pipe(finalize(() => {
-        this.loading = false;
-        this.loadingMore = false;
-      }))
+      .pipe(
+        finalize(() => {
+          this.loading = false;
+          this.loadingMore = false;
+        }),
+        catchError(error => {
+          console.error('Error loading novels:', error);
+          
+          if (this.isOffline) {
+            this.error = 'You are currently offline. Some content may not be up to date.';
+          } else if (error.status === 404) {
+            this.error = 'No novels found matching your criteria.';
+          } else {
+            this.error = 'Failed to load novels. Please try again later.';
+          }
+          
+          return of({
+            novels: [],
+            totalPages: 0,
+            totalItems: 0,
+            currentPage: this.filters.pageNumber || 1,
+            pageSize: this.filters.pageSize || 20
+          });
+        })
+      )
       .subscribe({
         next: (response: NovelApiResponse) => {
           // Set the image URL for each novel
@@ -208,19 +267,9 @@ export class BrowseComponent implements OnInit, OnDestroy {
           // Check if all pages are loaded
           this.allPagesLoaded = this.currentPage >= this.totalPages;
           
-          // Проверить прогресс чтения, если пользователь авторизован и есть книги
+          // Check reading progress if user is authenticated and there are books
           if (userId && loadedNovels.length > 0) {
             this.checkLastReadChapters(userId);
-          }
-        },
-        error: (err) => {
-          console.error('Error loading novels:', err);
-          
-          // Check for specific error types
-          if (err.status === 404) {
-            this.error = 'No novels found matching your criteria.';
-          } else {
-            this.error = 'Failed to load novels. Please try again later.';
           }
         }
       });
@@ -355,5 +404,26 @@ export class BrowseComponent implements OnInit, OnDestroy {
     setTimeout(() => {
       this.syncStateWithUrl();
     }, 0);
+  }
+
+  refreshData(): void {
+    // Force refresh data by clearing cache and reloading
+    this.forceRefresh = true;
+    
+    // Clear related caches
+    const cachePattern = 'novels_page';
+    this.novelService.clearCache(cachePattern);
+    
+    // Reset pagination
+    this.currentPage = 1;
+    this.filters.pageNumber = 1;
+    this.novels = [];
+    this.allPagesLoaded = false;
+    
+    // Reload data
+    this.loadNovels(false);
+    
+    // Reset the force refresh flag
+    this.forceRefresh = false;
   }
 }

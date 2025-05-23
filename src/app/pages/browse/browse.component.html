@@ -1,6 +1,14 @@
 <div class="container">
   <div class="browse-header">
-    <h1 class="page-title">Browse Novels</h1>
+    <div class="header-top">
+      <h1 class="page-title">Browse Novels</h1>
+      
+    </div>
+    
+    <div *ngIf="isOffline" class="offline-alert">
+      You are currently offline. Showing cached content.
+    </div>
+    
     <div class="browse-filters">
       <div class="filter-group">
         <label>Genre</label>
@@ -54,6 +62,9 @@
     <p>{{ error }}</p>
     <button *ngIf="error.includes('No novels found')" class="clear-filters-btn" (click)="clearFilters()">
       Clear Filters
+    </button>
+    <button *ngIf="error.includes('offline')" class="refresh-btn" (click)="refreshData()">
+      Try Again When Online
     </button>
   </div>
 

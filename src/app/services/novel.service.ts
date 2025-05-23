@@ -1,9 +1,10 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
-import { tap, catchError } from 'rxjs/operators';
+import { tap, catchError, map } from 'rxjs/operators';
 import { Novel } from '../components/novel-card/novel-card.component';
 import { environment } from '../../environments/environment';
+import { CacheService } from './cache.service';
 
 export interface NovelApiResponse {
   novels: Novel[];
@@ -90,8 +91,9 @@ export class NovelService {
   private readonly IMAGE_CACHE_PREFIX = 'novel_cover_';
   private readonly IMAGE_CACHE_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
   private readonly DEFAULT_COVER_IMAGE = 'assets/images/default-cover.png';
+  private readonly CACHE_TTL = 10 * 60 * 1000; // 10 minutes cache
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private cacheService: CacheService) {}
 
   getNovels(options: NovelFilterOptions = {}): Observable<NovelApiResponse> {
     const { pageNumber = 1, pageSize = 10, genreId, status, sortBy, userId = 0 } = options;
@@ -109,8 +111,21 @@ export class NovelService {
       url += `&sortBy=${sortBy}`;
     }
     
+    // Generate cache key matching backend pattern
+    const cacheKey = `novels_page${pageNumber}_size${pageSize}_genre${genreId ?? 'null'}_status${status ?? 'null'}_sort${sortBy ?? 'null'}_user${userId}`;
+    
+    // Check cache first
+    const cachedData = this.cacheService.get<NovelApiResponse>(cacheKey);
+    if (cachedData) {
+      return of(cachedData);
+    }
+    
     return this.http.get<NovelApiResponse>(url)
       .pipe(
+        tap(response => {
+          // Cache the response
+          this.cacheService.set(cacheKey, response, this.CACHE_TTL);
+        }),
         catchError(error => {
           if (error.status === 404 && error.error === 'Novel not found.') {
             return of({
@@ -128,7 +143,19 @@ export class NovelService {
   }
   
   getNovelById(id: number, userId: number = 0): Observable<Novel> {
-    return this.http.get<Novel>(`${this.apiUrl}/api/Novel/get-novel/${id}?userId=${userId}`);
+    const cacheKey = `novel_${id}_user${userId}`;
+    const cachedNovel = this.cacheService.get<Novel>(cacheKey);
+    
+    if (cachedNovel) {
+      return of(cachedNovel);
+    }
+    
+    return this.http.get<Novel>(`${this.apiUrl}/api/Novel/get-novel/${id}?userId=${userId}`)
+      .pipe(
+        tap(novel => {
+          this.cacheService.set(cacheKey, novel, this.CACHE_TTL);
+        })
+      );
   }
 
   getUserNovels(userId: number, requestUserId: number = 0, options: NovelFilterOptions = {}): Observable<Novel[]> {
@@ -492,7 +519,20 @@ export class NovelService {
   }
 
   getAllGenres(): Observable<Genre[]> {
-    return this.http.get<Genre[]>(`${this.apiUrl}/api/Genre/get-all-genre`);
+    const cacheKey = 'all_genres';
+    const cachedGenres = this.cacheService.get<Genre[]>(cacheKey);
+    
+    if (cachedGenres) {
+      return of(cachedGenres);
+    }
+    
+    return this.http.get<Genre[]>(`${this.apiUrl}/api/Genre/get-all-genre`)
+      .pipe(
+        tap(genres => {
+          // Cache genres for longer since they change less frequently
+          this.cacheService.set(cacheKey, genres, 60 * 60 * 1000); // 1 hour
+        })
+      );
   }
 
   // Add a new method to upload PDF for a chapter
@@ -505,5 +545,10 @@ export class NovelService {
       : `${this.apiUrl}/api/Chapter/upload-pdf/${userId}/${novelId}`;
       
     return this.http.post<any>(url, formData);
+  }
+
+  // Method to clear cache when needed (e.g., after novel creation/update)
+  clearCache(pattern?: string): void {
+    this.cacheService.clear(pattern);
   }
 } 
