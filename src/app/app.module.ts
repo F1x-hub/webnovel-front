@@ -28,6 +28,7 @@ import { FooterComponent } from './shared/footer/footer.component';
 import { VpnErrorModalComponent } from './components/vpn-error-modal/vpn-error-modal.component';
 import { ConnectionErrorService } from './services/connection-error.service';
 import { TestErrorService } from './services/test-error.service';
+import { CommentService } from './services/comment.service';
 
 @NgModule({
   declarations: [
@@ -62,7 +63,8 @@ import { TestErrorService } from './services/test-error.service';
     LibraryService,
     AgeVerificationService,
     ConnectionErrorService,
-    TestErrorService
+    TestErrorService,
+    CommentService
   ],
   bootstrap: [AppComponent]
 })

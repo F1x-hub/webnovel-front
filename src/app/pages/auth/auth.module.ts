@@ -8,7 +8,6 @@ import { LoginComponent } from './login/login.component';
 import { RegisterComponent } from './register/register.component';
 import { VerifyComponent } from './verify/verify.component';
 import { AuthLayoutComponent } from './auth-layout/auth-layout.component';
-import { GoogleCallbackComponent } from './google-callback/google-callback.component';
 import { CompleteProfileComponent } from './complete-profile/complete-profile.component';
 
 @NgModule({
@@ -17,7 +16,6 @@ import { CompleteProfileComponent } from './complete-profile/complete-profile.co
     RegisterComponent,
     VerifyComponent,
     AuthLayoutComponent,
-    GoogleCallbackComponent,
     CompleteProfileComponent
   ],
   imports: [

@@ -10,23 +10,11 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Location } from '@angular/common';
 import { AgeVerificationService } from '../../services/age-verification.service';
 import { HttpClient } from '@angular/common/http';
+import { CommentService, NovelComment } from '../../services/comment.service';
 
 interface Volume {
   name: string;
   chapters: Chapter[];
-}
-
-interface NovelComment {
-  id: number;
-  displayName: string;
-  content: string;
-  publishedDate: string;
-  likesCount: number;
-  imageUrl?: string;
-  isLiked?: boolean;
-  userId?: number;
-  novelId?: number;
-  showOptions?: boolean;
 }
 
 @Component({
@@ -38,6 +26,7 @@ export class NovelDetailComponent implements OnInit, OnDestroy {
   novel: Novel | null = null;
   loading = true;
   error = false;
+  adultContentError = false;
   activeTab = 'about';
   volumes: Volume[] = [];
   latestChapter: Chapter | null = null;
@@ -60,6 +49,7 @@ export class NovelDetailComponent implements OnInit, OnDestroy {
   showDeleteSuccess = false;
   
   private previousUrl: string | null = null;
+  private subscriptions: Subscription[] = [];
   
   constructor(
     private route: ActivatedRoute,
@@ -71,7 +61,8 @@ export class NovelDetailComponent implements OnInit, OnDestroy {
     private fb: FormBuilder,
     private location: Location,
     private ageVerificationService: AgeVerificationService,
-    private http: HttpClient
+    private http: HttpClient,
+    private commentService: CommentService
   ) { 
     this.commentForm = this.fb.group({
       content: ['', [Validators.required, Validators.minLength(1), Validators.maxLength(1000)]]
@@ -124,7 +115,7 @@ export class NovelDetailComponent implements OnInit, OnDestroy {
     });
 
     // Listen for auth state changes
-    this.authService.currentUser$.subscribe((user: User | null) => {
+    const authSub = this.authService.currentUser$.subscribe((user: User | null) => {
       this.currentUser = user;
       const novelId = Number(this.route.snapshot.paramMap.get('id'));
       if (user && novelId) {
@@ -133,16 +124,54 @@ export class NovelDetailComponent implements OnInit, OnDestroy {
         this.isInLibrary = false;
       }
     });
+    this.subscriptions.push(authSub);
 
     // Try to get previous URL from history state
     const navigation = this.router.getCurrentNavigation();
     if (navigation?.extras.state) {
       this.previousUrl = navigation.extras.state['prevUrl'] as string;
     }
+    
+    // Subscribe to real-time comment updates
+    this.subscribeToCommentUpdates();
+  }
+  
+  subscribeToCommentUpdates(): void {
+    // Handle new comments
+    const commentSub = this.commentService.novelComment$.subscribe(newComment => {
+      if (this.novel?.id === newComment.novelId) {
+        // Check if this comment already exists in our list
+        const existingIndex = this.comments.findIndex(c => c.id === newComment.id);
+        
+        if (existingIndex !== -1) {
+          // Update existing comment
+          this.comments[existingIndex] = newComment;
+        } else {
+          // Add new comment at the beginning (newest first)
+          this.comments.unshift(newComment);
+          
+          // Load avatar and check like status
+          this.loadCommentUserAvatar(newComment);
+          this.fetchCommentLikes(newComment);
+          
+          if (this.currentUser?.id) {
+            this.checkIfCommentLiked(newComment.id, this.currentUser.id);
+          }
+        }
+      }
+    });
+    this.subscriptions.push(commentSub);
+    
+    // Handle deleted comments
+    const deleteSub = this.commentService.commentDeleted$.subscribe(commentId => {
+      this.comments = this.comments.filter(c => c.id !== commentId);
+    });
+    this.subscriptions.push(deleteSub);
   }
   
   ngOnDestroy(): void {
-    // Cleanup
+    // Clean up all subscriptions
+    this.subscriptions.forEach(sub => sub.unsubscribe());
   }
 
   fetchNovel(id: number): void {
@@ -195,6 +224,14 @@ export class NovelDetailComponent implements OnInit, OnDestroy {
       },
       error: (error) => {
         console.error('Error fetching novel:', error);
+        
+        // Check if this is an unauthorized error (401) for adult content
+        if (error.status === 401) {
+          this.adultContentError = true;
+        } else {
+          this.adultContentError = false;
+        }
+        
         this.error = true;
         this.loading = false;
       }
@@ -464,78 +501,79 @@ export class NovelDetailComponent implements OnInit, OnDestroy {
   // Comments-related methods
   fetchComments(novelId: number): void {
     this.commentsLoading = true;
-    this.http.get<NovelComment[]>(`https://localhost:7188/api/Comment/get-novel-comment/${novelId}`)
-      .subscribe({
-        next: (comments) => {
-          // Sort comments by date (newest first)
-          this.comments = comments.sort((a, b) => {
-            return new Date(b.publishedDate).getTime() - new Date(a.publishedDate).getTime();
-          });
+    this.commentService.getNovelComments(novelId).subscribe({
+      next: (comments) => {
+        // Sort comments by date (newest first)
+        this.comments = comments.sort((a, b) => {
+          return new Date(b.publishedDate).getTime() - new Date(a.publishedDate).getTime();
+        });
+        
+        // Set novelId for all comments to current novel
+        this.comments.forEach(comment => {
+          comment.novelId = novelId; // Ensure novelId is set
+          this.loadCommentUserAvatar(comment);
+          this.fetchCommentLikes(comment);
           
-          // Set novelId for all comments to current novel
-          this.comments.forEach(comment => {
-            comment.novelId = novelId; // Ensure novelId is set
-            this.loadCommentUserAvatar(comment);
-            this.fetchCommentLikes(comment);
-            
-            // Check if current user has liked the comment
-            if (this.currentUser?.id) {
-              this.checkIfCommentLiked(comment.id, this.currentUser.id);
-            }
-          });
-          
-          this.commentsLoading = false;
-        },
-        error: (error) => {
-          // Handle 400 Bad Request with "Not Have Comments" message as a valid empty result
-          if (error.status === 400 || error.error === "Not Have Comments" || error.message?.includes("Not Have Comments")) {
-            this.comments = [];
-            this.commentsLoading = false;
-            return;
+          // Check if current user has liked the comment
+          if (this.currentUser?.id) {
+            this.checkIfCommentLiked(comment.id, this.currentUser.id);
           }
-          
-          console.error('Error fetching comments:', error);
+        });
+        
+        this.commentsLoading = false;
+      },
+      error: (error) => {
+        // Handle 400 Bad Request with "Not Have Comments" message as a valid empty result
+        if (error.status === 400 || error.error === "Not Have Comments" || error.message?.includes("Not Have Comments")) {
+          this.comments = [];
           this.commentsLoading = false;
+          return;
         }
-      });
+        
+        console.error('Error fetching comments:', error);
+        this.commentsLoading = false;
+      }
+    });
   }
   
   fetchCommentLikes(comment: NovelComment): void {
-    this.http.get<number>(`https://localhost:7188/api/Comment/get-novel-comment-like/${comment.id}`)
-      .subscribe({
-        next: (likeCount) => {
-          comment.likesCount = likeCount;
-        },
-        error: (error) => {
-          console.error(`Error fetching likes for comment ${comment.id}:`, error);
-        }
-      });
+    this.commentService.getNovelCommentLikes(comment.id).subscribe({
+      next: (likeCount) => {
+        comment.likesCount = likeCount;
+      },
+      error: (error) => {
+        console.error(`Error fetching likes for comment ${comment.id}:`, error);
+      }
+    });
   }
   
   checkIfCommentLiked(commentId: number, userId: number): void {
-    this.http.get<boolean>(`https://localhost:7188/api/Comment/has-user-liked-novel-comment/${commentId}/${userId}`)
-      .subscribe({
-        next: (hasLiked) => {
-          const comment = this.comments.find(c => c.id === commentId);
-          if (comment) {
-            comment.isLiked = hasLiked;
-            
-            // Update local tracking of likes for consistency
-            if (hasLiked) {
-              this.likedComments.add(commentId);
-            } else {
-              this.likedComments.delete(commentId);
-            }
+    this.commentService.hasUserLikedNovelComment(commentId, userId).subscribe({
+      next: (hasLiked) => {
+        const comment = this.comments.find(c => c.id === commentId);
+        if (comment) {
+          comment.isLiked = hasLiked;
+          
+          // Update local tracking of likes for consistency
+          if (hasLiked) {
+            this.likedComments.add(commentId);
+          } else {
+            this.likedComments.delete(commentId);
           }
-        },
-        error: (error) => {
-          console.error(`Error checking like status for comment ${commentId}:`, error);
         }
-      });
+      },
+      error: (error) => {
+        console.error(`Error checking like status for comment ${commentId}:`, error);
+      }
+    });
   }
   
   loadCommentUserAvatar(comment: NovelComment): void {
-    comment.imageUrl = this.userService.getProfileImageUrl(comment.id);
+    if (comment.userId) {
+      comment.imageUrl = this.userService.getProfileImageUrl(comment.userId);
+    } else {
+      comment.imageUrl = 'assets/images/default-avatar.png';
+    }
   }
 
   submitComment(): void {
@@ -550,16 +588,9 @@ export class NovelDetailComponent implements OnInit, OnDestroy {
       likeCount: 0
     };
 
-    this.http.post(
-      `https://localhost:7188/api/Comment/send-novel-comment/${this.currentUser.id}/${this.novel.id}`,
-      commentData
-    ).subscribe({
+    this.commentService.sendNovelComment(this.currentUser.id, this.novel.id, commentData).subscribe({
       next: () => {
-        // Refresh comments list
-        if (this.novel?.id) {
-          this.fetchComments(this.novel.id);
-        }
-        // Reset form
+        // Form reset (the comment will be added via SignalR)
         this.commentForm.reset();
       },
       error: (error) => {
@@ -581,34 +612,33 @@ export class NovelDetailComponent implements OnInit, OnDestroy {
     }
     
     // Call the API to toggle like status
-    this.http.post<boolean>(`https://localhost:7188/api/Comment/set-novel-comment-like/${commentId}/${this.currentUser.id}`, {})
-      .subscribe({
-        next: (isLiked) => {
-          // Update the UI based on server response
-          const comment = this.comments.find(c => c.id === commentId);
-          if (comment) {
-            comment.isLiked = isLiked;
-            
-            // Update like count
-            this.fetchCommentLikes(comment);
-            
-            // Update local tracking of liked comments for consistency
-            if (isLiked) {
-              this.likedComments.add(commentId);
-            } else {
-              this.likedComments.delete(commentId);
-            }
-          }
-        },
-        error: (error) => {
-          console.error('Error toggling comment like:', error);
+    this.commentService.toggleNovelCommentLike(commentId, this.currentUser.id).subscribe({
+      next: (isLiked) => {
+        // Update the UI based on server response
+        const comment = this.comments.find(c => c.id === commentId);
+        if (comment) {
+          comment.isLiked = isLiked;
           
-          // If there was an error, refresh the like status to ensure UI is correct
-          if (this.currentUser?.id) {
-            this.checkIfCommentLiked(commentId, this.currentUser.id);
+          // Update like count
+          this.fetchCommentLikes(comment);
+          
+          // Update local tracking of liked comments for consistency
+          if (isLiked) {
+            this.likedComments.add(commentId);
+          } else {
+            this.likedComments.delete(commentId);
           }
         }
-      });
+      },
+      error: (error) => {
+        console.error('Error toggling comment like:', error);
+        
+        // If there was an error, refresh the like status to ensure UI is correct
+        if (this.currentUser?.id) {
+          this.checkIfCommentLiked(commentId, this.currentUser.id);
+        }
+      }
+    });
   }
 
   isCommentLiked(commentId: number): boolean {
@@ -663,26 +693,25 @@ export class NovelDetailComponent implements OnInit, OnDestroy {
     const novelId = this.novel.id;
     this.deletingComment = true;
     
-    // Use the appropriate API endpoint for novel comments
-    this.http.delete(`https://localhost:7188/api/Comment/delete-novel-comments/${comment.id}/${novelId}/${userId}`)
-      .subscribe({
-        next: () => {
-          // Show success notification
-          this.showDeleteSuccess = true;
-          setTimeout(() => {
-            this.showDeleteSuccess = false;
-          }, 3000);
-          
-          // Remove comment from list
-          this.comments = this.comments.filter(c => c.id !== comment.id);
-          this.deletingComment = false;
-        },
-        error: (error) => {
-          console.error('Error deleting comment:', error);
-          this.deletingComment = false;
-          // You could show an error message here if needed
-        }
-      });
+    // Use the CommentService to delete the comment
+    this.commentService.deleteNovelComment(comment.id, novelId, userId).subscribe({
+      next: () => {
+        // Show success notification
+        this.showDeleteSuccess = true;
+        setTimeout(() => {
+          this.showDeleteSuccess = false;
+        }, 3000);
+        
+        // Remove comment from list (will also be removed via SignalR)
+        this.comments = this.comments.filter(c => c.id !== comment.id);
+        this.deletingComment = false;
+      },
+      error: (error) => {
+        console.error('Error deleting comment:', error);
+        this.deletingComment = false;
+        // You could show an error message here if needed
+      }
+    });
   }
   
   // Check if user can delete a comment (either author or admin)

@@ -19,7 +19,6 @@ export class LoginComponent implements OnInit {
   successMessage = '';
   requiresVerification = false;
   verificationData: any = null;
-  isLoadingGoogle = false;
   isRegistrationMode = false;
   
   // Forgot password properties
@@ -91,27 +90,8 @@ export class LoginComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    // Check for token in URL (Google authentication redirect)
+    // Check for registered status
     this.route.queryParams.subscribe(params => {
-      const token = params['token'];
-      if (token) {
-        this.isLoading = true;
-        this.errorMessage = '';
-        
-        // Process the token
-        this.authService.processAuthToken(token).subscribe({
-          next: () => {
-            this.isLoading = false;
-            this.router.navigate(['/']);
-          },
-          error: (error) => {
-            this.isLoading = false;
-            this.errorMessage = 'Authentication failed. Please try again.';
-            console.error('Token processing error:', error);
-          }
-        });
-      }
-      
       if (params['registered'] === 'true') {
         this.successMessage = 'Registration successful! Please log in with your credentials.';
         
@@ -172,33 +152,6 @@ export class LoginComponent implements OnInit {
         } 
       });
     }, 2000);
-  }
-
-  signInWithGoogle(): void {
-    this.isLoading = true;
-    this.errorMessage = '';
-    
-    // Ensure we're using HTTPS for Google authentication
-    if (window.location.protocol === 'http:') {
-      window.location.href = window.location.href.replace('http:', 'https:');
-      return;
-    }
-    
-    try {
-      // Get current URL to use as return URL after authentication
-      const returnUrl = this.router.url;
-      this.authService.googleLogin(returnUrl).subscribe({
-        error: (error) => {
-          console.error('Google login error:', error);
-          this.isLoading = false;
-          this.errorMessage = 'Failed to initialize Google sign-in. Please try again later.';
-        }
-      });
-    } catch (error) {
-      console.error('Google Sign-In initialization error:', error);
-      this.isLoading = false;
-      this.errorMessage = 'Failed to initialize Google sign-in. Please try again later.';
-    }
   }
   
   // Forgot password methods

@@ -37,25 +37,6 @@ export class RegisterComponent implements OnInit {
     }
   }
 
-  signInWithGoogle(): void {
-    this.isLoading = true;
-    this.errorMessage = '';
-    
-    try {
-      this.authService.googleRegister().subscribe({
-        error: (error) => {
-          console.error('Google registration error:', error);
-          this.isLoading = false;
-          this.errorMessage = 'Failed to initialize Google registration. Please try again later.';
-        }
-      });
-    } catch (error) {
-      console.error('Google registration initialization error:', error);
-      this.isLoading = false;
-      this.errorMessage = 'Failed to initialize Google registration. Please try again later.';
-    }
-  }
-
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     

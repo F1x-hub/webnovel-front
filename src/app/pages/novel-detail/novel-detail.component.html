@@ -65,8 +65,17 @@
   </div>
 
   <div *ngIf="error" class="error">
-    <p>Error loading novel details. Please try again later.</p>
-    <button class="btn" routerLink="/browse">Back to Browse</button>
+    <div *ngIf="adultContentError" class="adult-content-error">
+      <div class="adult-content-icon">18+</div>
+      <h2>Adults Only Content</h2>
+      <p>This novel contains mature content intended for adult audiences only.</p>
+      <div class="adult-content-actions">
+        <button class="btn primary-btn" routerLink="/auth/login">Log In to View</button>
+        <button class="btn secondary-btn" routerLink="/browse">Browse Other Novels</button>
+      </div>
+    </div>
+    <p *ngIf="!adultContentError">Error loading novel details. Please try again later.</p>
+    <button *ngIf="!adultContentError" class="btn" routerLink="/browse">Back to Browse</button>
   </div>
 
   <div *ngIf="novel && !loading && !error" class="novel-detail">

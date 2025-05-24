@@ -198,47 +198,15 @@ export class AuthService {
     console.log('RoleId value:', (userData.roleId !== undefined ? userData.roleId : 1).toString());
     console.log('IsAdult value:', (userData.isAdult !== undefined ? userData.isAdult : false).toString());
     
-    // Send as multipart/form-data
+    // Send the request with FormData
     return this.http.post<any>(`${this.API_URL}/Registration/register`, formData)
       .pipe(
-        tap(response => {
-          console.log('Registration successful:', response);
-          
-          // If image was included, upload it using the user ID from the response
-          if (userData.profileImage && response && response.id) {
-            this.uploadUserImage(response.id, userData.profileImage).subscribe({
-              next: imgResponse => console.log('Profile image uploaded successfully:', imgResponse),
-              error: err => console.error('Error uploading profile image:', err)
-            });
-          }
-        }),
-        catchError(error => {
-          console.error('Registration error detail:', error);
-          
-          // Check if error is from the backend with a message
-          if (error.error && typeof error.error === 'string') {
-            return throwError(() => ({ 
-              message: error.error,
-              originalError: error
-            }));
-          }
-          
-          // Check for user already exists error
-          if (error.error && error.error.includes && error.error.includes('User already exists')) {
-            return throwError(() => ({ 
-              message: 'User with this email already exists',
-              originalError: error
-            }));
-          }
-          
-          return this.handleRegistrationError(error);
-        })
+        catchError(error => this.handleRegistrationError(error))
       );
   }
 
   logout(): void {
     localStorage.removeItem('currentUser');
-    localStorage.removeItem('token');
     this.currentUserSubject.next(null);
   }
 
@@ -247,236 +215,217 @@ export class AuthService {
   }
 
   get isLoggedIn(): boolean {
-    return !!this.currentUserValue;
+    return !!this.currentUserValue?.token;
   }
 
   private storeUserData(userData: any): void {
-    if (userData.token) {
-      localStorage.setItem('token', userData.token);
+    try {
+      console.log('Storing user data:', userData);
       
-      // Try to parse the JWT token to extract user claims
-      try {
-        const base64Url = userData.token.split('.')[1];
-        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-        const tokenPayload = JSON.parse(atob(base64));
+      let userObject: User;
+      
+      // Проверяем, содержит ли ответ токен и информацию о пользователе отдельно
+      if (userData.token && userData.user) {
+        userObject = {
+          ...userData.user,
+          token: userData.token
+        };
+      } 
+      // Или же токен и данные пользователя находятся на одном уровне
+      else if (userData.token) {
+        // Try to extract user info from JWT token if not provided directly
+        let userId = userData.id;
+        let userName = userData.userName || '';
+        let email = userData.email || '';
+        let roles = userData.roles || [];
         
-        console.log('Full token payload:', tokenPayload);
-        
-        // Extract user ID - this is set by ClaimTypes.NameIdentifier in the backend
-        let userId = null;
-        // Look for the NameIdentifier claim specifically (this is used in your backend)
-        if (tokenPayload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier']) {
-          userId = tokenPayload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'];
-        } else {
-          userId = tokenPayload['nameid'] || tokenPayload['sub'] || tokenPayload['id'] || tokenPayload['userId'];
-        }
-        
-        // Convert to number if it's a string
-        if (typeof userId === 'string' && !isNaN(Number(userId))) {
-          userId = Number(userId);
-        }
-        
-        // Extract email - check for correct claim name
-        const userEmail = tokenPayload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'] || 
-                         tokenPayload['email'];
-        
-        // Extract username/name - check for correct claim names
-        const userName = tokenPayload['userName'] ||
+        // If we don't have a user ID, try to extract it from the token
+        if (!userId && userData.token) {
+          try {
+            const base64Url = userData.token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const tokenPayload = JSON.parse(atob(base64));
+            
+            // Extract user ID from token claims
+            userId = tokenPayload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'] || 
+                     tokenPayload['nameid'] || 
+                     tokenPayload['sub'] || 
+                     tokenPayload['id'] || 
+                     tokenPayload['userId'];
+                     
+            // Convert to number if it's a string
+            if (typeof userId === 'string' && !isNaN(Number(userId))) {
+              userId = Number(userId);
+            }
+            
+            // Extract email if not provided
+            if (!email) {
+              email = tokenPayload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'] || 
+                      tokenPayload['email'] || '';
+            }
+            
+            // Extract username if not provided
+            if (!userName) {
+              userName = tokenPayload['userName'] ||
                         tokenPayload['username'] ||
                         tokenPayload['login'] || 
-                        userEmail?.split('@')[0];
-        
-        // Extract full name - check for correct claim name
-        const fullName = tokenPayload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'] || 
-                        tokenPayload['unique_name'] || 
-                        tokenPayload['name'];
-        
-        // Extract first and last name if available
-        const firstName = tokenPayload['firstName'] || 
-                         tokenPayload['firstname'] || 
-                         tokenPayload['givenname'] ||
-                         (fullName && fullName.split(' ')[0]) || '';
-                         
-        const lastName = tokenPayload['lastName'] || 
-                        tokenPayload['lastname'] || 
-                        tokenPayload['surname'] ||
-                        (fullName && fullName.split(' ').slice(1).join(' ')) || '';
-        
-        // Extract role - check for correct claim name
-        const roles = tokenPayload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || 
-                     tokenPayload['role'] || [];
-        
-        const roleName = Array.isArray(roles) ? roles[0] : roles;
-        
-        // Extract roleId (or use default based on role name)
-        let roleId = tokenPayload['roleId'];
-        if (typeof roleId === 'string' && !isNaN(Number(roleId))) {
-          roleId = Number(roleId);
-        } else if (roleName === 'Admin') {
-          roleId = 1; // Assume Admin has roleId 1
-        } else {
-          roleId = 2; // Assume User has roleId 2
+                        email.split('@')[0] || '';
+            }
+            
+            // Extract roles if not provided
+            if (!roles || roles.length === 0) {
+              const tokenRoles = tokenPayload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || 
+                                tokenPayload['role'] || [];
+              roles = Array.isArray(tokenRoles) ? tokenRoles : [tokenRoles];
+            }
+            
+            console.log('Extracted user data from token:', { userId, email, userName, roles });
+          } catch (error) {
+            console.error('Error parsing JWT token:', error);
+          }
         }
         
-        // Extract isAdult status
-        const isAdult = !!tokenPayload['isAdult'];
-        
-        // Update user object with token data
-        userData.user = {
-          ...userData.user,
+        userObject = {
           id: userId,
-          email: userEmail || userData.user?.email,
-          userName: userName || userData.user?.userName,
-          firstName: firstName || userData.user?.firstName,
-          lastName: lastName || userData.user?.lastName,
-          roles: Array.isArray(roles) ? roles : [roles],
-          roleName: roleName,
-          roleId: roleId,
-          isAdult: isAdult || userData.user?.isAdult
+          userName: userName,
+          email: email,
+          firstName: userData.firstName || '',
+          lastName: userData.lastName || '',
+          token: userData.token,
+          roles: roles,
+          roleId: userData.roleId,
+          roleName: userData.roleName,
+          isAdult: userData.isAdult,
+          hasNewChapters: userData.hasNewChapters
         };
-        
-        console.log('Extracted user data from token:', userData.user);
-      } catch (error) {
-        console.error('Error parsing JWT token:', error);
+      } else {
+        console.error('Invalid user data structure:', userData);
+        throw new Error('Invalid user data');
       }
-    }
-    
-    if (userData.user) {
-      localStorage.setItem('currentUser', JSON.stringify(userData.user));
-      this.currentUserSubject.next(userData.user);
+      
+      console.log('Processed user object:', userObject);
+      
+      // Сохраняем пользователя в localStorage и обновляем BehaviorSubject
+      localStorage.setItem('currentUser', JSON.stringify(userObject));
+      this.currentUserSubject.next(userObject);
+    } catch (error) {
+      console.error('Error storing user data:', error);
     }
   }
 
   private handleRegistrationError(error: HttpErrorResponse) {
-    let errorMessage = 'An error occurred during registration';
+    console.error('Registration error response:', error);
     
-    // Check if it's a network error
-    if (error.error instanceof ErrorEvent) {
-      errorMessage = `Network error: ${error.error.message}`;
-    } else {
-      // Backend returned an unsuccessful response code
-      if (error.status === 0) {
-        errorMessage = 'Server is unavailable. Please check your internet connection';
-      } else if (error.status === 400) {
-        if (error.error && typeof error.error === 'object') {
-          // Handle validation errors
-          if ('errors' in error.error && error.error.errors) {
-            const validationErrors = Object.values(error.error.errors as Record<string, string[]>).flat();
-            if (validationErrors.length > 0) {
-              const rawError = validationErrors[0].toString();
-              
-              // Translate common error messages
-              if (rawError.includes('не должен') && rawError.includes('Age')) {
-                errorMessage = 'Age must not be equal to 0';
-              } else {
-                errorMessage = rawError;
-              }
-            }
-          } else if ('message' in error.error && error.error.message) {
-            errorMessage = error.error.message as string;
-            
-            // Translate if needed
-            if (errorMessage.includes('Произошла ошибка')) {
-              errorMessage = 'An error occurred during registration';
-            }
-          } else if ('title' in error.error && error.error.title) {
-            errorMessage = error.error.title as string;
-          }
+    let errorMsg = 'An error occurred during registration';
+    
+    // Handle different error formats
+    if (error.error && typeof error.error === 'string') {
+      errorMsg = error.error;
+    } else if (error.error?.message) {
+      errorMsg = error.error.message;
+    } else if (error.error?.title) {
+      errorMsg = error.error.title;
+    } else if (error.message) {
+      errorMsg = error.message;
+    }
+    
+    // Check for validation errors
+    if (error.error && error.error.errors) {
+      const validationErrors = error.error.errors;
+      
+      // Convert the first validation error to a readable message
+      if (Object.keys(validationErrors).length > 0) {
+        const firstErrorKey = Object.keys(validationErrors)[0];
+        const firstError = validationErrors[firstErrorKey];
+        
+        if (Array.isArray(firstError) && firstError.length > 0) {
+          errorMsg = firstError[0];
         }
-      } else if (error.status === 409) {
-        errorMessage = 'User with this email or username already exists';
-      } else if (error.status === 500) {
-        errorMessage = 'Internal server error. Please try again later';
       }
     }
     
-    console.error('Registration error:', error);
-    return throwError(() => ({ message: errorMessage, originalError: error }));
+    return throwError(() => ({
+      message: errorMsg,
+      originalError: error
+    }));
   }
 
-  // Add new method to get current user info
   getCurrentUserInfo(): Observable<any> {
-    return this.http.get(`${this.API_URL}/User/current-user`, { withCredentials: true })
+    const userId = this.currentUserValue?.id;
+    
+    if (!userId) {
+      return throwError(() => new Error('User not authenticated'));
+    }
+    
+    return this.http.get<any>(`${this.API_URL}/User/get-user-info/${userId}`)
       .pipe(
         tap(userData => {
+          // Update stored user info with fresh data
           if (userData) {
-            // Update stored user data
-            this.storeUserData({ user: userData });
+            this.updateStoredUserData(userData);
           }
         }),
         catchError(error => {
-          console.error('Error getting current user info:', error);
+          console.error('Error getting user info:', error);
           return throwError(() => error);
         })
       );
   }
 
-  // Alternative method to get current user data using stored token
   getCurrentUserById(): Observable<any> {
-    const user = this.currentUserValue;
-    if (!user || !user.id) {
-      return throwError(() => new Error('User ID not available'));
+    const userId = this.currentUserValue?.id;
+    
+    if (!userId) {
+      return throwError(() => new Error('User not authenticated'));
     }
     
-    return this.http.get(`${this.API_URL}/User/get-user/${user.id}`)
+    return this.http.get<any>(`${this.API_URL}/User/get-user-by-id/${userId}`)
       .pipe(
-        tap(userData => {
-          if (userData) {
-            // Update stored user data
-            const updatedUser = { ...user, ...userData };
-            localStorage.setItem('currentUser', JSON.stringify(updatedUser));
-            this.currentUserSubject.next(updatedUser);
-          }
-        }),
         catchError(error => {
+          console.error('Error getting user by ID:', error);
           return throwError(() => error);
         })
       );
   }
 
-  // Refresh token and user data
   refreshUserData(): Observable<any> {
-    const token = localStorage.getItem('token');
+    const userId = this.currentUserValue?.id;
+    const token = this.currentUserValue?.token;
     
-    if (!token) {
-      return throwError(() => new Error('No authentication token available'));
+    if (!userId || !token) {
+      return throwError(() => new Error('User not authenticated'));
     }
     
-    console.log('Attempting to refresh user data...');
-    
-    // First try to get current user info
-    return this.getCurrentUserById().pipe(
-      catchError(error => {
-        console.log('Failed to get user by ID, trying current-user endpoint...');
-        return this.getCurrentUserInfo().pipe(
-          catchError(error2 => {
-            console.error('All refresh attempts failed:', error2);
-            // Force logout if all refresh attempts fail
-            this.logout();
-            return throwError(() => new Error('Failed to refresh user data. Please login again.'));
-          })
-        );
-      })
-    );
+    // Get updated user information from the server
+    return this.http.get<any>(`${this.API_URL}/User/get-user-info/${userId}`)
+      .pipe(
+        tap(userData => {
+          if (userData) {
+            // Preserve token from currentUserValue
+            userData.token = token;
+            
+            // Update stored user data with new information
+            this.updateStoredUserData(userData);
+          }
+        }),
+        catchError(error => {
+          console.error('Error refreshing user data:', error);
+          return throwError(() => error);
+        })
+      );
   }
 
-  // Method to upload user image
   private uploadUserImage(userId: number, imageFile: File): Observable<any> {
+    if (!userId || !imageFile) {
+      return throwError(() => new Error('Missing user ID or image file'));
+    }
+    
     const formData = new FormData();
-    formData.append('imageFiles', imageFile);
+    formData.append('file', imageFile);
     
-    // Get authorization token but WITHOUT setting Content-Type header
-    const token = localStorage.getItem('token');
-    const options = token ? { 
-      headers: { 
-        Authorization: `Bearer ${token}`
-      },
-      reportProgress: true
-    } : {};
-    
-    return this.http.post(`${this.API_URL}/Image/add-user-image/${userId}`, formData, options)
+    return this.http.post<any>(`${this.API_URL}/User/upload-profile-image/${userId}`, formData)
       .pipe(
-        catchError((error: HttpErrorResponse) => {
+        catchError(error => {
           console.error('Error uploading profile image:', error);
           return throwError(() => error);
         })
@@ -488,89 +437,6 @@ export class AuthService {
       return url.replace('http:', 'https:');
     }
     return url;
-  }
-
-  googleLogin(returnUrl: string = '/'): Observable<any> {
-    // Ensure we're using HTTPS
-    const appUrl = this.ensureHttps(window.location.origin);
-    const callbackUrl = `${appUrl}/signin-google`; // Match backend's CallbackPath setting
-    
-    // Include returnUrl as state parameter for security
-    const state = encodeURIComponent(JSON.stringify({ returnUrl }));
-    
-    // Redirect to backend to initiate Google login
-    window.location.href = `${this.API_URL}/Auth/google-login?returnUrl=${encodeURIComponent(callbackUrl)}&state=${state}&prompt=select_account`;
-    return new Observable();
-  }
-
-  googleRegister(): Observable<any> {
-    // Ensure we're using HTTPS
-    const appUrl = this.ensureHttps(window.location.origin);
-    const callbackUrl = `${appUrl}/signin-google`; // Match backend's CallbackPath setting
-    
-    // Include registration flag in state
-    const state = encodeURIComponent(JSON.stringify({ isRegistration: true }));
-    
-    // Redirect to backend to initiate Google registration
-    window.location.href = `${this.API_URL}/Auth/google-login?returnUrl=${encodeURIComponent(callbackUrl)}&state=${state}&prompt=select_account`;
-    return new Observable();
-  }
-
-  // Direct API methods using idToken
-  googleDirectLogin(idToken: string): Observable<any> {
-    return this.http.post<any>(`${this.API_URL}/Auth/google-authorization`, { idToken })
-      .pipe(
-        tap(response => {
-          if (response && response.token) {
-            localStorage.setItem('token', response.token);
-            this.refreshUserData().subscribe();
-          }
-        })
-      );
-  }
-
-  googleDirectRegister(idToken: string): Observable<any> {
-    return this.http.post<any>(`${this.API_URL}/Auth/google-registration`, { idToken });
-  }
-  
-  // Process token from Google OAuth redirect
-  processAuthToken(token: string): Observable<any> {
-    // Store the token
-    localStorage.setItem('token', token);
-    
-    // Process JWT token and extract user data
-    try {
-      const base64Url = token.split('.')[1];
-      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-      const tokenPayload = JSON.parse(atob(base64));
-      
-      // Extract basic user info from token
-      const userId = tokenPayload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'];
-      const email = tokenPayload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'];
-      const name = tokenPayload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'];
-      const roles = tokenPayload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || [];
-      
-      // Create user object
-      const user: User = {
-        id: userId ? Number(userId) : undefined,
-        userName: name || email?.split('@')[0] || '',
-        email: email || '',
-        firstName: '',
-        lastName: '',
-        token: token,
-        roles: Array.isArray(roles) ? roles : [roles]
-      };
-      
-      // Store user in local storage and update subject
-      localStorage.setItem('currentUser', JSON.stringify(user));
-      this.currentUserSubject.next(user);
-      
-      // Return success
-      return of({ success: true });
-    } catch (error) {
-      console.error('Error processing auth token:', error);
-      return throwError(() => ({ message: 'Invalid authentication token' }));
-    }
   }
 
   forgotPassword(email: string): Observable<any> {

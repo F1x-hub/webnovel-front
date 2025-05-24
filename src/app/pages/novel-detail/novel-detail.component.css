@@ -10,6 +10,65 @@
   color: var(--text-primary);
 }
 
+/* 18+ Content Error Styling */
+.adult-content-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 20px;
+  max-width: 500px;
+  margin: 0 auto;
+  background-color: var(--bg-secondary);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  animation: fadeIn 0.4s ease-out;
+}
+
+.adult-content-icon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 80px;
+  height: 80px;
+  background-color: #e74c3c;
+  color: white;
+  font-size: 26px;
+  font-weight: bold;
+  border-radius: 50%;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 12px rgba(231, 76, 60, 0.4);
+}
+
+.adult-content-error h2 {
+  font-size: 28px;
+  margin: 0 0 16px;
+  color: var(--text-primary);
+}
+
+.adult-content-error p {
+  margin: 0 0 30px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  font-size: 16px;
+}
+
+.adult-content-actions {
+  display: flex;
+  gap: 16px;
+  margin-top: 10px;
+}
+
+@keyframes fadeIn {
+  from { 
+    opacity: 0; 
+    transform: translateY(20px);
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0);
+  }
+}
+
 .novel-detail {
   color: var(--text-primary);
 }
