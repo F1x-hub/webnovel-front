@@ -9,31 +9,44 @@ import {
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { Router } from '@angular/router';
+import { AuthService } from './auth.service';
 
 @Injectable()
 export class AuthInterceptor implements HttpInterceptor {
-  constructor(private router: Router) {}
+  constructor(private router: Router, private authService: AuthService) {}
 
   intercept(request: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
-    const token = localStorage.getItem('token');
+    // Get the current user from auth service
+    const currentUser = this.authService.currentUserValue;
     
-    if (token) {
-      const cloned = request.clone({
+    // Check if we need to add auth token
+    if (currentUser?.token) {
+      // Clone the request and add the auth header
+      request = request.clone({
         setHeaders: {
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${currentUser.token}`
         }
       });
-      return next.handle(cloned).pipe(
-        catchError((error: HttpErrorResponse) => {
-          if (error.status === 401) {
-            // Optional: Redirect to login on auth errors
-            // this.router.navigate(['/login']);
-          }
-          return throwError(() => error);
-        })
-      );
+      
+      console.log(`Adding auth token to request: ${request.url}`);
     }
     
-    return next.handle(request);
+    // Pass the cloned request to the next handler
+    return next.handle(request).pipe(
+      catchError((error: HttpErrorResponse) => {
+        if (error.status === 401) {
+          console.log('Auth error - 401 Unauthorized');
+          // Optionally: Redirect to login page or refresh token
+          // this.router.navigate(['/auth/login']);
+        } else if (error.status === 403) {
+          console.log('Auth error - 403 Forbidden');
+          // Log user info to help debug the issue
+          console.log('Current user roleId:', currentUser?.roleId);
+          console.log('Token present:', !!currentUser?.token);
+        }
+        
+        return throwError(() => error);
+      })
+    );
   }
 } 

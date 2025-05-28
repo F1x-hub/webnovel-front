@@ -8,6 +8,14 @@ export interface Genre {
   name: string;
 }
 
+export interface CreateGenreDto {
+  name: string;
+}
+
+export interface UpdateGenreDto {
+  name: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -18,5 +26,17 @@ export class GenreService {
 
   getAllGenres(): Observable<Genre[]> {
     return this.http.get<Genre[]>(`${this.apiUrl}/api/Genre/get-all-genre`);
+  }
+
+  createGenre(genre: CreateGenreDto): Observable<Genre> {
+    return this.http.post<Genre>(`${this.apiUrl}/api/Genre/create-genre`, genre);
+  }
+
+  updateGenre(id: number, genre: UpdateGenreDto): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/api/Genre/update-genre/${id}`, genre);
+  }
+
+  deleteGenre(id: number): Observable<any> {
+    return this.http.delete<any>(`${this.apiUrl}/api/Genre/delete-genre/${id}`);
   }
 }

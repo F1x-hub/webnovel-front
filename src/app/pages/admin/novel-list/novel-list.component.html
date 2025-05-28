@@ -1,0 +1,611 @@
+<div class="novel-list-container">
+  <div class="list-header">
+    <h1>Novel Management</h1>
+    <p class="subheading">View and manage all novels</p>
+    
+    <div class="filter-controls">
+      <div class="filter-group">
+        <select [(ngModel)]="filters.status" (change)="applyFilters()">
+          <option [ngValue]="undefined">All Statuses</option>
+          <option *ngFor="let option of novelStatusOptions" [ngValue]="option.value">{{ option.label }}</option>
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <select [(ngModel)]="filters.sortBy" (change)="applyFilters()">
+          <option [ngValue]="undefined">Default Sort</option>
+          <option value="popular">Most Popular</option>
+          <option value="rating">Highest Rated</option>
+          <option value="newest">Recently Added</option>
+          <option value="a-z">A to Z</option>
+        </select>
+      </div>
+      
+      <button class="clear-filters-btn" *ngIf="hasActiveFilters()" (click)="clearFilters()">
+        Clear Filters
+      </button>
+    </div>
+  </div>
+
+  <!-- Skeleton loader -->
+  <div class="skeleton-loader" *ngIf="isLoading">
+    <div class="novel-list">
+      <div class="novel-item skeleton" *ngFor="let i of [1,2,3,4,5]">
+        <div class="novel-item-content">
+          <div class="novel-cover-skeleton shimmer-effect"></div>
+          <div class="novel-content">
+            <div class="novel-title-skeleton shimmer-effect"></div>
+            <div class="novel-description-skeleton shimmer-effect"></div>
+            <div class="novel-description-skeleton shimmer-effect" style="width: 85%;"></div>
+            <div class="novel-meta-skeleton">
+              <div class="novel-genre-skeleton shimmer-effect"></div>
+              <div class="novel-chapters-skeleton shimmer-effect"></div>
+              <div class="novel-status-skeleton shimmer-effect"></div>
+            </div>
+          </div>
+        </div>
+        <div class="novel-actions-skeleton">
+          <div class="action-btn-skeleton shimmer-effect"></div>
+          <div class="action-btn-skeleton shimmer-effect"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="alert error" *ngIf="errorMessage">
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"></circle>
+      <line x1="12" y1="8" x2="12" y2="12"></line>
+      <line x1="12" y1="16" x2="12.01" y2="16"></line>
+    </svg>
+    {{ errorMessage }}
+  </div>
+
+  <div class="alert success" *ngIf="successMessage">
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+      <polyline points="22 4 12 14.01 9 11.01"></polyline>
+    </svg>
+    {{ successMessage }}
+  </div>
+
+  <div class="novels-content" *ngIf="!isLoading">
+    <div class="empty-state" *ngIf="novels.length === 0">
+      <div class="empty-state-icon">📚</div>
+      <h3>No novels found</h3>
+      <p>There are no novels matching your search criteria.</p>
+    </div>
+
+    <div class="novel-list" *ngIf="novels.length > 0">
+      <div class="novel-item" *ngFor="let novel of novels">
+        <div class="novel-item-content">
+          <a [routerLink]="['/novel', novel.id]" class="novel-cover-link">
+            <div class="novel-cover">
+              <div class="image-placeholder" [class.loaded]="isImageLoaded(novel.id)"></div>
+              <img [src]="novel.imageUrl || '/assets/images/default-cover.png'" 
+                   (error)="onImageError($event)" 
+                   (load)="onImageLoad(novel.id!)"
+                   [class.loaded]="isImageLoaded(novel.id)"
+                   [alt]="novel.title">
+            </div>
+          </a>
+          <div class="novel-content">
+            <h3 class="novel-title">{{ novel.title }}</h3>
+            <p class="novel-description">{{ novel.description }}</p>
+            <div class="novel-meta">
+              <span class="novel-genre">{{ novel.genres?.join(', ') || novel.genre }}</span>
+              <span class="novel-chapters">{{ novel.totalChapters || 0 }} chapters</span>
+              <div class="novel-status-container">
+                <span class="novel-status" *ngIf="novel.status">
+                  <span class="status-badge" [ngClass]="getStatusClass(novel.status)">{{ getStatusText(novel.status) }}</span>
+                </span>
+                <span class="adult-content-badge" *ngIf="novel.isAdultContent">18+</span>
+                <span class="user-info-badge" *ngIf="novel.authorName">By: {{ novel.authorName }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="novel-actions">
+          <button class="edit-button" (click)="showEditForm(novel)">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293l6.5-6.5z"/>
+            </svg>
+            Edit
+          </button>
+          <button class="manage-chapters-button" (click)="showManageChapters(novel)">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M5 10.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5zm0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5z"/>
+              <path d="M3 0h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2v-1h1v1a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v1H1V2a2 2 0 0 1 2-2z"/>
+              <path d="M1 5v-.5a.5.5 0 0 1 1 0V5h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1H1zm0 3v-.5a.5.5 0 0 1 1 0V8h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1H1zm0 3v-.5a.5.5 0 0 1 1 0v.5h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1H1z"/>
+            </svg>
+            Manage Chapters
+          </button>
+          <button class="delete-button" (click)="showDeleteConfirm(novel.id)">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+              <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+            </svg>
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination" *ngIf="totalPages > 1">
+      <button class="page-btn prev" [disabled]="currentPage === 1" (click)="prevPage()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+          <path fill-rule="evenodd" d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z"/>
+        </svg>
+        Previous
+      </button>
+      
+      <div class="page-numbers">
+        <button 
+          *ngFor="let page of [].constructor(totalPages > 5 ? 5 : totalPages); let i = index" 
+          class="page-number" 
+          [class.active]="currentPage === i + 1"
+          (click)="setPage(i + 1)">
+          {{ i + 1 }}
+        </button>
+        <span *ngIf="totalPages > 5">...</span>
+        <button 
+          *ngIf="totalPages > 5" 
+          class="page-number" 
+          [class.active]="currentPage === totalPages"
+          (click)="setPage(totalPages)">
+          {{ totalPages }}
+        </button>
+      </div>
+      
+      <button class="page-btn next" [disabled]="currentPage === totalPages" (click)="nextPage()">
+        Next
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+          <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Edit Novel Modal -->
+  <div class="modal-overlay" *ngIf="editFormVisible" (click)="cancelEdit()">
+    <div class="modal-content edit-novel-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header chapters-header">
+        <h2>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16" class="chapter-header-icon">
+            <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293l6.5-6.5z"/>
+          </svg>
+          Edit Novel
+        </h2>
+        <div class="novel-info-badge" *ngIf="selectedNovel">
+          <span class="novel-title-label">{{ selectedNovel.title }}</span>
+        </div>
+        <button class="close-button" (click)="cancelEdit()">&times;</button>
+      </div>
+      <div class="modal-body chapters-body">
+      <form [formGroup]="editForm" (ngSubmit)="updateNovel()">
+        <div class="form-group">
+          <label for="title">Title</label>
+          <input 
+            type="text" 
+            id="title" 
+            formControlName="title" 
+            [class.is-invalid]="editForm.get('title')?.invalid && editForm.get('title')?.touched"
+          />
+          <div class="error-message" *ngIf="editForm.get('title')?.invalid && editForm.get('title')?.touched">
+            <span *ngIf="editForm.get('title')?.errors?.['required']">Title is required</span>
+            <span *ngIf="editForm.get('title')?.errors?.['minlength']">Title must be at least 3 characters</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="description">Description</label>
+          <textarea 
+            id="description" 
+            formControlName="description" 
+            rows="6"
+            [class.is-invalid]="editForm.get('description')?.invalid && editForm.get('description')?.touched"
+          ></textarea>
+          <div class="error-message" *ngIf="editForm.get('description')?.invalid && editForm.get('description')?.touched">
+            <span *ngIf="editForm.get('description')?.errors?.['required']">Description is required</span>
+            <span *ngIf="editForm.get('description')?.errors?.['minlength']">Description must be at least 20 characters</span>
+          </div>
+        </div>
+
+        <!-- Status field -->
+        <div class="form-group">
+          <label for="status">Status</label>
+          
+          <div class="status-selector">
+            <div class="status-options">
+              <div 
+                *ngFor="let option of novelStatusOptions" 
+                class="status-option" 
+                [class.selected]="editForm.get('status')?.value == option.value"
+                [ngClass]="getStatusClass(option.value)"
+                (click)="setNovelStatus(option.value)"
+              >
+                <div class="status-icon">
+                  <svg *ngIf="option.value === 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+                    <path fill="currentColor" d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10zm0-2a8 8 0 1 1 0-16 8 8 0 0 1 0 16zm1-8h4v2h-6V7h2v5z"/>
+                  </svg>
+                  <svg *ngIf="option.value === 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+                    <path fill="currentColor" d="M8 17.85c1.275-.368 2.252-.913 3-1.651.748.738 1.725 1.283 3 1.65l-1.8 1.8a.5.5 0 0 0 .7.7l2.55-2.55a.5.5 0 0 0 0-.7L12.9 14.55a.5.5 0 0 0-.7.7l1.8 1.8a8.298 8.298 0 0 1-2-.958A8.298 8.298 0 0 1 10 17.05l1.8-1.8a.5.5 0 0 0-.7-.7l-2.55 2.55a.5.5 0 0 0 0 .7L11.1 20.3a.5.5 0 0 0 .7-.7L10 17.85zM18 18v-3h2v3h3v2h-3v3h-2v-3h-3v-2h3zM4 5v14h8v2H4a2 2 0 0 1-2-2V5c0-1.1.9-2 2-2h12a2 2 0 0 1 2 2v5h-2V5H4z"/>
+                  </svg>
+                  <svg *ngIf="option.value === 3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+                    <path fill="currentColor" d="M20 2a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1h16zm-1 2H5v16h14V4zm-2 4v2h-3V8h3zm-5 0v2H9V8h3zm-5 0v2H6V8h2zm10 4v2h-3v-2h3zm-5 0v2H9v-2h3zm-5 0v2H6v-2h2zm8 4v2H6v-2h10z"/>
+                  </svg>
+                  <svg *ngIf="option.value === 4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+                    <path fill="currentColor" d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm0-2a8 8 0 1 0 0-16 8 8 0 0 0 0 16zm-.997-4L6.76 11.757l1.414-1.414 2.829 2.829 5.656-5.657 1.415 1.414L11.003 16z"/>
+                  </svg>
+                </div>
+                <div class="status-info">
+                  <div class="status-name">{{ option.label }}</div>
+                  <div class="status-description">
+                    <ng-container [ngSwitch]="option.value">
+                      <span *ngSwitchCase="1">Story is actively being updated</span>
+                      <span *ngSwitchCase="2">Updates temporarily paused</span>
+                      <span *ngSwitchCase="3">No longer being updated</span>
+                      <span *ngSwitchCase="4">Story is finished</span>
+                    </ng-container>
+                  </div>
+                </div>
+                <div class="status-check">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+                    <path fill="currentColor" d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm0-2a8 8 0 1 0 0-16 8 8 0 0 0 0 16zm-.997-4L6.76 11.757l1.414-1.414 2.829 2.829 5.656-5.657 1.415 1.414L11.003 16z"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <select 
+            id="status" 
+            formControlName="status" 
+            class="form-control visually-hidden"
+            [class.is-invalid]="editForm.get('status')?.invalid && editForm.get('status')?.touched"
+          >
+            <option *ngFor="let option of novelStatusOptions" [value]="option.value">{{ option.label }}</option>
+          </select>
+          <div class="error-message" *ngIf="editForm.get('status')?.invalid && editForm.get('status')?.touched">
+            <span *ngIf="editForm.get('status')?.errors?.['required']">Status is required</span>
+          </div>
+        </div>
+
+        <!-- Adult Content field -->
+        <div class="form-group">
+          <div class="adult-content-toggle">
+            <div class="toggle-container">
+              <input 
+                class="toggle-input" 
+                type="checkbox" 
+                id="isAdultContent"
+                formControlName="isAdultContent"
+              >
+              <label class="toggle-label" for="isAdultContent">
+                <span class="toggle-button"></span>
+              </label>
+            </div>
+            <div class="toggle-content">
+              <h4>Adult Content</h4>
+              <p>This novel contains adult themes (18+)</p>
+            </div>
+          </div>
+          <div class="age-verification-note">
+            <div class="note-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
+              </svg>
+            </div>
+            <p>Adult content will only be accessible to users who have verified their age as 18+</p>
+          </div>
+        </div>
+
+        <!-- Cover Image upload field -->
+        <div class="form-group">
+          <h3 class="cover-image-title">Cover Image</h3>
+          <div class="image-upload-container" 
+               (dragover)="onDragOver($event)" 
+               (dragleave)="onDragLeave($event)" 
+               (drop)="onDrop($event)"
+               [class.drag-active]="isDragging">
+            <div class="upload-area">
+              <div *ngIf="!imagePreview" class="upload-placeholder">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="upload-icon">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                  <circle cx="9" cy="9" r="2"></circle>
+                  <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path>
+                </svg>
+                
+                <p class="upload-text">
+                  Drag and drop an image<br>
+                  or <span class="browse-text" (click)="triggerFileInput()">browse to upload</span>.
+                </p>
+                
+                <button type="button" class="upload-button" (click)="triggerFileInput()">
+                  Upload your photo
+                </button>
+                
+                <p class="file-requirements">
+                  Supported formats: JPEG or PNG · Max size: 40MB
+                </p>
+                
+                <div class="feature-list">
+                  <div class="feature-item">
+                    <span class="feature-check">✓</span> Free image hosting
+                  </div>
+                  <div class="feature-item">
+                    <span class="feature-check">✓</span> High quality display
+                  </div>
+                </div>
+              </div>
+              
+              <div *ngIf="imagePreview" class="preview-container">
+                <div class="novel-cover-preview">
+                  <div class="cover-frame">
+                    <img [src]="imagePreview" alt="Cover preview" class="preview-image">
+                  </div>
+                  <button type="button" class="remove-image-btn" (click)="removeImage()">
+                    Remove
+                  </button>
+                </div>
+              </div>
+            </div>
+            <input 
+              #fileInput
+              type="file" 
+              id="coverImage" 
+              class="file-input" 
+              accept="image/jpeg,image/png"
+              (change)="onFileSelected($event)"
+              hidden
+            />
+          </div>
+          <p class="cover-recommendation">Recommended size: 300x450 pixels (will be automatically resized to fit)</p>
+        </div>
+      </form>
+      </div>
+      <div class="modal-actions chapters-actions">
+        <button type="button" class="close-button-styled" (click)="cancelEdit()">Cancel</button>
+        <button type="submit" class="add-chapter-button-modal" [disabled]="editForm.invalid || isLoading" (click)="updateNovel()">
+          <svg *ngIf="!isLoading" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425z"/>
+          </svg>
+          <span *ngIf="isLoading" class="spinner-small"></span>
+          {{ isLoading ? 'Saving...' : 'Save Changes' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div class="modal-overlay" *ngIf="deleteConfirmVisible" (click)="cancelDelete()">
+    <div class="modal-content delete-confirm-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header delete-header">
+        <h2>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+            <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+          </svg>
+          Delete Novel
+        </h2>
+        <button class="close-button" (click)="cancelDelete()">×</button>
+      </div>
+      <div class="modal-body delete-body">
+        <div class="warning-icon-container">
+          <div class="warning-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+            </svg>
+          </div>
+        </div>
+        <div class="delete-message">
+          <h3>Are you sure you want to delete "<span class="novel-title">{{ selectedNovel?.title }}</span>"?</h3>
+          <p class="delete-warning">This action cannot be undone. All associated chapters and data will be permanently removed.</p>
+        </div>
+        <div class="delete-actions">
+          <button class="cancel-button" (click)="cancelDelete()">Cancel</button>
+          <button class="delete-button" [disabled]="isLoading" (click)="deleteNovel()">
+            <span *ngIf="isLoading" class="spinner-small"></span>
+            {{ isLoading ? 'Deleting...' : 'Delete Novel' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Manage Chapters Modal -->
+  <div class="modal-overlay" *ngIf="manageChaptersVisible" (click)="cancelManageChapters()">
+    <div class="modal-content chapters-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header chapters-header">
+        <h2>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="chapter-header-icon" viewBox="0 0 16 16">
+            <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"></path>
+          </svg>
+          Manage Chapters
+        </h2>
+        <button class="close-button" (click)="cancelManageChapters()">×</button>
+      </div>
+      
+      <div class="novel-info-badge">
+        <span class="novel-title-label">Novel {{selectedNovel?.id}}</span>
+      </div>
+      
+      <div class="chapters-body">
+        <div class="chapters-loading" *ngIf="isLoadingChapters">
+          <div class="spinner"></div>
+          <p>Loading chapters...</p>
+        </div>
+        
+        <div *ngIf="!isLoadingChapters && novelChapters.length === 0" class="empty-chapters">
+          <div class="empty-chapters-content">
+            <div class="empty-chapters-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"></path>
+              </svg>
+            </div>
+            <h3 class="empty-chapters-title">No Chapters Yet</h3>
+            <p class="empty-chapters-message">This novel doesn't have any chapters yet.</p>
+          </div>
+        </div>
+        
+        <div *ngIf="!isLoadingChapters && novelChapters.length > 0" class="chapters-container">
+          <div class="chapters-header-row">
+            <div class="chapter-column-title">Chapter</div>
+            <div class="chapter-column-title">Title</div>
+            <div class="chapter-column-title">Added</div>
+            <div class="chapter-column-title">Actions</div>
+          </div>
+          <div class="chapters-list">
+            <div *ngFor="let chapter of novelChapters; let i = index" class="chapter-item" [class.even]="i % 2 === 1" [class.has-pdf]="chapter.usePdfContent">
+              <div class="chapter-number">
+                <div class="chapter-number-badge" [style.--i]="i">
+                  {{chapter.chapterNumber}}
+                </div>
+              </div>
+              <div class="chapter-title">
+                {{chapter.title}}
+                <span class="chapter-format" [class.format-pdf]="chapter.usePdfContent" [class.format-text]="!chapter.usePdfContent">
+                  <svg *ngIf="chapter.usePdfContent" xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="chapter-format-icon" viewBox="0 0 16 16">
+                    <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z"/>
+                    <path d="M4.603 14.087a.81.81 0 0 1-.438-.42c-.195-.388-.13-.776.08-1.102.198-.307.526-.568.897-.787a7.68 7.68 0 0 1 1.482-.645 19.697 19.697 0 0 0 1.062-2.227 7.269 7.269 0 0 1-.43-1.295c-.086-.4-.119-.796-.046-1.136.075-.354.274-.672.65-.823.192-.077.4-.12.602-.077a.7.7 0 0 1 .477.365c.088.164.12.356.127.538.007.188-.012.396-.047.614-.084.51-.27 1.134-.52 1.794a10.954 10.954 0 0 0 .98 1.686 5.753 5.753 0 0 1 1.334.05c.364.066.734.195.96.465.12.144.193.32.2.518.007.192-.047.382-.138.563a1.04 1.04 0 0 1-.354.416.856.856 0 0 1-.51.138c-.331-.014-.654-.196-.933-.417a5.712 5.712 0 0 1-.911-.95 11.651 11.651 0 0 0-1.997.406 11.307 11.307 0 0 1-1.02 1.51c-.292.35-.609.656-.927.787a.793.793 0 0 1-.58.029zm1.379-1.901c-.166.076-.32.156-.459.238-.328.194-.541.383-.647.547-.094.145-.096.25-.04.361.01.022.02.036.026.044a.266.266 0 0 0 .035-.012c.137-.056.355-.235.635-.572a8.18 8.18 0 0 0 .45-.606zm1.64-1.33a12.71 12.71 0 0 1 1.01-.193 11.744 11.744 0 0 1-.51-.858 20.801 20.801 0 0 1-.5 1.05zm2.446.45c.15.163.296.3.435.41.24.19.407.253.498.256a.107.107 0 0 0 .07-.015.307.307 0 0 0 .094-.125.436.436 0 0 0 .059-.2.095.095 0 0 0-.026-.063c-.052-.062-.2-.152-.518-.209a3.876 3.876 0 0 0-.612-.053zM8.078 7.8a6.7 6.7 0 0 0 .2-.828c.031-.188.043-.343.038-.465a.613.613 0 0 0-.032-.198.517.517 0 0 0-.145.04c-.087.035-.158.106-.196.283-.04.192-.03.469.046.822.024.111.054.227.09.346z"/>
+                  </svg>
+                  <svg *ngIf="!chapter.usePdfContent" xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="chapter-format-icon" viewBox="0 0 16 16">
+                    <path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5L14 4.5zm-3 0A1.5 1.5 0 0 1 9.5 3V1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V4.5h-2z"/>
+                    <path d="M8.5 6.5a.5.5 0 0 0-1 0v5.793L5.854 10.646a.5.5 0 1 0-.708.708l3 3a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 12.293V6.5z"/>
+                  </svg>
+                  {{chapter.usePdfContent ? 'PDF' : 'TXT'}}
+                </span>
+              </div>
+              <div class="chapter-date">
+                {{chapter.createdAt | date:'medium'}}
+              </div>
+              <div class="chapter-actions">
+                <button class="edit-chapter-button" (click)="showEditChapterForm(chapter)">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293l6.5-6.5zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325z"/>
+                  </svg>
+                  Edit
+                </button>
+                <button class="delete-chapter-button" (click)="showDeleteChapterConfirm(chapter)">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+                    <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+                  </svg>
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button class="close-button-styled" (click)="cancelManageChapters()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Chapter Modal -->
+  <div class="modal-overlay" *ngIf="editChapterVisible" (click)="cancelEditChapter()">
+    <div class="modal-content edit-novel-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header chapters-header">
+        <h2>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16" class="chapter-header-icon">
+            <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293l6.5-6.5z"/>
+          </svg>
+          Edit Chapter
+        </h2>
+        <div class="novel-info-badge" *ngIf="selectedNovel">
+          <span class="novel-title-label">{{ selectedNovel.title }} - Chapter {{ selectedChapter?.chapterNumber }}</span>
+        </div>
+        <button class="close-button" (click)="cancelEditChapter()">&times;</button>
+      </div>
+      <div class="modal-body chapters-body">
+        <form [formGroup]="chapterForm" class="chapter-form">
+          <div class="form-group">
+            <label for="title">Chapter Title</label>
+            <input 
+              type="text" 
+              id="title" 
+              formControlName="title" 
+              [class.is-invalid]="chapterForm.get('title')?.invalid && chapterForm.get('title')?.touched"
+            />
+            <div class="error-message" *ngIf="chapterForm.get('title')?.invalid && chapterForm.get('title')?.touched">
+              <span *ngIf="chapterForm.get('title')?.errors?.['required']">Title is required</span>
+              <span *ngIf="chapterForm.get('title')?.errors?.['minlength']">Title must be at least 3 characters</span>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="chapterNumber">Chapter Number</label>
+            <input 
+              type="number" 
+              id="chapterNumber" 
+              formControlName="chapterNumber" 
+              min="0" 
+              [class.is-invalid]="chapterForm.get('chapterNumber')?.invalid && chapterForm.get('chapterNumber')?.touched"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="content">Content</label>
+            <textarea 
+              id="content" 
+              formControlName="content" 
+              rows="12"
+              [class.is-invalid]="chapterForm.get('content')?.invalid && chapterForm.get('content')?.touched"
+            ></textarea>
+            <div class="error-message" *ngIf="chapterForm.get('content')?.invalid && chapterForm.get('content')?.touched">
+              <span *ngIf="chapterForm.get('content')?.errors?.['required']">Content is required</span>
+              <span *ngIf="chapterForm.get('content')?.errors?.['minlength']">Content must be at least 50 characters</span>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-actions chapters-actions">
+        <button class="close-button-styled" (click)="cancelEditChapter()">Cancel</button>
+        <button class="add-chapter-button-modal" [disabled]="chapterForm.invalid || isLoading" (click)="updateChapter()">
+          <span *ngIf="isLoading" class="spinner-small"></span>
+          <span *ngIf="!isLoading">Update Chapter</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Chapter Confirmation Modal -->
+  <div class="modal-overlay" *ngIf="deleteChapterVisible" (click)="cancelDeleteChapter()">
+    <div class="modal-content delete-novel-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header delete-header">
+        <h2>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+            <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+          </svg>
+          Delete Chapter
+        </h2>
+        <button class="close-button" (click)="cancelDeleteChapter()">×</button>
+      </div>
+      <div class="modal-body delete-body">
+        <div class="warning-icon-container">
+          <div class="warning-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+            </svg>
+          </div>
+        </div>
+        <div class="delete-message">
+          <h3>Are you sure you want to delete chapter "{{ selectedChapter?.title }}"?</h3>
+          <p class="delete-warning">This action cannot be undone. The chapter will be permanently removed.</p>
+        </div>
+        <div class="delete-actions">
+          <button class="cancel-button" (click)="cancelDeleteChapter()">Cancel</button>
+          <button class="delete-button" [disabled]="isLoading" (click)="deleteChapter()">
+            <span *ngIf="isLoading" class="spinner-small"></span>
+            <span *ngIf="!isLoading">Delete Chapter</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

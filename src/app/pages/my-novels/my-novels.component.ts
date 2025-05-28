@@ -784,6 +784,15 @@ export class MyNovelsComponent implements OnInit, OnDestroy {
     
     // Disable scrolling when modal opens
     this.renderer.setStyle(document.body, 'overflow', 'hidden');
+    
+    // If chapter uses PDF content, update the form validation rules
+    if (chapter.usePdfContent) {
+      const contentControl = this.editChapterForm.get('content');
+      if (contentControl) {
+        contentControl.setValidators(null);
+        contentControl.updateValueAndValidity();
+      }
+    }
   }
   
   cancelEditChapter(): void {
@@ -831,27 +840,33 @@ export class MyNovelsComponent implements OnInit, OnDestroy {
       pdfPath: usePdfContent ? this.selectedChapter.pdfPath || "" : ""
     };
 
-    // If using PDF and a new file is selected, upload it first
+    // If using PDF and a new file is selected, we need to determine if this is a new PDF or a replacement
     if (usePdfContent && this.selectedPdfFile) {
-      this.novelService.uploadChapterPdf(userId, this.selectedNovelId, this.selectedChapter.id, this.selectedPdfFile)
-        .subscribe({
-          next: (response) => {
-            // Set the PDF path from the response
-            if (response && response.pdfPath) {
-              chapterData.pdfPath = response.pdfPath;
-              
-              // Now update the chapter with the PDF information
-              this.updateChapterWithData(userId, this.selectedNovelId!, this.selectedChapter!.id!, chapterData);
-            } else {
-              this.errorMessage = 'Failed to get valid PDF path from server. Please try again.';
+      // If the chapter already has a PDF, use replacePdf instead of uploadChapterPdf
+      if (this.selectedChapter.pdfPath) {
+        this.replacePdfFile(userId, this.selectedNovelId, this.selectedChapter.id, chapterData);
+      } else {
+        // This is a new PDF upload for the chapter
+        this.novelService.uploadChapterPdf(userId, this.selectedNovelId, this.selectedChapter.id, this.selectedPdfFile)
+          .subscribe({
+            next: (response) => {
+              // Set the PDF path from the response
+              if (response && response.pdfPath) {
+                chapterData.pdfPath = response.pdfPath;
+                
+                // Now update the chapter with the PDF information
+                this.updateChapterWithData(userId, this.selectedNovelId!, this.selectedChapter!.id!, chapterData);
+              } else {
+                this.errorMessage = 'Failed to get valid PDF path from server. Please try again.';
+                this.isLoading = false;
+              }
+            },
+            error: (error) => {
+              this.errorMessage = error.message || 'Failed to upload PDF. Please try again.';
               this.isLoading = false;
             }
-          },
-          error: (error) => {
-            this.errorMessage = error.message || 'Failed to upload PDF. Please try again.';
-            this.isLoading = false;
-          }
-        });
+          });
+      }
     } else if (usePdfContent && this.selectedChapter.pdfPath) {
       // Using existing PDF, proceed with update
       this.updateChapterWithData(userId, this.selectedNovelId, this.selectedChapter.id, chapterData);
@@ -861,6 +876,35 @@ export class MyNovelsComponent implements OnInit, OnDestroy {
       chapterData.pdfPath = ""; // Set an empty string instead of undefined
       this.updateChapterWithData(userId, this.selectedNovelId, this.selectedChapter.id, chapterData);
     }
+  }
+
+  // New method to handle PDF file replacement
+  replacePdfFile(userId: number, novelId: number, chapterId: number, chapterData: CreateChapterDto): void {
+    console.log('Replacing PDF for chapter:', chapterId);
+    console.log('PDF File:', this.selectedPdfFile);
+    console.log('API URL will be:', `${this.novelService['apiUrl']}/api/Chapter/replace-pdf/${userId}/${novelId}/${chapterId}`);
+    
+    this.novelService.replacePdf(userId, novelId, chapterId, this.selectedPdfFile!)
+      .subscribe({
+        next: (response) => {
+          console.log('PDF replacement succeeded:', response);
+          // Set the PDF path from the response
+          if (response && response.pdfPath) {
+            chapterData.pdfPath = response.pdfPath;
+            
+            // Now update the chapter with the PDF information
+            this.updateChapterWithData(userId, novelId, chapterId, chapterData);
+          } else {
+            this.errorMessage = 'Failed to get valid PDF path from server. Please try again.';
+            this.isLoading = false;
+          }
+        },
+        error: (error) => {
+          console.error('PDF replacement failed:', error);
+          this.errorMessage = error.message || 'Failed to replace PDF file. Please try again.';
+          this.isLoading = false;
+        }
+      });
   }
 
   // Helper method to update a chapter after potential PDF upload
@@ -918,6 +962,32 @@ export class MyNovelsComponent implements OnInit, OnDestroy {
     if (input.files && input.files[0]) {
       this.selectedPdfFile = input.files[0];
       this.createPdfPreview(this.selectedPdfFile);
+      
+      // Make sure the form control is updated
+      if (this.editChapterFormVisible) {
+        // We're in the edit chapter form
+        this.editChapterForm.get('usePdfContent')?.setValue(true);
+        
+        // If content validation should be disabled
+        const contentControl = this.editChapterForm.get('content');
+        if (contentControl) {
+          contentControl.setValue('Content will be extracted from PDF file.');
+          contentControl.setValidators(null);
+          contentControl.updateValueAndValidity();
+        }
+      } else if (this.addChapterFormVisible) {
+        // We're in the add chapter form
+        this.chapterForm.get('usePdfContent')?.setValue(true);
+        this.usePdfContent = true;
+        
+        // If content validation should be disabled
+        const contentControl = this.chapterForm.get('content');
+        if (contentControl) {
+          contentControl.setValue('Content will be extracted from PDF file.');
+          contentControl.setValidators(null);
+          contentControl.updateValueAndValidity();
+        }
+      }
     }
   }
 
@@ -928,18 +998,45 @@ export class MyNovelsComponent implements OnInit, OnDestroy {
   removePdf(): void {
     this.selectedPdfFile = null;
     this.pdfPreview = null;
-    // Reset file input
-    const pdfInput = document.getElementById('pdfFile') as HTMLInputElement;
-    if (pdfInput) pdfInput.value = '';
+    
+    // Reset file input based on which form is currently active
+    if (this.editChapterFormVisible) {
+      const editPdfInput = document.getElementById('editPdfFile') as HTMLInputElement;
+      if (editPdfInput) editPdfInput.value = '';
+    } else if (this.addChapterFormVisible) {
+      const addPdfInput = document.getElementById('pdfFile') as HTMLInputElement;
+      if (addPdfInput) addPdfInput.value = '';
+    }
   }
 
   triggerPdfInput(): void {
-    const pdfInput = document.getElementById('pdfFile') as HTMLInputElement;
-    if (pdfInput) pdfInput.click();
+    if (this.editChapterFormVisible) {
+      // Edit chapter form
+      const editPdfInput = document.getElementById('editPdfFile') as HTMLInputElement;
+      if (editPdfInput) {
+        editPdfInput.click();
+      } else {
+        console.error('Edit PDF input element not found');
+      }
+    } else if (this.addChapterFormVisible) {
+      // Add chapter form
+      const addPdfInput = document.getElementById('pdfFile') as HTMLInputElement;
+      if (addPdfInput) {
+        addPdfInput.click();
+      } else {
+        console.error('Add PDF input element not found');
+      }
+    }
   }
 
   toggleUsePdfContent(): void {
     this.usePdfContent = !this.usePdfContent;
+    
+    // Make sure to update the form control
+    const usePdfControl = this.chapterForm.get('usePdfContent');
+    if (usePdfControl) {
+      usePdfControl.setValue(this.usePdfContent);
+    }
     
     const contentControl = this.chapterForm.get('content');
     if (this.usePdfContent) {
@@ -958,8 +1055,6 @@ export class MyNovelsComponent implements OnInit, OnDestroy {
         contentControl.updateValueAndValidity();
       }
     }
-    
-    this.chapterForm.get('usePdfContent')?.setValue(this.usePdfContent);
   }
 
   toggleEditUsePdfContent(): void {

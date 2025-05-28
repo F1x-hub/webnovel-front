@@ -43,9 +43,7 @@
         <div class="card-body">
           <form [formGroup]="novelForm" (ngSubmit)="onSubmit()">
             <!-- Alert messages -->
-            <div *ngIf="errorMessage" class="alert alert-danger">
-              {{ errorMessage }}
-            </div>
+            
             <div *ngIf="successMessage" class="alert alert-success">
               {{ successMessage }}
             </div>
@@ -63,6 +61,7 @@
               <div *ngIf="novelForm.get('title')?.touched && novelForm.get('title')?.invalid" class="invalid-feedback">
                 <div *ngIf="novelForm.get('title')?.errors?.['required']">Title is required</div>
                 <div *ngIf="novelForm.get('title')?.errors?.['minlength']">Title must be at least 3 characters long</div>
+                <div style="color: red;" *ngIf="novelForm.get('title')?.errors?.['duplicate']">A novel with this title already exists. Please choose a different title.</div>
               </div>
             </div>
 

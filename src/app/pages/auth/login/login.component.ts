@@ -100,6 +100,15 @@ export class LoginComponent implements OnInit {
           this.successMessage = '';
         }, 5000);
       }
+      
+      if (params['verified'] === 'true') {
+        this.successMessage = 'Email verification successful! Please log in with your credentials.';
+        
+        // Clear success message after a few seconds
+        setTimeout(() => {
+          this.successMessage = '';
+        }, 5000);
+      }
     });
     
     if (this.authService.isLoggedIn) {

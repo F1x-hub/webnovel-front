@@ -244,13 +244,42 @@ export class NovelCreateComponent implements OnInit, OnDestroy {
       },
       error: (error) => {
         console.error('Error creating novel:', error);
-        this.errorMessage = error.message || 'Failed to create novel. Please try again later.';
+        
+        // Extract error message from the response
+        let errorMsg = 'Failed to create novel. Please try again later.';
+        
+        // Check for title already exists error
+        if (error.error && typeof error.error === 'string' && 
+            error.error.includes('novel with this title already exists')) {
+          errorMsg = error.error;
+        } else if (error.error && error.error.message && 
+                  error.error.message.includes('novel with this title already exists')) {
+          errorMsg = error.error.message;
+        } else if (typeof error.message === 'string' && 
+                  error.message.includes('novel with this title already exists')) {
+          errorMsg = error.message;
+        } else if (error.message) {
+          errorMsg = error.message;
+        }
+        
+        this.errorMessage = errorMsg;
         this.isLoading = false;
         this.isCreatingNovel = false;
         this.creationStep = 0;
         
         // Re-enable scrolling on error
         this.renderer.setStyle(document.body, 'overflow', '');
+        
+        // Focus on the title field if it's a duplicate title error
+        if (errorMsg.includes('novel with this title already exists')) {
+          setTimeout(() => {
+            const titleInput = document.getElementById('title');
+            if (titleInput) {
+              titleInput.focus();
+              this.novelForm.get('title')?.setErrors({'duplicate': true});
+            }
+          }, 100);
+        }
       }
     });
   }

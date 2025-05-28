@@ -11,6 +11,7 @@
     <div class="nav-links">
       <a routerLink="/browse" routerLinkActive="active">Browse</a>
       <a *ngIf="isLoggedIn" routerLink="/my-novels" routerLinkActive="active">My Novels</a>
+      <a *ngIf="isLoggedIn && isAdmin()" routerLink="/admin" routerLinkActive="active">Admin</a>
     </div>
     <div class="nav-actions">
       <button class="theme-toggle" (click)="toggleTheme()">
@@ -67,6 +68,19 @@
                   <circle cx="12" cy="7" r="4"></circle>
                 </svg>
                 <span>Profile</span>
+              </div>
+              <div class="popup-item" *ngIf="isAdmin()" (click)="navigateToAdmin()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 4.5c-1.5 0-2.5 1-2.5 2.5 0 .9.55 2.5 1.5 3.5L12 13l1-2.5c.95-1 1.5-2.6 1.5-3.5 0-1.5-1-2.5-2.5-2.5z"></path>
+                  <path d="M19 13.5c-1.5 0-2.5 1-2.5 2.5 0 .9.55 2.5 1.5 3.5l1 2.5 1-2.5c.95-1 1.5-2.6 1.5-3.5 0-1.5-1-2.5-2.5-2.5z"></path>
+                  <path d="M5 13.5c-1.5 0-2.5 1-2.5 2.5 0 .9.55 2.5 1.5 3.5L5 22l1-2.5c.95-1 1.5-2.6 1.5-3.5 0-1.5-1-2.5-2.5-2.5z"></path>
+                  <path d="M12 13.5V18"></path>
+                  <path d="M12 22v-1"></path>
+                  <path d="M5 13.5V7"></path>
+                  <path d="M19 13.5V7"></path>
+                  <path d="M5 7.5h14"></path>
+                </svg>
+                <span>Admin Panel</span>
               </div>
               <div class="popup-item" (click)="logout()">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

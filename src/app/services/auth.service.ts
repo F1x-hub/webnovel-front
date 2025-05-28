@@ -69,6 +69,12 @@ export interface CurrentUser {
   hasNewChapters: boolean;
 }
 
+export interface VerifyEmailRequest {
+  email: string;
+  password: string;
+  temporaryCode: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -512,9 +518,25 @@ export class AuthService {
     // Get the current stored user
     const currentUser = this.currentUserValue;
     
+    console.log('Updating user data');
+    
     if (currentUser && userData) {
-      // Merge the existing user data with the updated data
-      const updatedUser = { ...currentUser, ...userData };
+      // Ensure critical fields are preserved from the new data
+      const updatedUser = { 
+        ...currentUser, 
+        ...userData,
+        // Make sure roleId is explicitly set if available in the new data
+        roleId: userData.roleId !== undefined ? userData.roleId : currentUser.roleId
+      };
+      
+      // Make sure roleId and roleName are consistent
+      if (updatedUser.roleId === 2 && (!updatedUser.roleName || updatedUser.roleName !== 'Admin')) {
+        updatedUser.roleName = 'Admin';
+      } else if (updatedUser.roleId === 1 && (!updatedUser.roleName || updatedUser.roleName !== 'User')) {
+        updatedUser.roleName = 'User';
+      }
+      
+      console.log('User data updated');
       
       // Save to localStorage and update BehaviorSubject
       localStorage.setItem('currentUser', JSON.stringify(updatedUser));
@@ -548,5 +570,68 @@ export class AuthService {
     this.currentUserSubject.next(currentUser);
     
     return currentUser;
+  }
+
+  /**
+   * Static method to check and fix the current user data in localStorage
+   * This can be called from any component to ensure the roleId is correctly set
+   */
+  static checkAndFixUserData(): void {
+    try {
+      const storedUser = localStorage.getItem('currentUser');
+      if (storedUser) {
+        const userData = JSON.parse(storedUser);
+        
+        // Remove sensitive information logging
+        console.log('Checking user data integrity');
+        
+        // Check if roleId is missing but roles array contains admin role
+        if (!userData.roleId && userData.roles && 
+            (userData.roles.includes('Admin') || userData.roles.includes('admin'))) {
+          console.log('Fixing role data integrity');
+          userData.roleId = 2;
+          userData.roleName = 'Admin';
+          localStorage.setItem('currentUser', JSON.stringify(userData));
+        }
+        
+        // If roleId is explicitly 2, ensure roleName is set
+        if (userData.roleId === 2 && !userData.roleName) {
+          console.log('Setting role name for consistency');
+          userData.roleName = 'Admin';
+          localStorage.setItem('currentUser', JSON.stringify(userData));
+        }
+      }
+    } catch (error) {
+      console.error('Error checking user data integrity');
+    }
+  }
+
+  verifyEmail(verifyData: VerifyEmailRequest): Observable<any> {
+    console.log('Verifying email:', verifyData);
+    
+    return this.http.post<any>(`${this.API_URL}/Registration/verify-email`, verifyData)
+      .pipe(
+        tap(response => {
+          console.log('Email verification response:', response);
+          if (response && response.token) {
+            this.storeUserData(response);
+          }
+        }),
+        catchError((error: HttpErrorResponse) => {
+          console.log('Email verification error:', error);
+          
+          let errorMsg = 'Invalid verification code';
+          if (error.error && typeof error.error === 'string') {
+            errorMsg = error.error;
+          } else if (error.error?.message) {
+            errorMsg = error.error.message;
+          }
+          
+          return throwError(() => ({ 
+            message: errorMsg,
+            originalError: error
+          }));
+        })
+      );
   }
 } 

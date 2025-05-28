@@ -82,15 +82,16 @@ export class RegisterComponent implements OnInit {
       next: (response) => {
         console.log('Registration success:', response);
         this.isLoading = false;
-        // Wait a moment before redirecting to login page
         this.errorMessage = '';
-        this.registerForm.reset();
         
-        setTimeout(() => {
-          this.router.navigate(['/auth/login'], { 
-            queryParams: { registered: 'true' } 
-          });
-        }, 1000);
+        // Navigate to verification page with email and password
+        this.router.navigate(['/auth/verify'], { 
+          state: { 
+            email: this.registerForm.value.email,
+            password: this.registerForm.value.password,
+            isRegistration: true
+          } 
+        });
       },
       error: (error) => {
         console.error('Registration error:', error);

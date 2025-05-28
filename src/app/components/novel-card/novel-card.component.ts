@@ -16,20 +16,32 @@ export enum NovelStatus {
 export interface Novel {
   id?: number;
   title: string;
-  genre: string;
-  genres?: string[];
+  description?: string;
+  coverImageUrl?: string;
   imageUrl?: string;
+  status?: NovelStatus;
+  genre?: string;
+  genres?: string[];
+  genreIds?: number[];
+  tags?: string[];
+  totalChapters?: number;
+  currentChapter?: number;
+  averageRating?: number;
+  totalRatings?: number;
   rating?: number;
   ratingsCount?: number;
-  currentChapter?: number;
-  totalChapters?: number;
-  author?: string;
-  description?: string;
-  userId?: number;
+  totalViews?: number;
   views?: number;
-  status?: NovelStatus;
+  userId?: number;
+  publishedDate?: Date;
+  lastUpdated?: Date;
   isAdultContent?: boolean;
+  isCompleted?: boolean;
   addedChapter?: boolean;
+  userRating?: number;
+  authorId?: number;
+  authorName?: string;
+  author?: string;
 }
 
 @Component({

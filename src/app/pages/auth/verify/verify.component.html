@@ -1,7 +1,13 @@
 <div class="auth-container">
   <div class="auth-card">
-    <h2>Verify Your Account</h2>
-    <p class="verify-info">Please enter the verification code sent to your email.</p>
+    <h2>{{ isRegistration ? 'Verify Your Email' : 'Verify Your Account' }}</h2>
+    <p class="verify-info">
+      {{ isRegistration ? 'Please enter the verification code sent to your email to complete your registration.' : 'Please enter the verification code sent to your email.' }}
+    </p>
+    
+    <div class="timer-container" *ngIf="timeLeft > 0">
+      <p class="timer">Time remaining: <span>{{ formatTime(timeLeft) }}</span></p>
+    </div>
     
     <form [formGroup]="verifyForm" (ngSubmit)="onSubmit()">
       <div class="form-group">
@@ -26,13 +32,20 @@
         {{ errorMessage }}
       </div>
 
-      <button type="submit" [disabled]="verifyForm.invalid || isLoading" class="btn btn-primary">
+      <button type="submit" [disabled]="verifyForm.invalid || isLoading || timeLeft <= 0" class="btn btn-primary">
         {{ isLoading ? 'Verifying...' : 'Verify' }}
       </button>
     </form>
     
     <div class="auth-footer">
-      <p>Didn't receive a code? <a routerLink="/auth/login">Go back to login</a></p>
+      <p>
+        <span *ngIf="isRegistration">
+          Didn't receive a code? <a routerLink="/auth/register">Register again</a>
+        </span>
+        <span *ngIf="!isRegistration">
+          Didn't receive a code? <a routerLink="/auth/login">Go back to login</a>
+        </span>
+      </p>
     </div>
   </div>
 </div> 

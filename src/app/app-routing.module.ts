@@ -8,6 +8,7 @@ import { CreateComponent } from './pages/create/create.component';
 import { AuthGuard } from './services/auth.guard';
 import { NovelDetailComponent } from './pages/novel-detail/novel-detail.component';
 import { SearchComponent } from './pages/search/search.component';
+import { AdminGuard } from './services/admin.guard';
 
 const routes: Routes = [
   { path: '', component: HomeComponent },
@@ -40,6 +41,37 @@ const routes: Routes = [
   { 
     path: 'auth', 
     loadChildren: () => import('./pages/auth/auth.module').then(m => m.AuthModule) 
+  },
+  { 
+    path: 'admin', 
+    loadComponent: () => import('./pages/admin/admin-layout/admin-layout.component').then(c => c.AdminLayoutComponent),
+    canActivate: [AuthGuard, AdminGuard],
+    children: [
+      { 
+        path: '', 
+        loadComponent: () => import('./pages/admin/admin-dashboard/admin-dashboard.component').then(c => c.AdminDashboardComponent)
+      },
+      { 
+        path: 'users', 
+        loadComponent: () => import('./pages/admin/user-list/user-list.component').then(c => c.UserListComponent)
+      },
+      { 
+        path: 'users/edit/:id', 
+        loadComponent: () => import('./pages/admin/user-edit/user-edit.component').then(c => c.UserEditComponent)
+      },
+      { 
+        path: 'users/details/:id', 
+        loadComponent: () => import('./pages/admin/user-details/user-details.component').then(c => c.UserDetailsComponent)
+      },
+      { 
+        path: 'novels', 
+        loadComponent: () => import('./pages/admin/novel-list/novel-list.component').then(c => c.NovelListComponent)
+      },
+      {
+        path: 'genres',
+        loadComponent: () => import('./pages/admin/genre-management/genre-management.component').then(c => c.GenreManagementComponent)
+      }
+    ]
   },
   { path: '**', redirectTo: '' }
 ];

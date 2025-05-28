@@ -547,8 +547,62 @@ export class NovelService {
     return this.http.post<any>(url, formData);
   }
 
+  // Replace an existing PDF file for a chapter
+  replacePdf(userId: number, novelId: number, chapterId: number, file: File): Observable<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    return this.http.post<any>(`${this.apiUrl}/api/Chapter/replace-pdf/${userId}/${novelId}/${chapterId}`, formData);
+  }
+
   // Method to clear cache when needed (e.g., after novel creation/update)
   clearCache(pattern?: string): void {
     this.cacheService.clear(pattern);
+  }
+
+  /**
+   * Get all novels with pagination - Admin specific method
+   * This uses the same endpoint as getNovels but is specifically for admin usage
+   */
+  getAllNovelsAdmin(options: NovelFilterOptions = {}): Observable<NovelApiResponse> {
+    const { pageNumber = 1, pageSize = 10, genreId, status, sortBy } = options;
+    let url = `${this.apiUrl}/api/Novel/get-all-novels?pageNumber=${pageNumber}&pageSize=${pageSize}`;
+    
+    if (genreId !== undefined) {
+      url += `&genreId=${genreId}`;
+    }
+    
+    if (status !== undefined) {
+      url += `&status=${status}`;
+    }
+    
+    if (sortBy) {
+      url += `&sortBy=${sortBy}`;
+    }
+    
+    return this.http.get<NovelApiResponse>(url)
+      .pipe(
+        tap(response => {
+          // Enhance the novels with author information where available
+          response.novels = response.novels.map(novel => {
+            if (novel.authorId) {
+              novel.authorName = novel.authorName || `User #${novel.authorId}`;
+            }
+            return novel;
+          });
+        }),
+        catchError(error => {
+          if (error.status === 404) {
+            return of({
+              novels: [],
+              totalPages: 0,
+              totalItems: 0,
+              currentPage: pageNumber,
+              pageSize: pageSize
+            });
+          }
+          throw error;
+        })
+      );
   }
 } 
