@@ -4,7 +4,6 @@ import { Observable, of } from 'rxjs';
 import { tap, catchError, map } from 'rxjs/operators';
 import { Novel } from '../components/novel-card/novel-card.component';
 import { environment } from '../../environments/environment';
-import { CacheService } from './cache.service';
 
 export interface NovelApiResponse {
   novels: Novel[];
@@ -89,14 +88,24 @@ export interface Genre {
 export class NovelService {
   private apiUrl = environment.apiUrl;
   private readonly IMAGE_CACHE_PREFIX = 'novel_cover_';
-  private readonly IMAGE_CACHE_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+  private readonly DATA_CACHE_PREFIX = 'novel_data_';
+  private readonly POPULAR_CACHE_KEY = 'most_popular_last_week';
+  private readonly RATED_CACHE_KEY = 'novels_by_rating';
+  private readonly IMAGE_CACHE_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours
+  private readonly DATA_CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutes
   private readonly DEFAULT_COVER_IMAGE = 'assets/images/default-cover.png';
-  private readonly CACHE_TTL = 10 * 60 * 1000; // 10 minutes cache
 
-  constructor(private http: HttpClient, private cacheService: CacheService) {}
+  constructor(private http: HttpClient) {}
 
   getNovels(options: NovelFilterOptions = {}): Observable<NovelApiResponse> {
     const { pageNumber = 1, pageSize = 10, genreId, status, sortBy, userId = 0 } = options;
+    const cacheKey = `${this.DATA_CACHE_PREFIX}novels_page${pageNumber}_size${pageSize}_genre${genreId || 'null'}_status${status || 'null'}_sort${sortBy || 'null'}_user${userId}`;
+    
+    const cached = this.getFromCache<NovelApiResponse>(cacheKey);
+    if (cached) {
+      return of(cached);
+    }
+    
     let url = `${this.apiUrl}/api/Novel/get-all-novels?pageNumber=${pageNumber}&pageSize=${pageSize}&userId=${userId}`;
     
     if (genreId !== undefined) {
@@ -111,20 +120,18 @@ export class NovelService {
       url += `&sortBy=${sortBy}`;
     }
     
-    // Generate cache key matching backend pattern
-    const cacheKey = `novels_page${pageNumber}_size${pageSize}_genre${genreId ?? 'null'}_status${status ?? 'null'}_sort${sortBy ?? 'null'}_user${userId}`;
-    
-    // Check cache first
-    const cachedData = this.cacheService.get<NovelApiResponse>(cacheKey);
-    if (cachedData) {
-      return of(cachedData);
-    }
-    
     return this.http.get<NovelApiResponse>(url)
       .pipe(
         tap(response => {
-          // Cache the response
-          this.cacheService.set(cacheKey, response, this.CACHE_TTL);
+          if (response.novels?.length) {
+            // Add image URLs to novels
+            response.novels.forEach(novel => {
+              if (novel.id) {
+                novel.imageUrl = this.getNovelImageUrl(novel.id);
+              }
+            });
+            this.saveToCache(cacheKey, response);
+          }
         }),
         catchError(error => {
           if (error.status === 404 && error.error === 'Novel not found.') {
@@ -143,23 +150,33 @@ export class NovelService {
   }
   
   getNovelById(id: number, userId: number = 0): Observable<Novel> {
-    const cacheKey = `novel_${id}_user${userId}`;
-    const cachedNovel = this.cacheService.get<Novel>(cacheKey);
+    const cacheKey = `${this.DATA_CACHE_PREFIX}novel_${id}_user${userId}`;
     
-    if (cachedNovel) {
-      return of(cachedNovel);
+    const cached = this.getFromCache<Novel>(cacheKey);
+    if (cached) {
+      return of(cached);
     }
     
     return this.http.get<Novel>(`${this.apiUrl}/api/Novel/get-novel/${id}?userId=${userId}`)
       .pipe(
         tap(novel => {
-          this.cacheService.set(cacheKey, novel, this.CACHE_TTL);
+          if (novel && novel.id) {
+            novel.imageUrl = this.getNovelImageUrl(novel.id);
+            this.saveToCache(cacheKey, novel);
+          }
         })
       );
   }
 
   getUserNovels(userId: number, requestUserId: number = 0, options: NovelFilterOptions = {}): Observable<Novel[]> {
     const { genreId, status, sortBy } = options;
+    const cacheKey = `${this.DATA_CACHE_PREFIX}user_novels_${userId}_req${requestUserId}_genre${genreId || 'null'}_status${status || 'null'}_sort${sortBy || 'null'}`;
+    
+    const cached = this.getFromCache<Novel[]>(cacheKey);
+    if (cached) {
+      return of(cached);
+    }
+    
     let url = `${this.apiUrl}/api/Novel/get-all-user-novel/${userId}?requestUserId=${requestUserId}`;
     
     if (genreId !== undefined) {
@@ -174,11 +191,28 @@ export class NovelService {
       url += `&sortBy=${sortBy}`;
     }
     
-    return this.http.get<Novel[]>(url);
+    return this.http.get<Novel[]>(url)
+      .pipe(
+        tap(novels => {
+          if (novels?.length) {
+            novels.forEach(novel => {
+              if (novel.id) {
+                novel.imageUrl = this.getNovelImageUrl(novel.id);
+              }
+            });
+            this.saveToCache(cacheKey, novels);
+          }
+        })
+      );
   }
 
   createNovel(novelData: CreateNovelDto, userId: number): Observable<Novel> {
-    return this.http.post<Novel>(`${this.apiUrl}/api/Novel/create-novel/${userId}`, novelData);
+    return this.http.post<Novel>(`${this.apiUrl}/api/Novel/create-novel/${userId}`, novelData)
+      .pipe(
+        tap(() => {
+          this.clearDataCache();
+        })
+      );
   }
 
   updateNovel(novelId: number, userId: number, novelData: UpdateNovelDto): Observable<any> {
@@ -198,6 +232,13 @@ export class NovelService {
       headers: { 'Content-Type': 'application/json' }
     })
       .pipe(
+        tap(() => {
+          // Clear related data caches
+          this.clearNovelDataCache(novelId);
+          this.clearDataCacheByPattern(`${this.DATA_CACHE_PREFIX}user_novels_${userId}`);
+          this.clearDataCacheByPattern(this.POPULAR_CACHE_KEY);
+          this.clearDataCacheByPattern(this.RATED_CACHE_KEY);
+        }),
         catchError(error => {
           let errorMessage = 'Failed to update novel';
           if (error.error && typeof error.error === 'string') {
@@ -218,7 +259,13 @@ export class NovelService {
   deleteNovel(novelId: number, userId: number): Observable<any> {
     // Clear image cache when novel is deleted
     this.clearImageCache(novelId);
-    return this.http.delete<any>(`${this.apiUrl}/api/Novel/delete-novel/${novelId}/${userId}`);
+    return this.http.delete<any>(`${this.apiUrl}/api/Novel/delete-novel/${novelId}/${userId}`)
+      .pipe(
+        tap(() => {
+          // Clear all data caches on novel deletion
+          this.clearDataCache();
+        })
+      );
   }
   
   createChapter(userId: number, novelId: number, chapterData: CreateChapterDto): Observable<GetChapterDto> {
@@ -232,21 +279,51 @@ export class NovelService {
       chapterData.chapterNumber = 0;
     }
     
-    return this.http.post<GetChapterDto>(`${this.apiUrl}/api/Chapter/create-chapter/${userId}/${novelId}`, chapterData);
+    return this.http.post<GetChapterDto>(`${this.apiUrl}/api/Chapter/create-chapter/${userId}/${novelId}`, chapterData)
+      .pipe(
+        tap(() => {
+          // Clear novel data cache when a chapter is added
+          this.clearNovelDataCache(novelId);
+        })
+      );
   }
   
   deleteChapter(novelId: number, chapterId: number, userId: number): Observable<any> {
-    return this.http.delete<any>(`${this.apiUrl}/api/Chapter/delete-chapter/${novelId}/${chapterId}/${userId}`);
+    return this.http.delete<any>(`${this.apiUrl}/api/Chapter/delete-chapter/${novelId}/${chapterId}/${userId}`)
+      .pipe(
+        tap(() => {
+          // Clear novel data cache when a chapter is deleted
+          this.clearNovelDataCache(novelId);
+        })
+      );
   }
 
   updateChapter(novelId: number, chapterId: number, userId: number, chapterData: CreateChapterDto): Observable<any> {
-    return this.http.put<any>(`${this.apiUrl}/api/Chapter/update-chapter/${novelId}/${chapterId}/${userId}`, chapterData);
+    return this.http.put<any>(`${this.apiUrl}/api/Chapter/update-chapter/${novelId}/${chapterId}/${userId}`, chapterData)
+      .pipe(
+        tap(() => {
+          // Clear novel data cache when a chapter is updated
+          this.clearNovelDataCache(novelId);
+        })
+      );
   }
   
   getAllChapters(novelId: number): Observable<Chapter[]> {
+    const cacheKey = `${this.DATA_CACHE_PREFIX}novel_${novelId}_chapters`;
+    
+    const cached = this.getFromCache<Chapter[]>(cacheKey);
+    if (cached) {
+      return of(cached);
+    }
+    
     // Only use the working endpoint
     return this.http.get<Chapter[]>(`${this.apiUrl}/api/Chapter/novel-all-chapters/${novelId}`)
       .pipe(
+        tap(chapters => {
+          if (chapters?.length) {
+            this.saveToCache(cacheKey, chapters);
+          }
+        }),
         catchError(error => {
           // Return empty array on error
           return of([]);
@@ -255,7 +332,21 @@ export class NovelService {
   }
 
   getChapterByNumber(novelId: number, chapterNumber: number, userId: number = 0): Observable<GetChapterDto> {
-    return this.http.get<GetChapterDto>(`${this.apiUrl}/api/Chapter/get-chapter/${novelId}/${chapterNumber}/${userId}`);
+    const cacheKey = `${this.DATA_CACHE_PREFIX}novel_${novelId}_chapter_${chapterNumber}_user${userId}`;
+    
+    const cached = this.getFromCache<GetChapterDto>(cacheKey);
+    if (cached) {
+      return of(cached);
+    }
+    
+    return this.http.get<GetChapterDto>(`${this.apiUrl}/api/Chapter/get-chapter/${novelId}/${chapterNumber}/${userId}`)
+      .pipe(
+        tap(chapter => {
+          if (chapter) {
+            this.saveToCache(cacheKey, chapter);
+          }
+        })
+      );
   }
 
   uploadNovelImage(novelId: number, imageFile: File): Observable<any> {
@@ -265,7 +356,13 @@ export class NovelService {
     // Clear the cache for this novel as we're uploading a new image
     this.clearImageCache(novelId);
     
-    return this.http.post<any>(`${this.apiUrl}/api/Image/add-novel-image/${novelId}`, formData);
+    return this.http.post<any>(`${this.apiUrl}/api/Image/add-novel-image/${novelId}`, formData)
+      .pipe(
+        tap(() => {
+          // Clear novel data cache when the image is updated
+          this.clearNovelDataCache(novelId);
+        })
+      );
   }
 
   getNovelImageUrl(novelId: number): string {
@@ -470,12 +567,43 @@ export class NovelService {
   }
 
   getNovelRating(novelId: number): Observable<RatingResponse> {
-    return this.http.get<RatingResponse>(`${this.apiUrl}/api/Rating/get-novel-rating/${novelId}`);
+    const cacheKey = `${this.DATA_CACHE_PREFIX}novel_${novelId}_rating`;
+    
+    const cached = this.getFromCache<RatingResponse>(cacheKey);
+    if (cached) {
+      return of(cached);
+    }
+    
+    return this.http.get<RatingResponse>(`${this.apiUrl}/api/Rating/get-novel-rating/${novelId}`)
+      .pipe(
+        tap(rating => {
+          if (rating) {
+            this.saveToCache(cacheKey, rating);
+          }
+        })
+      );
   }
 
   getMostPopularLastWeek(limit: number = 10, userId: number = 0): Observable<Novel[]> {
+    const cacheKey = `${this.POPULAR_CACHE_KEY}_limit${limit}_user${userId}`;
+    
+    const cached = this.getFromCache<Novel[]>(cacheKey);
+    if (cached) {
+      return of(cached);
+    }
+    
     return this.http.get<Novel[]>(`${this.apiUrl}/api/Rating/most-popular-last-week?limit=${limit}&userId=${userId}`)
       .pipe(
+        tap(novels => {
+          if (novels?.length) {
+            novels.forEach(novel => {
+              if (novel.id) {
+                novel.imageUrl = this.getNovelImageUrl(novel.id);
+              }
+            });
+            this.saveToCache(cacheKey, novels);
+          }
+        }),
         catchError(error => {
           return of([]);
         })
@@ -483,8 +611,25 @@ export class NovelService {
   }
 
   getNovelsByRating(limit: number = 10, userId: number = 0): Observable<Novel[]> {
+    const cacheKey = `${this.RATED_CACHE_KEY}_limit${limit}_user${userId}`;
+    
+    const cached = this.getFromCache<Novel[]>(cacheKey);
+    if (cached) {
+      return of(cached);
+    }
+    
     return this.http.get<Novel[]>(`${this.apiUrl}/api/Rating/by-rating?limit=${limit}&userId=${userId}`)
       .pipe(
+        tap(novels => {
+          if (novels?.length) {
+            novels.forEach(novel => {
+              if (novel.id) {
+                novel.imageUrl = this.getNovelImageUrl(novel.id);
+              }
+            });
+            this.saveToCache(cacheKey, novels);
+          }
+        }),
         catchError(error => {
           return of([]);
         })
@@ -496,11 +641,24 @@ export class NovelService {
       `${this.apiUrl}/api/Rating/rate-novel/${novelId}/${userId}`, 
       rating, 
       { headers: { 'Content-Type': 'application/json' } }
+    ).pipe(
+      tap(() => {
+        // Clear novel rating and lists cache
+        this.clearNovelDataCache(novelId);
+        this.clearDataCacheByPattern(this.RATED_CACHE_KEY);
+      })
     );
   }
 
   getNovelByName(name: string, userId: number = 0, options: NovelFilterOptions = {}): Observable<Novel[]> {
     const { genreId, status, sortBy, pageNumber = 1, pageSize = 10 } = options;
+    const cacheKey = `${this.DATA_CACHE_PREFIX}novel_search_${name}_user${userId}_page${pageNumber}_size${pageSize}_genre${genreId || 'null'}_status${status || 'null'}_sort${sortBy || 'null'}`;
+    
+    const cached = this.getFromCache<Novel[]>(cacheKey);
+    if (cached) {
+      return of(cached);
+    }
+    
     let url = `${this.apiUrl}/api/Novel/get-novel-by-name?name=${name}&userId=${userId}&pageNumber=${pageNumber}&pageSize=${pageSize}`;
     
     if (genreId !== undefined) {
@@ -515,22 +673,35 @@ export class NovelService {
       url += `&sortBy=${sortBy}`;
     }
     
-    return this.http.get<Novel[]>(url);
+    return this.http.get<Novel[]>(url)
+      .pipe(
+        tap(novels => {
+          if (novels?.length) {
+            novels.forEach(novel => {
+              if (novel.id) {
+                novel.imageUrl = this.getNovelImageUrl(novel.id);
+              }
+            });
+            this.saveToCache(cacheKey, novels);
+          }
+        })
+      );
   }
 
   getAllGenres(): Observable<Genre[]> {
-    const cacheKey = 'all_genres';
-    const cachedGenres = this.cacheService.get<Genre[]>(cacheKey);
+    const cacheKey = `${this.DATA_CACHE_PREFIX}all_genres`;
     
-    if (cachedGenres) {
-      return of(cachedGenres);
+    const cached = this.getFromCache<Genre[]>(cacheKey);
+    if (cached) {
+      return of(cached);
     }
     
     return this.http.get<Genre[]>(`${this.apiUrl}/api/Genre/get-all-genre`)
       .pipe(
         tap(genres => {
-          // Cache genres for longer since they change less frequently
-          this.cacheService.set(cacheKey, genres, 60 * 60 * 1000); // 1 hour
+          if (genres?.length) {
+            this.saveToCache(cacheKey, genres, 60 * 60 * 1000); // Cache genres for 1 hour
+          }
         })
       );
   }
@@ -544,7 +715,16 @@ export class NovelService {
       ? `${this.apiUrl}/api/Chapter/upload-pdf/${userId}/${novelId}/${chapterId}`
       : `${this.apiUrl}/api/Chapter/upload-pdf/${userId}/${novelId}`;
       
-    return this.http.post<any>(url, formData);
+    return this.http.post<any>(url, formData)
+      .pipe(
+        tap(() => {
+          // Clear chapter and novel caches
+          if (chapterId) {
+            this.clearDataCacheByPattern(`${this.DATA_CACHE_PREFIX}novel_${novelId}_chapter_`);
+          }
+          this.clearNovelDataCache(novelId);
+        })
+      );
   }
 
   // Replace an existing PDF file for a chapter
@@ -552,12 +732,160 @@ export class NovelService {
     const formData = new FormData();
     formData.append('file', file);
     
-    return this.http.post<any>(`${this.apiUrl}/api/Chapter/replace-pdf/${userId}/${novelId}/${chapterId}`, formData);
+    return this.http.post<any>(`${this.apiUrl}/api/Chapter/replace-pdf/${userId}/${novelId}/${chapterId}`, formData)
+      .pipe(
+        tap(() => {
+          // Clear chapter cache
+          this.clearDataCacheByPattern(`${this.DATA_CACHE_PREFIX}novel_${novelId}_chapter_`);
+        })
+      );
+  }
+
+  // New data caching methods
+  private saveToCache<T>(key: string, data: T, expiry: number = this.DATA_CACHE_EXPIRY): void {
+    try {
+      const cacheItem = {
+        data,
+        timestamp: Date.now(),
+        expiry
+      };
+      
+      localStorage.setItem(key, JSON.stringify(cacheItem));
+    } catch (error) {
+      // If storage is full, clear some old items
+      if (error instanceof DOMException && (error.name === 'QuotaExceededError' || error.code === 22)) {
+        this.clearOldestDataCache(5);
+        try {
+          // Try again after clearing
+          const cacheItem = {
+            data,
+            timestamp: Date.now(),
+            expiry
+          };
+          localStorage.setItem(key, JSON.stringify(cacheItem));
+        } catch {
+          // If still fails, give up
+        }
+      }
+    }
+  }
+  
+  private getFromCache<T>(key: string): T | null {
+    try {
+      const cacheItem = localStorage.getItem(key);
+      if (!cacheItem) return null;
+      
+      const parsedCache = JSON.parse(cacheItem);
+      
+      // Check if cache is expired
+      if (Date.now() - parsedCache.timestamp > (parsedCache.expiry || this.DATA_CACHE_EXPIRY)) {
+        localStorage.removeItem(key);
+        return null;
+      }
+      
+      return parsedCache.data as T;
+    } catch (error) {
+      return null;
+    }
+  }
+  
+  private clearDataCache(): void {
+    try {
+      const keysToRemove: string[] = [];
+      
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith(this.DATA_CACHE_PREFIX)) {
+          keysToRemove.push(key);
+        }
+      }
+      
+      keysToRemove.forEach(key => {
+        try {
+          localStorage.removeItem(key);
+        } catch {
+          // Ignore errors
+        }
+      });
+    } catch {
+      // Ignore errors
+    }
+  }
+  
+  private clearNovelDataCache(novelId: number): void {
+    this.clearDataCacheByPattern(`${this.DATA_CACHE_PREFIX}novel_${novelId}`);
+  }
+  
+  private clearDataCacheByPattern(pattern: string): void {
+    try {
+      const keysToRemove: string[] = [];
+      
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.includes(pattern)) {
+          keysToRemove.push(key);
+        }
+      }
+      
+      keysToRemove.forEach(key => {
+        try {
+          localStorage.removeItem(key);
+        } catch {
+          // Ignore errors
+        }
+      });
+    } catch {
+      // Ignore errors
+    }
+  }
+  
+  private clearOldestDataCache(count: number): void {
+    try {
+      const cacheItems = [];
+      
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith(this.DATA_CACHE_PREFIX)) {
+          try {
+            const item = localStorage.getItem(key);
+            if (item) {
+              const parsedItem = JSON.parse(item);
+              cacheItems.push({
+                key,
+                timestamp: parsedItem.timestamp || 0
+              });
+            }
+          } catch {
+            // If can't parse, add with zero timestamp
+            cacheItems.push({
+              key,
+              timestamp: 0
+            });
+          }
+        }
+      }
+      
+      // Sort by timestamp, oldest first
+      cacheItems.sort((a, b) => a.timestamp - b.timestamp);
+      
+      // Remove the oldest ones up to count
+      const toRemove = cacheItems.slice(0, count);
+      toRemove.forEach(item => {
+        localStorage.removeItem(item.key);
+      });
+    } catch {
+      // Ignore errors
+    }
   }
 
   // Method to clear cache when needed (e.g., after novel creation/update)
   clearCache(pattern?: string): void {
-    this.cacheService.clear(pattern);
+    if (pattern) {
+      this.clearDataCacheByPattern(pattern);
+    } else {
+      this.clearDataCache();
+      this.clearAllImageCache();
+    }
   }
 
   /**
@@ -566,6 +894,13 @@ export class NovelService {
    */
   getAllNovelsAdmin(options: NovelFilterOptions = {}): Observable<NovelApiResponse> {
     const { pageNumber = 1, pageSize = 10, genreId, status, sortBy } = options;
+    const cacheKey = `${this.DATA_CACHE_PREFIX}admin_novels_page${pageNumber}_size${pageSize}_genre${genreId || 'null'}_status${status || 'null'}_sort${sortBy || 'null'}`;
+    
+    const cached = this.getFromCache<NovelApiResponse>(cacheKey);
+    if (cached) {
+      return of(cached);
+    }
+    
     let url = `${this.apiUrl}/api/Novel/get-all-novels?pageNumber=${pageNumber}&pageSize=${pageSize}`;
     
     if (genreId !== undefined) {
@@ -584,12 +919,19 @@ export class NovelService {
       .pipe(
         tap(response => {
           // Enhance the novels with author information where available
-          response.novels = response.novels.map(novel => {
-            if (novel.authorId) {
-              novel.authorName = novel.authorName || `User #${novel.authorId}`;
-            }
-            return novel;
-          });
+          if (response.novels?.length) {
+            response.novels = response.novels.map(novel => {
+              if (novel.id) {
+                novel.imageUrl = this.getNovelImageUrl(novel.id);
+              }
+              if (novel.authorId) {
+                novel.authorName = novel.authorName || `User #${novel.authorId}`;
+              }
+              return novel;
+            });
+            
+            this.saveToCache(cacheKey, response);
+          }
         }),
         catchError(error => {
           if (error.status === 404) {

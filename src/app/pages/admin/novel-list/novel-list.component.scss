@@ -38,6 +38,12 @@
         border-color: var(--primary-color);
       }
     }
+    
+    select option {
+      background-color: var(--bg-tertiary);
+      color: var(--text-primary);
+      padding: 10px;
+    }
   }
   
   .clear-filters-btn {
@@ -688,6 +694,12 @@
     &.is-invalid {
       border-color: #dc3545;
     }
+  }
+  
+  select option {
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+    padding: 10px;
   }
   
   textarea {
